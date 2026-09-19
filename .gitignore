@@ -1,0 +1,54 @@
+# dependencies and caches
+node_modules/
+.npm-cache/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+coverage/
+.nyc_output/
+.tmp/
+
+# secrets — only the .example file is shared
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+secrets*.json
+credentials*.json
+
+# local data (the root folder only; qa/ai/data/ is the evaluation corpus)
+/data/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+
+# generated reports and test output
+qa/reports/
+test-results/
+playwright-report/
+blob-report/
+output/
+.playwright-cli/
+*.har
+*.trace.zip
+trace.zip
+
+# logs and archives
+*.log
+*.zip
+*.tar.gz
+*.7z
+
+# editors and operating systems (local tool folders belong in .git/info/exclude)
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

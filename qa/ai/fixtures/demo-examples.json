@@ -1,0 +1,114 @@
+{
+  "_readme": [
+    "Synthetic answers for `npm run ai:demo`. Each text must be typed exactly (surrounding spaces ignored; case matters, because answers quote the text).",
+    "Anything else answers DEMO_UNSUPPORTED. These are copies of fixture outputs from qa/ai/data/eval-cases.jsonl (source_case), with category_ref replaced by a category NAME, because refs depend on the signed-in user's own category list.",
+    "They show the review flow. They are not language understanding and are never labelled as an AI result."
+  ],
+  "examples": [
+    {
+      "source_case": "AI-EVAL-001",
+      "language": "en",
+      "text": "Yesterday I paid 18 euros for lunch",
+      "shows": "ready",
+      "answer": {
+        "intent": "expense",
+        "language": "en",
+        "amount_text": "18",
+        "currency_text": "euros",
+        "date_text": "Yesterday",
+        "note_text": "lunch",
+        "category_name": "Restaurants"
+      }
+    },
+    {
+      "source_case": "AI-EVAL-002",
+      "language": "uk",
+      "text": "Учора витратив 18 євро на обід",
+      "shows": "ready",
+      "answer": {
+        "intent": "expense",
+        "language": "uk",
+        "amount_text": "18",
+        "currency_text": "євро",
+        "date_text": "Учора",
+        "note_text": "обід",
+        "category_name": "Restaurants"
+      }
+    },
+    {
+      "source_case": "AI-EVAL-003",
+      "language": "sk",
+      "text": "Včera som zaplatil 18 eur za obed",
+      "shows": "ready",
+      "answer": {
+        "intent": "expense",
+        "language": "sk",
+        "amount_text": "18",
+        "currency_text": "eur",
+        "date_text": "Včera",
+        "note_text": "obed",
+        "category_name": "Restaurants"
+      }
+    },
+    {
+      "source_case": "AI-EVAL-004",
+      "language": "en",
+      "text": "Groceries 12,50 € today",
+      "shows": "ready",
+      "answer": {
+        "intent": "expense",
+        "language": "en",
+        "amount_text": "12,50",
+        "currency_text": "€",
+        "date_text": "today",
+        "note_text": "Groceries",
+        "category_name": "Groceries"
+      }
+    },
+    {
+      "source_case": "AI-EVAL-019",
+      "language": "en",
+      "text": "Lunch yesterday",
+      "shows": "needs_input",
+      "answer": {
+        "intent": "expense",
+        "language": "en",
+        "amount_text": null,
+        "currency_text": null,
+        "date_text": "yesterday",
+        "note_text": "Lunch",
+        "category_name": "Restaurants"
+      }
+    },
+    {
+      "source_case": "AI-EVAL-028",
+      "language": "en",
+      "text": "Lunch 10 USD",
+      "shows": "unsupported",
+      "answer": {
+        "intent": "expense",
+        "language": "en",
+        "amount_text": "10",
+        "currency_text": "USD",
+        "date_text": null,
+        "note_text": "Lunch",
+        "category_name": "Restaurants"
+      }
+    },
+    {
+      "source_case": "AI-EVAL-025",
+      "language": "en",
+      "text": "Coffee 3 euros and cake 5 euros",
+      "shows": "unsupported",
+      "answer": {
+        "intent": "multiple_expenses",
+        "language": "en",
+        "amount_text": null,
+        "currency_text": null,
+        "date_text": null,
+        "note_text": null,
+        "category_name": null
+      }
+    }
+  ]
+}

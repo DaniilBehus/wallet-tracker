@@ -1,0 +1,43 @@
+{
+  "corpus": "qa/ai/data/eval-cases.jsonl",
+  "version": "1",
+  "frozen": "2026-09-14",
+  "sha256": "4b7e5bf4f21655a17b342237ec7489aa30467fe880f300ef42243666a053ff67",
+  "total_rows": 116,
+  "nl_rows": 113,
+  "nl_by_split": {
+    "dev": 93,
+    "holdout": 20
+  },
+  "nl_by_language": {
+    "en": 56,
+    "uk": 28,
+    "sk": 27,
+    "mixed": 2
+  },
+  "exploratory_rows": 3,
+  "holdout_ids": [
+    "AI-EVAL-061",
+    "AI-EVAL-062",
+    "AI-EVAL-063",
+    "AI-EVAL-064",
+    "AI-EVAL-065",
+    "AI-EVAL-066",
+    "AI-EVAL-067",
+    "AI-EVAL-068",
+    "AI-EVAL-115",
+    "AI-EVAL-118",
+    "AI-EVAL-121",
+    "AI-EVAL-122",
+    "AI-EVAL-123",
+    "AI-EVAL-215",
+    "AI-EVAL-218",
+    "AI-EVAL-221",
+    "AI-EVAL-222",
+    "AI-EVAL-223",
+    "AI-EVAL-224",
+    "AI-EVAL-124"
+  ],
+  "label_provenance": "AGENT_AUTHORED",
+  "note": "Holdout frozen before any normaliser code existed. Changing a label or the split requires a new corpus version and a recorded reason."
+}

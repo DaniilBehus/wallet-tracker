@@ -1,0 +1,1173 @@
+/* WALLET — mobile-first. One fixed light theme: spec §9 rules out dark mode.
+   No framework and no build step (spec §2), so this is hand-written CSS with a
+   small set of custom properties standing in for a design system.
+
+   Layout contract for the whole app:
+     - the page itself never scrolls; each screen owns its own scroll area
+     - the bottom navigation is fixed and thumb-reachable
+     - every tap target is at least 48px, which is why --tap exists
+     - nothing may overflow horizontally on a 320px screen */
+
+:root {
+  --bg:        #eef0f5;
+  --surface:   #ffffff;
+  --line:      #e1e4ec;
+  --text:      #14161a;
+  --muted:     #6b7280;
+  --accent:    #3d5afe;
+  --accent-dk: #2f47c9;
+  --danger:    #d92d20;
+  --ok:        #067647;
+  --ok-bg:     #ecfdf3;
+  --danger-bg: #fef3f2;
+
+  --tap: 48px;                 /* minimum comfortable tap target */
+  --nav-h: 60px;
+  --radius: 14px;
+
+  /* Home-indicator clearance on iOS; 0 everywhere else. */
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;            /* screens scroll, the page does not */
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+[hidden] { display: none !important; }
+
+button { font: inherit; color: inherit; cursor: pointer; }
+
+input, select {
+  font: inherit;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0 12px;
+  height: var(--tap);
+  width: 100%;
+  min-width: 0;                /* lets inputs shrink inside flex/grid parents */
+}
+
+input:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------ auth -- */
+
+.auth {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  height: 100%;
+  padding: 24px 20px calc(24px + var(--safe-b));
+  max-width: 420px;
+  margin: 0 auto;
+}
+.auth__logo { margin: 0; font-size: 32px; letter-spacing: -0.5px; }
+.auth__sub  { margin: 0 0 8px; color: var(--muted); }
+.auth__form { display: flex; flex-direction: column; gap: 14px; }
+
+/* ----------------------------------------------------------------- forms -- */
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field__label { font-size: 13px; color: var(--muted); }
+.field__hint  { font-size: 12px; color: var(--muted); min-height: 1em; }
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--tap);
+  cursor: pointer;
+}
+.check input { width: 22px; height: 22px; flex: none; }
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+/* --------------------------------------------------------------- buttons -- */
+
+.btn {
+  min-height: var(--tap);
+  padding: 0 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.btn--primary:active { background: var(--accent-dk); }
+.btn--link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  text-decoration: underline;
+  min-height: var(--tap);
+}
+.btn[disabled] { opacity: 0.55; cursor: default; }
+
+/* --------------------------------------------------------------- screens -- */
+
+#app {
+  position: fixed;
+  inset: 0 0 calc(var(--nav-h) + var(--safe-b)) 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;               /* without this the scroll child never shrinks */
+  max-width: 520px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.screen__head {
+  padding: 16px 16px 10px;
+  flex: none;
+}
+.screen__head--add { padding-bottom: 6px; }
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 16px 20px;
+}
+
+.total__label { margin: 0 0 4px; color: var(--muted); font-size: 13px; }
+.total {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
+.empty {
+  color: var(--muted);
+  text-align: center;
+  padding: 28px 8px;
+}
+
+/* ------------------------------------------------------------ add screen -- */
+
+.amount {
+  display: block;
+  width: 100%;
+  text-align: right;
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  font-variant-numeric: tabular-nums;
+  padding: 6px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.amount--empty { color: #c2c6cf; }
+
+/* One column of full-width rows rather than a grid of squares (D-023): a
+   square is sized by its icon and truncates its label, a row is sized by the
+   text and grows the tap target instead of shrinking it. */
+.categories {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 16px 10px;
+}
+
+.tile {
+  min-height: 54px;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  text-align: left;
+  flex: none;
+}
+.tile__icon { font-size: 22px; line-height: 1; flex: none; }
+.tile__name {
+  font-size: 15px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+/* aria-pressed is the selection state; the styling follows it rather than a
+   separate class, so the accessible state and the visible state cannot drift. */
+.tile[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.tile[aria-pressed="true"] .tile__name { color: var(--accent); font-weight: 600; }
+
+/* --------------------------------------------------------------- note -- */
+
+.note {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 16px 10px;
+}
+.note__label { font-size: 12px; color: var(--muted); }
+.note input { height: 44px; border-radius: 12px; }
+
+/* ------------------------------------------------- month overview (D-022) -- */
+
+.screen__head--month { padding: 14px 16px 12px; }
+
+.overview {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.donut { width: 132px; height: 132px; flex: none; }
+.donut__track {
+  fill: none;
+  stroke: #dfe3ec;
+  stroke-width: 14;
+}
+.donut__slice {
+  fill: none;
+  stroke-width: 14;
+  stroke-linecap: butt;
+}
+.donut__value {
+  font-size: 17px;
+  font-weight: 700;
+  fill: var(--text);
+}
+.donut__caption {
+  font-size: 9px;
+  fill: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.figures {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.figure dt {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.figure dd {
+  margin: 2px 0 0;
+  font-size: 21px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.figure__edit {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  border-bottom: 1px dashed var(--muted);
+}
+.figure--over { color: var(--danger); }
+
+.income-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.income-form__actions { display: flex; gap: 8px; }
+.income-form__actions .btn { flex: 1; }
+
+.keypad {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 8px 16px 12px;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}
+.key {
+  min-height: 56px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: 22px;
+  font-weight: 600;
+}
+.key:active { background: #eceef3; }
+.key--clear { color: var(--danger); }
+
+/* The save key repeats the primary colours instead of reusing .btn--primary.
+   BUG-001: .key is declared after .btn--primary with the same specificity, so
+   .key's white background won while .btn--primary's white text stayed — an
+   invisible button. Specificity here (.key.key--save) is higher than either,
+   so the pair can no longer be split by declaration order. */
+.key--save.key {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+}
+.key--save.key:active { background: var(--accent-dk); }
+
+/* ---------------------------------------------------------- month screen -- */
+
+.bars { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+
+.bar__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.bar__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bar__amount { color: var(--muted); flex: none; font-variant-numeric: tabular-nums; }
+.bar__track {
+  height: 8px;
+  background: var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+/* spec §9: bars are divs with a width percentage, not a charting library. */
+.bar__fill { height: 100%; background: var(--accent); border-radius: 4px; }
+
+.daygroup { margin-bottom: 18px; }
+.daygroup__label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin: 0 0 6px 2px;
+}
+
+.txlist { padding-bottom: 8px; }
+
+.tx {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 8px 10px 12px;
+  margin-bottom: 8px;
+}
+.tx__icon { font-size: 20px; flex: none; }
+/* A button, because it opens the editor (D-029). Stripped back to look like
+   the text it replaced — the affordance is the whole row, not a button edge. */
+.tx__body {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.tx__body:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.tx__body:active .tx__name { color: var(--accent); }
+.tx__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tx__note { font-size: 12px; color: var(--muted); }
+.tx__amount { font-weight: 600; flex: none; font-variant-numeric: tabular-nums; }
+.tx__del {
+  flex: none;
+  width: var(--tap);
+  height: var(--tap);
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 18px;
+  border-radius: 10px;
+}
+.tx__del:active { background: var(--danger-bg); color: var(--danger); }
+
+/* ------------------------------------------------ upcoming / schedules --- */
+
+.rows { display: flex; flex-direction: column; gap: 8px; }
+
+.row {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.row--done { background: var(--ok-bg); border-color: #a9e0c1; }
+
+.row__top {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.row__date {
+  flex: none;
+  font-size: 13px;
+  color: var(--muted);
+  min-width: 74px;
+  font-variant-numeric: tabular-nums;
+}
+.row__name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.row__amount { flex: none; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.row__bottom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.row__meta { font-size: 13px; color: var(--muted); flex: 1; min-width: 0; }
+.row__pay { flex: none; }
+.row__done {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ok);
+}
+
+/* ------------------------------------------------------------------ nav -- */
+
+.nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--nav-h) + var(--safe-b));
+  padding-bottom: var(--safe-b);
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+}
+.nav__btn {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 0 2px;
+}
+.nav__icon { font-size: 19px; line-height: 1; }
+.nav__btn[aria-current="page"] { color: var(--accent); font-weight: 600; }
+
+/* --------------------------------------------------------------- toasts -- */
+
+.toast {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(var(--nav-h) + var(--safe-b) + 12px);
+  z-index: 10;
+  padding: 13px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14);
+}
+.toast--success { background: var(--ok-bg);     color: var(--ok);     border: 1px solid #a9e0c1; }
+.toast--error   { background: var(--danger-bg); color: var(--danger); border: 1px solid #f3b4ae; }
+
+@media (min-width: 560px) {
+  .toast { left: 50%; right: auto; transform: translateX(-50%); min-width: 320px; }
+}
+
+
+/* ============================================ editing and paging (D-029, D-031) */
+
+/* The sheet that edits one expense. Fixed to the viewport rather than placed in
+   the list, because the row being edited can be anywhere in a long month and an
+   inline form would push the rest of the list under the reader's thumb. */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(17, 20, 24, 0.45);
+}
+
+.sheet__panel {
+  width: 100%;
+  max-width: 480px;
+  background: var(--surface);
+  border-radius: 16px 16px 0 0;
+  padding: 20px 16px calc(16px + env(safe-area-inset-bottom));
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.18);
+  display: grid;
+  gap: 14px;
+}
+
+.sheet__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.sheet__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.sheet__actions .btn { flex: 1; }
+
+.sheet select,
+.sheet input[type="date"] {
+  width: 100%;
+  padding: 12px;
+  font: inherit;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+@media (min-width: 560px) {
+  .sheet { align-items: center; }
+  .sheet__panel { border-radius: 16px; }
+}
+
+/* "Show more", and the line that says how much of the month is on screen. The
+   count is shown even when everything is loaded: a list that stops without
+   saying so is the defect this closes. */
+.loadmore {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 8px 16px 20px;
+}
+
+.loadmore__count {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ================================================= presentation refresh --
+   A visual-only layer for the existing screens. It deliberately reuses the
+   semantic structure and all test IDs above: the application remains the same
+   product, but its hierarchy reads like a finished finance tool rather than a
+   collection of controls. */
+
+:root {
+  --bg: #edf3ef;
+  --surface: #fffefa;
+  --surface-soft: #f6faf7;
+  --line: #dce7df;
+  --text: #15231e;
+  --muted: #66756d;
+  --accent: #0d6b58;
+  --accent-dk: #084b3e;
+  --accent-soft: #dff5eb;
+  --danger: #b73b32;
+  --danger-bg: #fff0ed;
+  --ok: #08744d;
+  --ok-bg: #e6f7ed;
+  --radius: 18px;
+  --radius-sm: 13px;
+  --shadow-sm: 0 1px 2px rgba(16, 39, 30, 0.04), 0 8px 24px rgba(16, 39, 30, 0.06);
+  --shadow-lg: 0 20px 50px rgba(12, 49, 37, 0.14);
+  --nav-h: 66px;
+}
+
+body {
+  background:
+    radial-gradient(circle at 12% 2%, rgba(69, 176, 130, 0.17), transparent 28rem),
+    radial-gradient(circle at 92% 100%, rgba(240, 183, 97, 0.13), transparent 25rem),
+    var(--bg);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: -0.01em;
+}
+
+button,
+input,
+select { transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
+
+button:active { transform: translateY(1px); }
+
+input,
+select {
+  height: 52px;
+  background: rgba(255, 254, 250, 0.86);
+  border-color: var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+input:hover,
+select:hover { border-color: #b8cfc1; }
+
+input:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: 3px solid rgba(13, 107, 88, 0.23);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------ auth -- */
+
+.auth {
+  position: relative;
+  gap: 0;
+  max-width: 470px;
+  padding: 28px 24px calc(28px + var(--safe-b));
+}
+
+.auth::before {
+  content: "";
+  position: absolute;
+  inset: 50% -24px auto;
+  height: 430px;
+  transform: translateY(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 28px;
+  background: rgba(255, 254, 250, 0.76);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(12px);
+  z-index: -1;
+}
+
+.auth__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 34px;
+}
+
+.auth__mark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: #fff;
+  background: linear-gradient(145deg, #14836b, #084b3e);
+  border-radius: 14px;
+  font-size: 22px;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(13, 107, 88, 0.25);
+}
+
+.auth__eyebrow {
+  margin: 0 0 2px;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.auth__logo {
+  margin: 0;
+  color: var(--text);
+  font-size: 25px;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.auth__sub {
+  margin: 0;
+  color: var(--text);
+  font-size: 28px;
+  font-weight: 750;
+  letter-spacing: -0.045em;
+}
+
+.auth__intro {
+  margin: 7px 0 24px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.auth__form { gap: 16px; }
+.auth .field { gap: 7px; }
+.auth .field__label { color: #4f6157; font-size: 12px; font-weight: 700; letter-spacing: 0.01em; }
+.auth .btn--primary { margin-top: 4px; }
+.auth .btn--link { margin: 17px auto 0; font-size: 14px; }
+
+/* --------------------------------------------------------------- buttons -- */
+
+.btn {
+  min-height: 50px;
+  border-radius: var(--radius-sm);
+  border-color: var(--line);
+  background: var(--surface);
+  font-weight: 700;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9), 0 3px 8px rgba(21, 35, 30, 0.05);
+}
+
+.btn:hover:not([disabled]) { border-color: #accab9; background: #fbfdfb; }
+
+.btn--primary,
+.key--save.key {
+  background: linear-gradient(135deg, #137c66, #0a5e4d);
+  border-color: #0a5e4d;
+  box-shadow: 0 7px 16px rgba(13, 107, 88, 0.22);
+}
+
+/* Keep the keypad CTA a real solid colour.  Apart from making it immediately
+   readable, this lets the BUG-001 guard inspect the colour that is actually
+   painted behind its label; computed backgroundColor cannot represent a
+   gradient. */
+.key--save.key {
+  background: #0d6b58;
+  background-image: none;
+  color: #fff;
+}
+
+.btn--primary:hover:not([disabled]),
+.key--save.key:hover:not([disabled]) {
+  background: linear-gradient(135deg, #188b72, #0a5e4d);
+  border-color: #084b3e;
+}
+
+.key--save.key:hover:not([disabled]) { background: #0a5e4d; }
+
+.btn--primary:active,
+.key--save.key:active { background: var(--accent-dk); }
+.btn--link { color: var(--accent); font-weight: 700; text-underline-offset: 3px; box-shadow: none; }
+
+/* --------------------------------------------------------------- screens -- */
+
+#app { inset: 0 0 calc(var(--nav-h) + var(--safe-b) + 24px) 0; }
+
+.screen { max-width: 660px; padding: 10px 12px 0; }
+
+.screen__head {
+  margin: 0 4px 12px;
+  padding: 18px 16px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: var(--radius);
+  background: rgba(255, 254, 250, 0.72);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(10px);
+}
+
+.screen__head--add {
+  margin-bottom: 8px;
+  padding: 19px 18px 16px;
+  background: linear-gradient(135deg, #0f6e5a, #174c42);
+  border-color: transparent;
+  box-shadow: 0 14px 28px rgba(13, 82, 67, 0.25);
+}
+
+.screen__head--add::before {
+  content: "NEW EXPENSE";
+  display: block;
+  margin-bottom: 4px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.screen__head--add .amount { color: #fff; font-size: 46px; line-height: 1.08; }
+.screen__head--add .amount--empty { color: rgba(255, 255, 255, 0.56); }
+
+.screen__head > .total__label {
+  margin: 0;
+  color: var(--text);
+  font-size: 25px;
+  font-weight: 760;
+  letter-spacing: -0.045em;
+}
+
+.scroll { padding: 0 4px 24px; }
+
+/* ------------------------------------------------------------ add screen -- */
+
+.categories { gap: 8px; padding: 6px 4px 12px; }
+
+.tile {
+  min-height: 58px;
+  border-radius: 16px;
+  border-color: rgba(220, 231, 223, 0.9);
+  background: rgba(255, 254, 250, 0.88);
+  box-shadow: 0 2px 7px rgba(16, 45, 35, 0.04);
+}
+
+.tile:hover { border-color: #b7d5c3; background: #fff; transform: translateY(-1px); }
+.tile__icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 11px; background: var(--surface-soft); font-size: 19px; }
+.tile__name { font-weight: 650; }
+.tile[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent), 0 5px 13px rgba(13, 107, 88, 0.11); }
+.tile[aria-pressed="true"] .tile__icon { background: #fff; }
+.tile[aria-pressed="true"] .tile__name { color: var(--accent-dk); }
+
+.note { padding: 0 4px 12px; }
+.note__label { color: var(--muted); font-size: 12px; font-weight: 700; }
+.note input { background: rgba(255, 254, 250, 0.88); }
+
+.keypad {
+  gap: 9px;
+  padding: 11px 4px 4px;
+  border: 0;
+  background: transparent;
+}
+
+.key {
+  min-height: 54px;
+  border-radius: 15px;
+  border-color: rgba(220, 231, 223, 0.92);
+  background: rgba(255, 254, 250, 0.9);
+  box-shadow: 0 2px 6px rgba(16, 45, 35, 0.04);
+}
+.key:hover { border-color: #b9d5c4; background: #fff; }
+.key--clear { color: var(--danger); background: #fff7f5; }
+
+/* ------------------------------------------------- month overview (D-022) -- */
+
+.screen__head--month {
+  padding: 18px;
+  background: linear-gradient(145deg, #153d34, #0b6552);
+  border-color: transparent;
+  box-shadow: 0 14px 30px rgba(13, 82, 67, 0.24);
+}
+
+.screen__head--month .donut { width: 142px; height: 142px; filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.14)); }
+.screen__head--month .donut__track { stroke: rgba(255, 255, 255, 0.18); }
+.screen__head--month .donut__value { fill: #fff; font-size: 18px; }
+.screen__head--month .donut__caption { fill: rgba(255, 255, 255, 0.65); }
+.screen__head--month .figure dt { color: rgba(255, 255, 255, 0.65); font-size: 10px; font-weight: 700; letter-spacing: 0.12em; }
+.screen__head--month .figure dd { color: #fff; font-size: 23px; }
+.screen__head--month .figure__edit { color: #fff; border-bottom-color: rgba(255, 255, 255, 0.45); }
+.screen__head--month .figure--over { color: #ffd4ca; }
+.screen__head--month .income-form { margin-top: 18px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.2); }
+.screen__head--month .income-form .field__label { color: rgba(255, 255, 255, 0.76); font-weight: 700; }
+.screen__head--month .income-form input { background: rgba(255, 255, 255, 0.96); }
+.screen__head--month .income-form .btn:not(.btn--primary) { background: transparent; border-color: rgba(255, 255, 255, 0.38); color: #fff; box-shadow: none; }
+
+.bars { gap: 13px; margin: 2px 0 24px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.76); border-radius: var(--radius); background: rgba(255, 254, 250, 0.8); box-shadow: var(--shadow-sm); }
+.bars:empty { display: none; }
+.bar__head { font-size: 12px; font-weight: 650; }
+.bar__track { height: 9px; background: #e7eee9; border-radius: 999px; }
+.bar__fill { border-radius: 999px; }
+
+.daygroup { margin-bottom: 20px; }
+.daygroup__label { margin: 0 0 8px 4px; color: #718078; font-size: 10px; font-weight: 800; letter-spacing: 0.13em; }
+.tx { gap: 12px; margin-bottom: 9px; border-radius: 16px; border-color: rgba(220, 231, 223, 0.9); padding: 11px 8px 11px 12px; box-shadow: 0 2px 7px rgba(16, 45, 35, 0.035); }
+.tx__icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: var(--surface-soft); font-size: 18px; }
+.tx__name { font-weight: 700; }
+.tx__amount { color: var(--text); font-weight: 750; }
+.tx__del:hover { background: var(--danger-bg); color: var(--danger); }
+
+/* ------------------------------------------------ upcoming / schedules --- */
+
+.form { gap: 16px; border-radius: var(--radius); border-color: rgba(255, 255, 255, 0.76); background: rgba(255, 254, 250, 0.8); box-shadow: var(--shadow-sm); padding: 18px; }
+.field__label { color: #536259; font-weight: 700; }
+.check { border-radius: var(--radius-sm); background: var(--surface-soft); padding: 2px 12px; font-weight: 650; }
+
+.rows { gap: 10px; }
+.row { gap: 10px; border-radius: 16px; border-color: rgba(220, 231, 223, 0.9); background: rgba(255, 254, 250, 0.88); box-shadow: 0 2px 7px rgba(16, 45, 35, 0.035); padding: 14px; }
+.row--done { background: var(--ok-bg); border-color: #a9ddbc; }
+.row__name { font-weight: 750; }
+.row__amount { font-weight: 750; }
+.row__date { color: #77867d; font-size: 12px; }
+.row__pay { min-height: 42px; padding: 0 14px; }
+
+.empty { margin: 18px 0; padding: 28px 16px; border: 1px dashed #c9d9ce; border-radius: var(--radius); background: rgba(255, 254, 250, 0.56); color: #7a8880; }
+
+/* ------------------------------------------------------------------ nav -- */
+
+.nav {
+  left: 50%;
+  right: auto;
+  bottom: calc(12px + var(--safe-b));
+  width: min(calc(100% - 24px), 636px);
+  height: var(--nav-h);
+  padding: 0;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 20px;
+  background: rgba(255, 254, 250, 0.9);
+  box-shadow: 0 13px 30px rgba(16, 45, 35, 0.15);
+  backdrop-filter: blur(14px);
+}
+
+.nav__btn { position: relative; gap: 3px; border-radius: 15px; font-size: 11px; font-weight: 650; }
+.nav__icon { font-size: 18px; transition: transform 160ms ease; }
+.nav__btn:hover .nav__icon { transform: translateY(-1px); }
+.nav__btn[aria-current="page"] { color: var(--accent-dk); }
+.nav__btn[aria-current="page"]::before { content: ""; position: absolute; top: 7px; width: 28px; height: 3px; border-radius: 999px; background: var(--accent); }
+
+.toast { bottom: calc(var(--nav-h) + var(--safe-b) + 30px); border-radius: 15px; box-shadow: var(--shadow-lg); }
+
+.sheet { background: rgba(12, 40, 31, 0.42); backdrop-filter: blur(4px); }
+.sheet__panel { border-radius: 22px 22px 0 0; padding: 22px 18px calc(18px + env(safe-area-inset-bottom)); box-shadow: 0 -12px 38px rgba(10, 36, 28, 0.2); }
+.sheet__title { font-size: 21px; letter-spacing: -0.035em; }
+
+@media (min-width: 700px) {
+  #app { inset: 0 0 0 0; }
+  .screen { max-width: 980px; padding: 28px 26px 106px; }
+  .screen__head { margin-left: 0; margin-right: 0; }
+  .scroll { padding-left: 0; padding-right: 0; }
+  .categories { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); align-content: start; overflow: visible; padding-left: 0; padding-right: 0; }
+  .tile { min-height: 68px; }
+  #screen-add { overflow-y: auto; }
+  #screen-add .categories { flex: none; width: 100%; max-width: 760px; margin: 0 auto; }
+  #screen-add .note, #screen-add .keypad { flex: none; width: 100%; max-width: 640px; margin-left: auto; margin-right: auto; }
+  .screen__head--month { max-width: 760px; }
+  #screen-month .scroll { display: grid; grid-template-columns: minmax(260px, 0.72fr) minmax(360px, 1.28fr); gap: 24px; align-content: start; }
+  #screen-month .bars { margin: 0; }
+  #screen-month .txlist { grid-column: 2; grid-row: 1 / span 2; }
+  #screen-month .loadmore { grid-column: 2; }
+  .form { max-width: 620px; }
+}
+
+@media (max-width: 360px) {
+  .screen { padding-left: 8px; padding-right: 8px; }
+  .screen__head--month .overview { gap: 11px; }
+  .screen__head--month .donut { width: 118px; height: 118px; }
+  .screen__head--month .figure dd { font-size: 19px; }
+  .nav { width: calc(100% - 16px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+}
+
+/* ------------------------------------------------ short phones (BUG-014) --
+   The header, note, keypad and floating navigation are fixed-height, and the
+   category list was the one flexible part, so on a short phone it absorbed the
+   whole shortage: 18 px at 320x568. The list now keeps a floor of two and a
+   half rows (it still scrolls inside), the keypad and header get tighter, and
+   when even that does not fit the Add screen scrolls as a whole — Save is one
+   swipe away instead of being pushed under a list nobody can read. */
+@media (max-width: 699px) and (max-height: 760px) {
+  #screen-add { overflow-y: auto; }
+  #screen-add .categories { flex: 1 0 150px; min-height: 150px; }
+  .screen__head--add { padding: 12px 16px 10px; }
+  .screen__head--add .amount { font-size: 38px; }
+  .note { padding-bottom: 8px; }
+  .note input { height: 40px; }
+  .keypad { gap: 7px; padding-top: 8px; }
+  .key { min-height: 46px; }
+}
+
+/* ------------------------------------------- AI expense entry (AI-R19) --
+   A native <dialog>: the browser supplies the focus trap, Escape and the
+   backdrop. The panel is one scrolling column so every field and Save is
+   reachable at 320x568 with the on-screen keyboard open. */
+
+.screen__head--add { position: relative; }
+
+.ai-open {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+.ai-open:hover { background: rgba(255, 255, 255, 0.24); }
+/* The amount is right-aligned and large; without this the button sat on top
+   of it (seen in the first screenshots, not caught by any test). */
+.screen__head--add:has(.ai-open:not([hidden])) .amount { margin-top: 22px; }
+.ai-open:focus-visible { outline-color: #fff; }
+
+.ai {
+  width: min(100% - 16px, 560px);
+  max-width: none;
+  max-height: calc(100dvh - 16px);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-lg, 0 20px 50px rgba(0, 0, 0, 0.2));
+  overflow: hidden;
+}
+.ai[open] { display: flex; }
+.ai::backdrop { background: rgba(12, 40, 31, 0.45); }
+
+.ai__panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: calc(100dvh - 16px);
+  min-height: 0;
+}
+
+.ai__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 12px 10px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.ai__title { margin: 0; font-size: 19px; letter-spacing: -0.03em; }
+.ai__close {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  font-size: 18px;
+}
+.ai__close:hover { background: var(--surface-soft, #f3f4f6); }
+
+.ai__demo {
+  flex: none;
+  margin: 0;
+  padding: 9px 18px;
+  background: #fff5d6;
+  color: #6a4b00;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ai__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 18px 18px;
+}
+
+.ai__example { margin: 0; color: var(--muted); font-size: 14px; }
+
+.ai textarea {
+  font: inherit;
+  color: inherit;
+  width: 100%;
+  min-height: 84px;
+  resize: vertical;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.ai textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.ai__count { text-align: right; }
+.ai__count--over { color: var(--danger); font-weight: 700; }
+
+.ai__examples { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  min-height: 40px;
+  min-width: 52px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft, #f6faf7);
+  font-weight: 700;
+}
+
+.ai__consent p { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
+.ai__consent .check { align-items: flex-start; padding: 10px 12px; gap: 10px; }
+.ai__consent .check span { font-size: 14px; }
+
+.ai__progress { margin: 0; color: var(--accent-dk); font-weight: 700; }
+.ai__error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--danger-bg, #fff0ed);
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.ai__source p {
+  margin: 4px 0 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--surface-soft, #f6faf7);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.ai__status { margin: 0; font-weight: 700; }
+
+#ai-fields { display: flex; flex-direction: column; gap: 12px; }
+.field__hint--need { color: var(--danger); font-weight: 700; }
+.ai input[aria-invalid="true"],
+.ai select[aria-invalid="true"] { border-color: var(--danger); }
+
+.ai__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ai__actions .btn { flex: 1 1 140px; }

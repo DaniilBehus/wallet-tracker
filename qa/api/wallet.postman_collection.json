@@ -1,0 +1,5427 @@
+{
+  "info": {
+    "name": "WALLET API",
+    "_postman_id": "b7c1f0e2-4a3d-4d6e-9f21-5a1c0e7d4c10",
+    "description": "API checks for the WALLET service.\n\nCovers all twelve endpoints from spec §5: status codes, response-body schema on every single request, the five token states, the validation boundaries from §4.3, and the malformed-input paths that must produce 400 rather than 500.\n\nTwo conventions worth knowing before reading:\n\n1. The environment holds exactly two variables, {{baseUrl}} and {{token}}. Everything else the run needs — ids of rows it created, the second user's token, the expired token — lives in collection variables, set at runtime. There is not one literal id or URL anywhere in the requests.\n\n2. Every response is validated against a JSON Schema, including error responses. Spec §5 says every error has the same shape; a contract nobody asserts is a contract that drifts.\n\nThe collection creates its own users on every run, with e-mail addresses derived from a run id, so it is safe to run repeatedly against the same database and in any environment.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Runs before every request. Sets up two things once per run: the JSON",
+          "// Schemas that every response is validated against, and a run id that keeps",
+          "// the users this collection creates unique, so it can be run repeatedly",
+          "// against the same database.",
+          "",
+          "if (!pm.collectionVariables.has('runId')) {",
+          "    const runId = Date.now() + '-' + Math.floor(Math.random() * 100000);",
+          "    pm.collectionVariables.set('runId', runId);",
+          "    pm.collectionVariables.set('emailA', 'qa-a-' + runId + '@wallet.test');",
+          "    pm.collectionVariables.set('emailB', 'qa-b-' + runId + '@wallet.test');",
+          "    pm.collectionVariables.set('password', 'qa-passphrase-' + runId);",
+          "}",
+          "",
+          "if (!pm.collectionVariables.has('schemas')) {",
+          "    // additionalProperties is false everywhere on purpose: a field that",
+          "    // appears without anyone deciding to add it is exactly what a contract",
+          "    // test is for. If the API grows a field, this fails and someone updates",
+          "    // the schema deliberately.",
+          "    const category = {",
+          "        type: 'object', required: ['id', 'name', 'icon'], additionalProperties: false,",
+          "        properties: {",
+          "            id: { type: 'integer', minimum: 1 },",
+          "            name: { type: 'string', minLength: 1, maxLength: 60 },",
+          "            icon: { type: ['string', 'null'] }",
+          "        }",
+          "    };",
+          "",
+          "    const transaction = {",
+          "        type: 'object',",
+          "        required: ['id', 'amount_cents', 'category_id', 'spent_on', 'note', 'schedule_id', 'created_at'],",
+          "        additionalProperties: false,",
+          "        properties: {",
+          "            id: { type: 'integer', minimum: 1 },",
+          "            amount_cents: { type: 'integer', minimum: 1 },",
+          "            category_id: { type: ['integer', 'null'] },",
+          "            spent_on: { type: 'string', pattern: '^\\\\d{4}-\\\\d{2}-\\\\d{2}$' },",
+          "            note: { type: ['string', 'null'] },",
+          "            schedule_id: { type: ['integer', 'null'] },",
+          "            created_at: { type: 'string', minLength: 1 }",
+          "        }",
+          "    };",
+          "",
+          "    const schedule = {",
+          "        type: 'object',",
+          "        required: ['id', 'name', 'amount_cents', 'category_id', 'day_of_month', 'starts_on',",
+          "                   'next_due', 'total_count', 'paid_count', 'remaining_count', 'remaining_cents', 'active'],",
+          "        additionalProperties: false,",
+          "        properties: {",
+          "            id: { type: 'integer', minimum: 1 },",
+          "            name: { type: 'string', minLength: 1, maxLength: 60 },",
+          "            amount_cents: { type: 'integer', minimum: 1 },",
+          "            category_id: { type: ['integer', 'null'] },",
+          "            day_of_month: { type: 'integer', minimum: 1, maximum: 31 },",
+          "            starts_on: { type: 'string', pattern: '^\\\\d{4}-\\\\d{2}-\\\\d{2}$' },",
+          "            next_due: { type: 'string', pattern: '^\\\\d{4}-\\\\d{2}-\\\\d{2}$' },",
+          "            total_count: { type: ['integer', 'null'] },",
+          "            paid_count: { type: 'integer', minimum: 0 },",
+          "            remaining_count: { type: ['integer', 'null'] },",
+          "            remaining_cents: { type: ['integer', 'null'] },",
+          "            active: { type: 'integer', minimum: 0, maximum: 1 }",
+          "        }",
+          "    };",
+          "",
+          "    pm.collectionVariables.set('schemas', JSON.stringify({",
+          "        error: {",
+          "            type: 'object', required: ['error'], additionalProperties: false,",
+          "            properties: {",
+          "                error: {",
+          "                    type: 'object', required: ['code', 'message'], additionalProperties: false,",
+          "                    properties: { code: { type: 'string', minLength: 1 }, message: { type: 'string', minLength: 1 } }",
+          "                }",
+          "            }",
+          "        },",
+          "        health: {",
+          "            type: 'object', required: ['status', 'version', 'db'], additionalProperties: false,",
+          "            properties: { status: { type: 'string' }, version: { type: 'string' }, db: { type: 'string' } }",
+          "        },",
+          "        token: {",
+          "            type: 'object', required: ['token'], additionalProperties: false,",
+          "            properties: { token: { type: 'string', pattern: '^[\\\\w-]+\\\\.[\\\\w-]+\\\\.[\\\\w-]+$' } }",
+          "        },",
+          "        settings: {",
+          "            type: 'object', required: ['monthly_income_cents'], additionalProperties: false,",
+          "            properties: { monthly_income_cents: { type: 'integer', minimum: 0 } }",
+          "        },",
+          "        category: category,",
+          "        categoryList: { type: 'array', items: category },",
+          "        transaction: transaction,",
+          "        transactionList: {",
+          "            type: 'object', required: ['items', 'total'], additionalProperties: false,",
+          "            properties: { items: { type: 'array', items: transaction }, total: { type: 'integer', minimum: 0 } }",
+          "        },",
+          "        schedule: schedule,",
+          "        scheduleList: { type: 'array', items: schedule },",
+          "        payResult: {",
+          "            type: 'object',",
+          "            required: ['paid_count', 'remaining_count', 'finished', 'transaction_id'],",
+          "            additionalProperties: false,",
+          "            properties: {",
+          "                paid_count: { type: 'integer', minimum: 1 },",
+          "                remaining_count: { type: ['integer', 'null'] },",
+          "                finished: { type: 'boolean' },",
+          "                transaction_id: { type: 'integer', minimum: 1 }",
+          "            }",
+          "        },",
+          "        summary: {",
+          "            type: 'object', required: ['month', 'total_cents', 'income_cents', 'remaining_cents', 'by_category'], additionalProperties: false,",
+          "            properties: {",
+          "                month: { type: 'string', pattern: '^\\\\d{4}-\\\\d{2}$' },",
+          "                total_cents: { type: 'integer', minimum: 0 },",
+          "                income_cents: { type: 'integer', minimum: 0 },",
+          "                // May be negative: spending more than you earned is a fact the",
+          "                // API reports rather than clamps (D-021).",
+          "                remaining_cents: { type: 'integer' },",
+          "                by_category: {",
+          "                    type: 'array',",
+          "                    items: {",
+          "                        type: 'object', required: ['category_id', 'name', 'total_cents'], additionalProperties: false,",
+          "                        properties: {",
+          "                            category_id: { type: ['integer', 'null'] },",
+          "                            name: { type: ['string', 'null'] },",
+          "                            total_cents: { type: 'integer' }",
+          "                        }",
+          "                    }",
+          "                }",
+          "            }",
+          "        }",
+          "    }));",
+          "}",
+          "",
+          "// Assertion helpers. Loaded into each test with:",
+          "//     eval(pm.collectionVariables.get('helpers'));",
+          "// Keeping them here rather than repeating them in 50 test scripts means the",
+          "// schema assertion cannot be quietly forgotten on one request.",
+          "pm.collectionVariables.set('helpers', [",
+          "    \"function schemaFor(name) { return JSON.parse(pm.collectionVariables.get('schemas'))[name]; }\",",
+          "    \"function expectStatus(code) { pm.test('status is ' + code, function () { pm.response.to.have.status(code); }); }\",",
+          "    \"function expectSchema(name) { pm.test('body matches the ' + name + ' schema', function () { pm.response.to.have.jsonSchema(schemaFor(name)); }); }\",",
+          "    \"function expectOk(code, name) { expectStatus(code); expectSchema(name); }\",",
+          "    \"function expectError(code, errCode) {\",",
+          "    \"    expectStatus(code); expectSchema('error');\",",
+          "    \"    if (errCode) { pm.test('error code is ' + errCode, function () { pm.expect(pm.response.json().error.code).to.eql(errCode); }); }\",",
+          "    \"    pm.test('never a 500 (spec §5)', function () { pm.expect(pm.response.code).to.not.eql(500); });\",",
+          "    \"}\",",
+          "    \"function expectNotForbidden() {\",",
+          "    \"    pm.test('404 and NOT 403 — does not confirm another user\\\\'s row exists (spec §4.3)', function () {\",",
+          "    \"        pm.expect(pm.response.code, 'a 403 here would leak that the row exists').to.not.eql(403);\",",
+          "    \"        pm.expect(pm.response.code).to.eql(404);\",",
+          "    \"    });\",",
+          "    \"}\",",
+          "    \"function expectNoBody() { pm.test('204 carries no body', function () { pm.expect(pm.response.text()).to.have.lengthOf(0); }); }\"",
+          "].join('\\n'));"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "ceiling",
+      "value": "100000000"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 · Health and registration",
+      "item": [
+        {
+          "name": "GET /health → 200",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            },
+            "description": "No auth, and it must not touch user data (spec §5)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'health');",
+                  "pm.test('reports the database as reachable', function () {",
+                  "    pm.expect(pm.response.json().db).to.eql('ok');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/register user A → 201",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailA}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'token');",
+                  "// The only place {{token}} is written. Everything after this uses it.",
+                  "pm.environment.set('token', pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/register user B → 201",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailB}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "A second user exists so that cross-user isolation can be tested with a real token belonging to somebody else, rather than with a fabricated id."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'token');",
+                  "pm.collectionVariables.set('tokenB', pm.response.json().token);",
+                  "pm.test('the two users got different tokens', function () {",
+                  "    pm.expect(pm.response.json().token).to.not.eql(pm.environment.get('token'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/register duplicate e-mail → 409",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailA}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(409, 'CONFLICT');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/register password too short → 400",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"short-{{runId}}@wallet.test\",\n  \"password\": \"short\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/register missing password → 400",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nopass-{{runId}}@wallet.test\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/login correct → 200",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailA}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'token');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/login wrong password → 401",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailA}}\",\n  \"password\": \"definitely-not-the-password\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(401, 'UNAUTHORIZED');",
+                  "pm.collectionVariables.set('wrongPasswordMessage', pm.response.json().error.message);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/login unknown e-mail → 401, same message",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nobody-{{runId}}@wallet.test\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "An unknown e-mail and a wrong password must be indistinguishable. A different message for each would turn the login form into a way to find out which addresses are registered."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(401, 'UNAUTHORIZED');",
+                  "pm.test('unknown e-mail is indistinguishable from a wrong password', function () {",
+                  "    pm.expect(pm.response.json().error.message)",
+                  "      .to.eql(pm.collectionVariables.get('wrongPasswordMessage'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 · Token handling",
+      "description": "The five states a bearer token can be in. /categories stands in for every protected endpoint — the middleware runs before any route, so proving it once proves it for all of them.",
+      "item": [
+        {
+          "name": "No token → 401",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(401, 'UNAUTHORIZED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Malformed header (no Bearer scheme) → 401",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(401, 'UNAUTHORIZED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Corrupted token → 401",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCorrupt}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            },
+            "description": "A real token with its signature altered. Proves the signature is verified rather than merely decoded."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Flip the last character of the signature. The header and payload stay",
+                  "// perfectly valid, so a server that only decoded the token would accept it.",
+                  "const token = pm.environment.get('token');",
+                  "const last = token.slice(-1);",
+                  "pm.collectionVariables.set('tokenCorrupt', token.slice(0, -1) + (last === 'A' ? 'B' : 'A'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(401, 'UNAUTHORIZED');",
+                  "pm.test('the corrupted token differs only in its signature', function () {",
+                  "    const good = pm.environment.get('token').split('.');",
+                  "    const bad = pm.collectionVariables.get('tokenCorrupt').split('.');",
+                  "    pm.expect(bad[0]).to.eql(good[0]);",
+                  "    pm.expect(bad[1]).to.eql(good[1]);",
+                  "    pm.expect(bad[2]).to.not.eql(good[2]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expired token → 401",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenExpired}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            },
+            "description": "Tokens are issued with a 30-day life, so an expired one cannot be obtained by waiting. qa/api/run.js signs one with the server's own secret and an exp in the past, and injects it as a collection variable. The first assertion below proves the token really is expired — without it this test would pass on any unusable string and prove nothing."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "",
+                  "// pm.variables resolves across every scope, so this reads the same value",
+                  "// the {{tokenExpired}} in the header above resolved to, wherever the",
+                  "// runner chose to put it.",
+                  "const token = pm.variables.get('tokenExpired');",
+                  "",
+                  "pm.test('the token under test is a real JWT that has genuinely expired', function () {",
+                  "    pm.expect(token, 'run.js did not inject tokenExpired — run this via qa/api/run.js')",
+                  "        .to.match(/^[\\w-]+\\.[\\w-]+\\.[\\w-]+$/);",
+                  "    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString('utf8'));",
+                  "    pm.expect(payload.exp, 'token has no exp claim').to.be.a('number');",
+                  "    pm.expect(payload.exp * 1000, 'exp is not in the past').to.be.below(Date.now());",
+                  "});",
+                  "",
+                  "expectError(401, 'UNAUTHORIZED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Another user's token sees only their own rows",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'transactionList');",
+                  "pm.test('a freshly registered user has no transactions', function () {",
+                  "    pm.expect(pm.response.json().total).to.eql(0);",
+                  "    pm.expect(pm.response.json().items).to.be.an('array').that.is.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 · Categories",
+      "item": [
+        {
+          "name": "GET /categories → 200, seeded on registration",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'categoryList');",
+                  "const list = pm.response.json();",
+                  "pm.test('registration seeded a starting set of categories', function () {",
+                  "    pm.expect(list.length).to.be.above(0);",
+                  "});",
+                  "pm.collectionVariables.set('catA', list[0].id);",
+                  "pm.collectionVariables.set('catAName', list[0].name);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /categories as user B → different ids",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            },
+            "description": "Categories are seeded per user, so the two users must own different rows even though the names match."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'categoryList');",
+                  "const list = pm.response.json();",
+                  "pm.collectionVariables.set('catB', list[0].id);",
+                  "pm.test(\"user B's categories are not user A's rows\", function () {",
+                  "    const idsA = pm.collectionVariables.get('catA');",
+                  "    pm.expect(list.map(function (c) { return c.id; })).to.not.include(Number(idsA));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /categories → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"QA {{runId}}\",\n  \"icon\": \"🧪\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'category');",
+                  "pm.test('echoes back what was sent', function () {",
+                  "    pm.expect(pm.response.json().name).to.eql('QA ' + pm.collectionVariables.get('runId'));",
+                  "    pm.expect(pm.response.json().icon).to.eql('🧪');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /categories duplicate name → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"QA {{runId}}\",\n  \"icon\": \"🧪\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(409, 'CONFLICT');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /categories empty name → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"   \"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /categories name of 61 characters → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{name61}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            },
+            "description": "The limit in spec §4.3 is 60. This is the first value past it."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('name61', 'x'.repeat(61));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /categories name of exactly 60 → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{name60}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            },
+            "description": "The other side of the same boundary — 60 is allowed."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Unique per run, still exactly 60 characters, so re-runs do not collide.",
+                  "const tail = String(pm.collectionVariables.get('runId'));",
+                  "pm.collectionVariables.set('name60', ('n' + tail).padEnd(60, 'x').slice(0, 60));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'category');",
+                  "pm.test('the stored name is 60 characters long', function () {",
+                  "    pm.expect(pm.response.json().name).to.have.lengthOf(60);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 · Transactions",
+      "item": [
+        {
+          "name": "POST /transactions → 201, spent_on defaults to today",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 1250,\n  \"category_id\": {{catA}},\n  \"note\": \"api check\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'transaction');",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('txA', body.id);",
+                  "pm.test('spent_on defaulted to today (spec §5)', function () {",
+                  "    const now = new Date();",
+                  "    const pad = function (n) { return String(n).padStart(2, '0'); };",
+                  "    const today = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());",
+                  "    pm.expect(body.spent_on).to.eql(today);",
+                  "});",
+                  "pm.test('amount is returned as the integer it was sent as', function () {",
+                  "    pm.expect(body.amount_cents).to.eql(1250);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /transactions amount_cents = 0 → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 0,\n  \"category_id\": {{catA}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /transactions amount_cents = 1 → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 1,\n  \"category_id\": {{catA}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "description": "The smallest legal amount: one cent."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'transaction');",
+                  "pm.collectionVariables.set('txOneCent', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /transactions amount_cents = ceiling → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": {{ceiling}},\n  \"category_id\": {{catA}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "description": "100 000 000 cents = 1 000 000 €, the largest value spec §4.3 allows."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'transaction');",
+                  "pm.collectionVariables.set('txCeiling', pm.response.json().id);",
+                  "pm.test('the ceiling survives the round trip exactly', function () {",
+                  "    pm.expect(pm.response.json().amount_cents).to.eql(100000000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /transactions amount_cents = ceiling + 1 → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 100000001,\n  \"category_id\": {{catA}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /transactions amount_cents not an integer → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 12.5,\n  \"category_id\": {{catA}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "description": "Money is integer cents (spec §3). A fractional cent is the shape of a float that leaked in."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /transactions amount_cents as a string → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": \"1250\",\n  \"category_id\": {{catA}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "description": "A numeric string must not be coerced. Accepting it would mean '12abc' has to be decided about too."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /transactions missing amount_cents → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category_id\": {{catA}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /transactions broken JSON → 400, not 500",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount_cents\": 1250, \"category_id\": "
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "description": "Truncated JSON is rejected by the body parser before any handler runs. Left alone it surfaces as a 500, and spec §5 says a 500 must never be reachable."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "pm.test('the error body is JSON, not an HTML error page', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /transactions spent_on in the wrong format → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 500,\n  \"category_id\": {{catA}},\n  \"spent_on\": \"02/09/2026\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /transactions spent_on far in the future → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 500,\n  \"category_id\": {{catA}},\n  \"spent_on\": \"{{farFuture}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "description": "Spec §4.3 allows at most one day into the future, so that a phone whose clock runs ahead still works."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = new Date();",
+                  "d.setDate(d.getDate() + 30);",
+                  "const pad = function (n) { return String(n).padStart(2, '0'); };",
+                  "pm.collectionVariables.set('farFuture', d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /transactions with another user's category_id → 404, not 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 500,\n  \"category_id\": {{catB}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "description": "The category exists — it belongs to user B. Spec §4.3 requires 404 rather than 403, so that ids cannot be enumerated to discover which rows exist."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectNotForbidden();",
+                  "expectError(404, 'NOT_FOUND');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /transactions → 200, defaults to the current month",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'transactionList');",
+                  "const body = pm.response.json();",
+                  "pm.test('the rows created above are present', function () {",
+                  "    const ids = body.items.map(function (t) { return t.id; });",
+                  "    pm.expect(ids).to.include(Number(pm.collectionVariables.get('txA')));",
+                  "});",
+                  "pm.test('sorted newest first (spec §6.2)', function () {",
+                  "    const dates = body.items.map(function (t) { return t.spent_on; });",
+                  "    pm.expect(dates).to.eql(dates.slice().sort().reverse());",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /transactions?limit=201 → 400",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions?limit=201",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "201"
+                }
+              ]
+            },
+            "description": "Spec §5 caps limit at 200. This is the first value past the cap."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /transactions?limit=200 → 200",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions?limit=200",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "200"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'transactionList');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /transactions?from later than to → 400",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions?from=2026-12-31&to=2026-01-01",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-12-31"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-01-01"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /transactions?category_id of another user → 404, not 403",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions?category_id={{catB}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "category_id",
+                  "value": "{{catB}}"
+                }
+              ]
+            },
+            "description": "Filtering is another way to ask whether a row exists. It must answer the same way as everything else."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectNotForbidden();",
+                  "expectError(404, 'NOT_FOUND');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /transactions/:id another user's row → 404, not 403",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/{{txA}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "{{txA}}"
+              ]
+            },
+            "description": "User B tries to delete a row belonging to user A. The row is real; the answer must still be 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectNotForbidden();",
+                  "expectError(404, 'NOT_FOUND');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /transactions/:id → 204",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/{{txOneCent}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "{{txOneCent}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectStatus(204);",
+                  "expectNoBody();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /transactions/:id again → 404",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/{{txOneCent}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "{{txOneCent}}"
+              ]
+            },
+            "description": "Deleting is idempotent in effect but not in status: the row is gone, so the second call is a 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(404, 'NOT_FOUND');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /transactions/:id non-numeric id → 400",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/not-a-number",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "not-a-number"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 · Schedules and loans",
+      "item": [
+        {
+          "name": "POST /schedules subscription → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Telekom {{runId}}\",\n  \"amount_cents\": 1500,\n  \"category_id\": {{catA}},\n  \"day_of_month\": 12,\n  \"starts_on\": \"2026-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules"
+              ]
+            },
+            "description": "No total_count means a subscription that never ends (spec §3)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'schedule');",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('schedSub', body.id);",
+                  "pm.test('remaining_* are null for a subscription (spec §5)', function () {",
+                  "    pm.expect(body.total_count).to.eql(null);",
+                  "    pm.expect(body.remaining_count).to.eql(null);",
+                  "    pm.expect(body.remaining_cents).to.eql(null);",
+                  "});",
+                  "pm.test('next_due falls on the requested day', function () {",
+                  "    pm.expect(body.next_due.slice(-2)).to.eql('12');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /schedules day_of_month = 0 → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"day zero\",\n  \"amount_cents\": 1000,\n  \"day_of_month\": 0,\n  \"starts_on\": \"2026-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /schedules day_of_month = 1 → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"day one {{runId}}\",\n  \"amount_cents\": 1000,\n  \"day_of_month\": 1,\n  \"starts_on\": \"2026-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'schedule');",
+                  "pm.test('next_due lands on the 1st', function () {",
+                  "    pm.expect(pm.response.json().next_due.slice(-2)).to.eql('01');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /schedules day_of_month = 28 → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"day 28 {{runId}}\",\n  \"amount_cents\": 1000,\n  \"day_of_month\": 28,\n  \"starts_on\": \"2026-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules"
+              ]
+            },
+            "description": "The last day that exists in every month, so it never needs clamping."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'schedule');",
+                  "pm.test('next_due lands on the 28th in every month', function () {",
+                  "    pm.expect(pm.response.json().next_due.slice(-2)).to.eql('28');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /schedules day_of_month = 31 starting in February → clamps",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"day 31 {{runId}}\",\n  \"amount_cents\": 1000,\n  \"day_of_month\": 31,\n  \"starts_on\": \"{{febStart}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules"
+              ]
+            },
+            "description": "Spec §4.1: clamp, never skip. The start date is pinned to a February in the future so the expected answer does not depend on today's date — the mistake that produced rule R1."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Next February that is still ahead of us, and whether it is a leap year.",
+                  "const now = new Date();",
+                  "let year = now.getFullYear() + 1;",
+                  "const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;",
+                  "pm.collectionVariables.set('febStart', year + '-02-01');",
+                  "pm.collectionVariables.set('febExpected', year + '-02-' + (leap ? '29' : '28'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'schedule');",
+                  "pm.test('the 31st clamps to the last day of February, it does not skip the month', function () {",
+                  "    pm.expect(pm.response.json().next_due).to.eql(pm.collectionVariables.get('febExpected'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /schedules day_of_month = 32 → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"day 32\",\n  \"amount_cents\": 1000,\n  \"day_of_month\": 32,\n  \"starts_on\": \"2026-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /schedules total_count = 0 → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"zero instalments\",\n  \"amount_cents\": 1000,\n  \"day_of_month\": 5,\n  \"starts_on\": \"2026-01-01\",\n  \"total_count\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /schedules starts_on malformed → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"bad start\",\n  \"amount_cents\": 1000,\n  \"day_of_month\": 5,\n  \"starts_on\": \"2026-13-45\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules"
+              ]
+            },
+            "description": "Shaped like a date, but there is no month 13. A regex alone would let this through."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /schedules loan of 2 instalments → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Loan {{runId}}\",\n  \"amount_cents\": 10000,\n  \"category_id\": {{catA}},\n  \"day_of_month\": 15,\n  \"starts_on\": \"2026-01-01\",\n  \"total_count\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'schedule');",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('schedLoan', body.id);",
+                  "pm.test('the countdown starts at the full amount (spec §4.2)', function () {",
+                  "    pm.expect(body.total_count).to.eql(2);",
+                  "    pm.expect(body.paid_count).to.eql(0);",
+                  "    pm.expect(body.remaining_count).to.eql(2);",
+                  "    pm.expect(body.remaining_cents).to.eql(20000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /schedules → 200, sorted by next_due",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'scheduleList');",
+                  "pm.test('sorted by next_due ascending (spec §5)', function () {",
+                  "    const due = pm.response.json().map(function (s) { return s.next_due; });",
+                  "    pm.expect(due).to.eql(due.slice().sort());",
+                  "});",
+                  "pm.test('remaining_cents equals remaining_count × amount_cents on every loan', function () {",
+                  "    pm.response.json().forEach(function (s) {",
+                  "        if (s.total_count !== null) {",
+                  "            pm.expect(s.remaining_cents).to.eql(s.remaining_count * s.amount_cents);",
+                  "        }",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /schedules?active=1 → 200, only active",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules?active=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules"
+              ],
+              "query": [
+                {
+                  "key": "active",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'scheduleList');",
+                  "pm.test('every row returned is active', function () {",
+                  "    pm.response.json().forEach(function (s) { pm.expect(s.active).to.eql(1); });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /schedules/:id/pay first instalment → 200",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{schedLoan}}/pay",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{schedLoan}}",
+                "pay"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'payResult');",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('payTxId', body.transaction_id);",
+                  "pm.test('one instalment down, one to go, not finished', function () {",
+                  "    pm.expect(body.paid_count).to.eql(1);",
+                  "    pm.expect(body.remaining_count).to.eql(1);",
+                  "    pm.expect(body.finished).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "The payment created a transaction",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "description": "Spec §4.2: paying an instalment writes a transactions row with schedule_id set. The pay response returns its id, so the row it names must actually exist and be linked."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'transactionList');",
+                  "const wanted = Number(pm.collectionVariables.get('payTxId'));",
+                  "const row = pm.response.json().items.filter(function (t) { return t.id === wanted; })[0];",
+                  "pm.test('the transaction named by the pay response exists', function () {",
+                  "    pm.expect(row, 'no transaction with id ' + wanted).to.be.an('object');",
+                  "});",
+                  "pm.test('it is linked back to the schedule and carries the instalment amount', function () {",
+                  "    pm.expect(row.schedule_id).to.eql(Number(pm.collectionVariables.get('schedLoan')));",
+                  "    pm.expect(row.amount_cents).to.eql(10000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /schedules/:id/pay last instalment → finished",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{schedLoan}}/pay",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{schedLoan}}",
+                "pay"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'payResult');",
+                  "const body = pm.response.json();",
+                  "pm.test('the loan closes itself on its last payment (spec §4.2)', function () {",
+                  "    pm.expect(body.paid_count).to.eql(2);",
+                  "    pm.expect(body.remaining_count).to.eql(0);",
+                  "    pm.expect(body.finished).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /schedules/:id/pay a closed loan → 409",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{schedLoan}}/pay",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{schedLoan}}",
+                "pay"
+              ]
+            },
+            "description": "Spec §4.2 calls this out specifically: a state transition, not a validation error, so 409 and not 400."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(409, 'CONFLICT');",
+                  "pm.test('409, not 400 — this is a state conflict, not bad input', function () {",
+                  "    pm.expect(pm.response.code).to.not.eql(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "The finished loan is gone from ?active=1",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules?active=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules"
+              ],
+              "query": [
+                {
+                  "key": "active",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'scheduleList');",
+                  "pm.test('a closed loan no longer appears among active schedules', function () {",
+                  "    const ids = pm.response.json().map(function (s) { return s.id; });",
+                  "    pm.expect(ids).to.not.include(Number(pm.collectionVariables.get('schedLoan')));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /schedules/:id/pay another user's schedule → 404, not 403",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{schedSub}}/pay",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{schedSub}}",
+                "pay"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectNotForbidden();",
+                  "expectError(404, 'NOT_FOUND');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /schedules/:id/pay a schedule that does not exist → 404",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/99999999/pay",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "99999999",
+                "pay"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(404, 'NOT_FOUND');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 · Summary",
+      "item": [
+        {
+          "name": "GET /summary → 200, parts sum to the whole",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const body = pm.response.json();",
+                  "pm.test('the per-category totals add up to the month total', function () {",
+                  "    const sum = body.by_category.reduce(function (acc, row) { return acc + row.total_cents; }, 0);",
+                  "    pm.expect(sum).to.eql(body.total_cents);",
+                  "});",
+                  "pm.test('the month defaults to the current one', function () {",
+                  "    const now = new Date();",
+                  "    const month = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');",
+                  "    pm.expect(body.month).to.eql(month);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /summary?month=YYYY-MM → 200",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary?month=2026-01",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "2026-01"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "pm.test('answers for the month that was asked for', function () {",
+                  "    pm.expect(pm.response.json().month).to.eql('2026-01');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /summary?month malformed → 400",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary?month=January",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "January"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /summary as user B → their own empty month",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            },
+            "description": "User A has spent money this month. None of it may appear here."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "pm.test(\"another user's spending does not leak into this total\", function () {",
+                  "    pm.expect(pm.response.json().total_cents).to.eql(0);",
+                  "    pm.expect(pm.response.json().by_category).to.be.an('array').that.is.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 · Contract edges",
+      "item": [
+        {
+          "name": "Unknown /api path → 404 in JSON, not HTML",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/nope-{{runId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "nope-{{runId}}"
+              ]
+            },
+            "description": "A client parsing JSON must never be handed Express's default HTML error page."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(404, 'NOT_FOUND');",
+                  "pm.test('the body is JSON, not markup', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "    pm.expect(pm.response.text()).to.not.include('<html');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "403 is unreachable — every cross-user path answered 404",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions?category_id={{catA}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "category_id",
+                  "value": "{{catA}}"
+                }
+              ]
+            },
+            "description": "Spec §5's table lists 403 as 'valid token, but not allowed'. This application has no such case by design: everything a user is not allowed to see answers 404 instead, so that ids cannot be probed for existence (§4.3). Rather than invent an endpoint to produce a 403, this asserts the property that replaced it — the last of the cross-user paths, from the opposite direction."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectNotForbidden();",
+                  "expectError(404, 'NOT_FOUND');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08 · Settings and the month balance",
+      "description": "Monthly income (D-021). Zero is how \"not set\" is expressed — §3 forbids a negative income, so zero cannot mean anything else. remaining_cents is computed on read and may be negative: spending more than you earned is a fact the API reports rather than clamps.",
+      "item": [
+        {
+          "name": "GET /settings on a fresh account → 0",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "description": "No settings row exists yet. \"No row\" and \"zero\" are deliberately the same answer."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('a fresh account reports zero rather than 404', function () {",
+                  "    pm.expect(pm.response.json().monthly_income_cents).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /settings → 200",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 150000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('echoes the stored figure', function () {",
+                  "    pm.expect(pm.response.json().monthly_income_cents).to.eql(150000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /settings again → replaces, does not accumulate",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 200000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "description": "The route upserts. A second PUT must overwrite, not insert a second row or add to the first."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('the second write replaces the first', function () {",
+                  "    pm.expect(pm.response.json().monthly_income_cents).to.eql(200000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /settings back to 150000",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 150000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "description": "Restores the figure the summary cases below expect."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /settings zero → allowed",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('zero is a legal value — it means not set', function () {",
+                  "    pm.expect(pm.response.json().monthly_income_cents).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /settings negative → 400",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": -1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "description": "Boundary: one below zero."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /settings fractional → 400",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 12.5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "description": "Money is integer cents (spec §3). A fractional cent is a float that leaked in."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /settings as a string → 400",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": \"150000\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /settings missing field → 400",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /settings above the ceiling → 400",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 100000001\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "description": "The same ceiling as amount_cents, §4.3."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /settings with no token → 401",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(401, 'UNAUTHORIZED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /settings = 1 → the smallest income above zero",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "description": "Step 2 of qa/docs/test-design.md: zero and negative were covered, the minimum-plus-one class was not. Zero means \"not set\", so 1 is the smallest figure that actually means something."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('one cent is a legal income', function () {",
+                  "    pm.expect(pm.response.json().monthly_income_cents).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /settings = the ceiling exactly → 200",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 100000000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "description": "Only ceiling+1 had a case. A boundary needs both sides: an off-by-one in the comparison would have passed the old pair."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('the ceiling itself is allowed and survives exactly', function () {",
+                  "    pm.expect(pm.response.json().monthly_income_cents).to.eql(100000000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /settings explicit null → 400",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "description": "null and absent are different inputs and take different paths through the validator. Absent had a case; null did not."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /settings with no token → 401",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 150000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "description": "Step 3, the authentication matrix: GET was asked without a token, PUT was not. A write is the one worth being sure about."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(401, 'UNAUTHORIZED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Restore the income for the summary cases",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 150000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /summary carries income and what remains",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            },
+            "description": "remaining_cents must equal income_cents - total_cents exactly, in integer cents."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const body = pm.response.json();",
+                  "pm.test('income is the figure that was just written', function () {",
+                  "    pm.expect(body.income_cents).to.eql(150000);",
+                  "});",
+                  "pm.test('remaining is income minus spent, to the cent', function () {",
+                  "    pm.expect(body.remaining_cents).to.eql(body.income_cents - body.total_cents);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Another user's income does not leak",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test(\"user B has their own income, not user A's\", function () {",
+                  "    pm.expect(pm.response.json().monthly_income_cents).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10 · Editing (D-029)",
+      "item": [
+        {
+          "name": "setup · an expense to edit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 1500,\n  \"category_id\": \"{{catA}}\",\n  \"note\": \"before the edit\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'transaction');",
+                  "pm.collectionVariables.set('editTx', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "setup · a 3-instalment loan to edit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Editable loan\",\n  \"amount_cents\": 10000,\n  \"category_id\": \"{{catA}}\",\n  \"day_of_month\": 10,\n  \"starts_on\": \"2026-01-10\",\n  \"total_count\": 3\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'schedule');",
+                  "pm.collectionVariables.set('editSched', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "setup · pay it once, so paid_count is 1",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{editSched}}/pay",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{editSched}}",
+                "pay"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'payResult');",
+                  "pm.test('paid_count is 1', function () { pm.expect(pm.response.json().paid_count).to.eql(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /transactions/:id 200, only the field sent changes",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/{{editTx}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "{{editTx}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 2500\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'transaction');",
+                  "const b = pm.response.json();",
+                  "pm.test('the amount changed', function () { pm.expect(b.amount_cents).to.eql(2500); });",
+                  "pm.test('the note was NOT touched, because PATCH is partial (D-029)', function () {",
+                  "    pm.expect(b.note).to.eql('before the edit');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /transactions/:id note null clears it",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/{{editTx}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "{{editTx}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": null\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'transaction');",
+                  "pm.test('the note is null, and null is a legal value for it', function () {",
+                  "    pm.expect(pm.response.json().note).to.eql(null);",
+                  "});",
+                  "pm.test('the amount survived a patch that did not mention it', function () {",
+                  "    pm.expect(pm.response.json().amount_cents).to.eql(2500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /transactions/:id an empty body is 400, not a 200 that did nothing",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/{{editTx}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "{{editTx}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "pm.test('the message says a field is needed', function () {",
+                  "    pm.expect(pm.response.json().error.message).to.include('at least one field');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /transactions/:id a server-owned field is rejected, not ignored",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/{{editTx}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "{{editTx}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schedule_id\": 1\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "pm.test('it names the field rather than silently dropping it (D-029)', function () {",
+                  "    pm.expect(pm.response.json().error.message).to.include('schedule_id');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /transactions/:id an unknown field is rejected",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/{{editTx}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "{{editTx}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"colour\": \"red\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /transactions/:id the create-path validators still apply",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/{{editTx}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "{{editTx}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 0\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "pm.test('zero is refused on edit exactly as on create', function () {",
+                  "    pm.expect(pm.response.json().error.message).to.include('positive');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /transactions/:id another user gets 404, never 403",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/{{editTx}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "{{editTx}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 100\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(404, 'NOT_FOUND');",
+                  "expectNotForbidden();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /transactions/:id a row that does not exist is 404",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/99999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "99999999"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 100\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(404, 'NOT_FOUND');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /schedules/:id 200, renames and re-prices",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{editSched}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{editSched}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Renamed loan\",\n  \"amount_cents\": 20000\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'schedule');",
+                  "const b = pm.response.json();",
+                  "pm.test('name and amount changed together', function () {",
+                  "    pm.expect(b.name).to.eql('Renamed loan');",
+                  "    pm.expect(b.amount_cents).to.eql(20000);",
+                  "});",
+                  "pm.test('remaining_cents is recomputed from the new amount, never stored', function () {",
+                  "    pm.expect(b.remaining_cents).to.eql(b.remaining_count * 20000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /schedules/:id paid_count is refused",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{editSched}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{editSched}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paid_count\": 99\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "pm.test('a counter cannot be set by hand (D-029)', function () {",
+                  "    pm.expect(pm.response.json().error.message).to.include('paid_count');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /schedules/:id active is refused",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{editSched}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{editSched}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": 0\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /schedules/:id total_count 0 is bad input, before state is considered",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{editSched}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{editSched}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"total_count\": 0\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "pm.test('zero is refused as INPUT, so it never reaches the state check', function () {",
+                  "    pm.expect(pm.response.json().error.message).to.include('positive integer');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "setup · pay it twice more, so paid_count reaches 3",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{editSched}}/pay",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{editSched}}",
+                "pay"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'payResult');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "setup · the third payment finishes it",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{editSched}}/pay",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{editSched}}",
+                "pay"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'payResult');",
+                  "pm.test('finished after the third', function () {",
+                  "    pm.expect(pm.response.json().finished).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /schedules/:id raising total_count reopens a finished loan",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{editSched}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{editSched}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"total_count\": 6\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'schedule');",
+                  "const b = pm.response.json();",
+                  "pm.test('active is DERIVED from the counts, not preserved (D-029)', function () {",
+                  "    pm.expect(b.active).to.eql(1);",
+                  "    pm.expect(b.remaining_count).to.eql(6 - b.paid_count);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /schedules/:id total_count below paid_count is 409, not 400",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{editSched}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{editSched}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"total_count\": 1\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(409, 'CONFLICT');",
+                  "pm.test('a valid integer that conflicts with state is 409, not 400', function () {",
+                  "    pm.expect(pm.response.json().error.message).to.include('already been paid');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /schedules/:id total_count equal to paid_count finishes it",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{editSched}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{editSched}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"total_count\": 3\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'schedule');",
+                  "const b = pm.response.json();",
+                  "pm.test('finished, reached from the other direction than the last payment', function () {",
+                  "    pm.expect(b.active).to.eql(0);",
+                  "    pm.expect(b.remaining_count).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /schedules/:id/pay a loan finished by editing cannot be paid",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{editSched}}/pay",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{editSched}}",
+                "pay"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(409, 'CONFLICT');",
+                  "pm.test('the state machine does not care how it reached finished', function () {",
+                  "    pm.expect(pm.response.json().error.message).to.include('no longer active');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /schedules/:id day_of_month 32 is refused on edit too",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{editSched}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{editSched}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"day_of_month\": 32\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /schedules/:id another user gets 404, never 403",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{editSched}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{editSched}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"stolen\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(404, 'NOT_FOUND');",
+                  "expectNotForbidden();"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "11 · AI drafts and keyed saves (D-033–D-035)",
+      "description": "This collection runs against a server with WALLET_AI_MODE unset, which means off. What it can prove: the off-mode contract, request validation that happens before the mode is consulted, keyed saves and the 413 mapping. Draft behaviour with a provider (403 consent, 422, 429, 502, 504) is tested in qa/ai against a live-mode server and a local fake provider; scripts/coverage-gates.js counts those assertions for C8.",
+      "item": [
+        {
+          "name": "GET /ai/capabilities (off) → 200, disabled, nothing secret",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectStatus(200);",
+                  "pm.test('the off-mode capability shape, exactly', function () {",
+                  "    pm.expect(pm.response.json()).to.eql({ enabled: false, mode: 'off', provider: null, max_input_chars: 500, languages: ['en', 'uk', 'sk'], requires_external_consent: false });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/capabilities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "capabilities"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /ai/expense-draft without a token → 401",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// The server compares reference_date and keyed spent_on with its own local day.",
+                  "const d = new Date();",
+                  "const p = (n) => String(n).padStart(2, '0');",
+                  "pm.collectionVariables.set('aiToday', d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(401, 'UNAUTHORIZED');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/expense-draft",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "expense-draft"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Lunch 9 EUR\",\n  \"reference_date\": \"{{aiToday}}\",\n  \"locale\": \"auto\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /ai/expense-draft with an unknown field → 400",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// The server compares reference_date and keyed spent_on with its own local day.",
+                  "const d = new Date();",
+                  "const p = (n) => String(n).padStart(2, '0');",
+                  "pm.collectionVariables.set('aiToday', d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/expense-draft",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "expense-draft"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Lunch 9 EUR\",\n  \"reference_date\": \"{{aiToday}}\",\n  \"locale\": \"auto\",\n  \"provider\": \"demo\"\n}"
+            },
+            "description": "No request field can choose a provider, model or mode (AI-R07). Rejected before the mode is consulted, so it holds with the feature off."
+          }
+        },
+        {
+          "name": "POST /ai/expense-draft (off) → 503 AI_UNAVAILABLE",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// The server compares reference_date and keyed spent_on with its own local day.",
+                  "const d = new Date();",
+                  "const p = (n) => String(n).padStart(2, '0');",
+                  "pm.collectionVariables.set('aiToday', d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(503, 'AI_UNAVAILABLE');",
+                  "pm.test('the message points to manual entry', function () {",
+                  "    pm.expect(pm.response.json().error.message).to.match(/manually/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/expense-draft",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "expense-draft"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Lunch 9 EUR\",\n  \"reference_date\": \"{{aiToday}}\",\n  \"locale\": \"auto\",\n  \"consent_to_external_processing\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /transactions with Idempotency-Key → 201",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// The server compares reference_date and keyed spent_on with its own local day.",
+                  "const d = new Date();",
+                  "const p = (n) => String(n).padStart(2, '0');",
+                  "pm.collectionVariables.set('aiToday', d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()));",
+                  "pm.collectionVariables.set('aiKey', 'qa-' + pm.collectionVariables.get('runId') + '-key1');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'transaction');",
+                  "pm.test('a first save is not a replay', function () {",
+                  "    pm.expect(pm.response.headers.has('Idempotency-Replayed')).to.eql(false);",
+                  "});",
+                  "pm.collectionVariables.set('aiKeyedTx', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{aiKey}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 1800,\n  \"category_id\": {{catA}},\n  \"spent_on\": \"{{aiToday}}\",\n  \"note\": \"keyed lunch\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /transactions same key, same payload → 201 replay, same row",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'transaction');",
+                  "pm.test('marked as a replay', function () {",
+                  "    pm.expect(pm.response.headers.get('Idempotency-Replayed')).to.eql('true');",
+                  "});",
+                  "pm.test('the same expense, not a second one', function () {",
+                  "    pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get('aiKeyedTx')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{aiKey}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"keyed lunch\",\n  \"spent_on\": \"{{aiToday}}\",\n  \"category_id\": {{catA}},\n  \"amount_cents\": 1800\n}"
+            },
+            "description": "Same fields in a different order: key order is not part of the payload identity."
+          }
+        },
+        {
+          "name": "POST /transactions same key, different amount → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(409, 'IDEMPOTENCY_CONFLICT');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{aiKey}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 1900,\n  \"category_id\": {{catA}},\n  \"spent_on\": \"{{aiToday}}\",\n  \"note\": \"keyed lunch\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /transactions keyed without spent_on → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "qa-no-date-{{runId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 1800,\n  \"category_id\": {{catA}}\n}"
+            },
+            "description": "A retry on another day must not silently mean another day, so a keyed save names its date."
+          }
+        },
+        {
+          "name": "POST /transactions with a malformed Idempotency-Key → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "short"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 1800,\n  \"category_id\": {{catA}},\n  \"spent_on\": \"{{aiToday}}\",\n  \"note\": \"keyed lunch\"\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /transactions/:id the keyed expense → 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectStatus(204);",
+                  "expectNoBody();"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/{{aiKeyedTx}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "{{aiKeyedTx}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /transactions replay of a deleted expense's key → 409, not resurrected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(409, 'IDEMPOTENCY_REPLAY_UNAVAILABLE');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{aiKey}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 1800,\n  \"category_id\": {{catA}},\n  \"spent_on\": \"{{aiToday}}\",\n  \"note\": \"keyed lunch\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /transactions with a body over the parser limit → 413, not 500 (BUG-019)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('bigNote', 'x'.repeat(120 * 1024));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(413, 'PAYLOAD_TOO_LARGE');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 1,\n  \"note\": \"{{bigNote}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 · Login rate limiting",
+      "description": "Spec §5 / D-016: after LOGIN_MAX_FAILURES failed attempts inside LOGIN_WINDOW_MS, login answers 429 with Retry-After until the window expires. The limits come from the runner as globals, so these cases do not hard-code the boundary they are testing.\n\nTwo requests here deliberately wait for real time to pass. Everywhere else in this project a fixed wait is forbidden — but a window that expires on a schedule cannot be tested without letting the schedule run, and the alternative (an endpoint that resets the counter) would be test scaffolding shipped in the application.\n\nThis folder is last on purpose: it deliberately gets the client IP blocked, and any login after it would inherit that.",
+      "item": [
+        {
+          "name": "Wait out the window, then fail once → 401",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{rlEmail}}\",\n  \"password\": \"wrong-password-1\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Let the rate-limit window expire, so the counters below start from zero",
+                  "// and are not affected by the failed logins in folder 01.",
+                  "const window = Number(pm.variables.get('loginWindowMs') || 4000);",
+                  "const until = Date.now() + window + 1000;",
+                  "while (Date.now() < until) { /* deliberate: see the folder description */ }",
+                  "",
+                  "// A fresh address for this folder, so the per-e-mail counter is clean.",
+                  "pm.collectionVariables.set('rlEmail', 'rl-' + pm.collectionVariables.get('runId') + '@wallet.test');",
+                  "pm.collectionVariables.set('rlFailures', 1);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(401, 'UNAUTHORIZED');",
+                  "pm.test('a failed attempt inside the allowance is a 401, not a 429', function () {",
+                  "    pm.expect(pm.response.code).to.not.eql(429);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Fail up to one below the limit → all 401",
+          "description": "Repeats until one attempt short of the limit. The count comes from the runner, so changing LOGIN_MAX_FAILURES does not silently break this.",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{rlEmail}}\",\n  \"password\": \"wrong-password-loop\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "const max = Number(pm.variables.get('loginMaxFailures') || 5);",
+                  "let failures = Number(pm.collectionVariables.get('rlFailures')) + 1;",
+                  "pm.collectionVariables.set('rlFailures', failures);",
+                  "",
+                  "pm.test('attempt ' + failures + ' of ' + max + ' is refused with 401, not blocked', function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});",
+                  "expectSchema('error');",
+                  "",
+                  "// Loop back to this request until the last allowed attempt is used.",
+                  "if (failures < max) {",
+                  "    pm.execution.setNextRequest('Fail up to one below the limit → all 401');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "One attempt past the limit → 429 with Retry-After",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{rlEmail}}\",\n  \"password\": \"wrong-password-over\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(429, 'RATE_LIMITED');",
+                  "pm.test('Retry-After says when to come back', function () {",
+                  "    const header = pm.response.headers.get('Retry-After');",
+                  "    pm.expect(header, 'no Retry-After header').to.be.a('string');",
+                  "    pm.expect(Number(header)).to.be.above(0);",
+                  "});",
+                  "pm.test('the message does not say whether the account exists', function () {",
+                  "    const message = pm.response.json().error.message.toLowerCase();",
+                  "    pm.expect(message).to.not.include('password');",
+                  "    pm.expect(message).to.not.include('exist');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "The correct password while blocked → still 429",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{rlEmail}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(429, 'RATE_LIMITED');",
+                  "pm.test('being right does not lift the block — otherwise it protects nothing', function () {",
+                  "    pm.expect(pm.response.code).to.eql(429);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "After the window expires, the block lifts by itself",
+          "description": "The block must end on its own. If it needed an administrator, anyone who knows an e-mail address could lock its owner out permanently (D-016).",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{rlEmail}}\",\n  \"password\": \"wrong-again\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Let the rate-limit window expire, so the counters below start from zero",
+                  "// and are not affected by the failed logins in folder 01.",
+                  "const window = Number(pm.variables.get('loginWindowMs') || 4000);",
+                  "const until = Date.now() + window + 1000;",
+                  "while (Date.now() < until) { /* deliberate: see the folder description */ }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(401, 'UNAUTHORIZED');",
+                  "pm.test('back to 401 — the window expired without anyone intervening', function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "A successful login clears the counter",
+          "description": "Signing in proves the caller is who they said they were, so the record of their fumbled attempts is discarded.",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailA}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'token');",
+                  "pm.test('the failures counted a moment ago did not block this', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

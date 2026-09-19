@@ -1,0 +1,22 @@
+{
+  "_readme": [
+    "Exceptions for the coverage gates C6, C7 and C8.",
+    "",
+    "Every entry needs a reason and the gate refuses an empty one — the point of",
+    "this file is that a gap is a sentence somebody wrote, not a silent skip.",
+    "An entry that no longer matches anything is reported as stale, so the list",
+    "cannot quietly outlive what it excused.",
+    "",
+    "An exception is for something that CANNOT be tested, not for something that",
+    "has not been tested yet. A missing test is a finding and is closed with a",
+    "test."
+  ],
+  "C6": [],
+  "C7": [],
+  "C8": [
+    {
+      "item": "500",
+      "reason": "spec §5: a 500 must never be reachable. Asserting one would mean deliberately breaking the app to prove it can break. The collection asserts the opposite instead — every error case carries 'never a 500 (spec §5)', which is 40+ assertions that no path reaches it."
+    }
+  ]
+}

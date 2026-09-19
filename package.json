@@ -1,0 +1,40 @@
+{
+  "name": "wallet",
+  "version": "1.0.0",
+  "description": "Phone-first tracker for expenses, subscriptions and loans",
+  "private": true,
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "check": "node scripts/check.js",
+    "test:api": "node --env-file-if-exists=.env qa/api/run.js",
+    "test:python": "node qa/python/run.js",
+    "test:e2e": "playwright test",
+    "test": "npm run check && npm run test:api && npm run test:python && npm run test:e2e && npm run test:race",
+    "screenshots": "node scripts/screenshots.js",
+    "test:load": "node qa/load/run.js",
+    "test:race": "node qa/race/run.js",
+    "test:ai": "node qa/ai/run.js",
+    "test:ai:e2e": "playwright test -c playwright.ai.config.js",
+    "ai:demo": "node qa/ai/demo.js",
+    "ai:screenshots": "node qa/ai/screenshots.js",
+    "eval:ai": "node qa/ai/evaluate.js",
+    "eval:ai:live": "node --env-file-if-exists=.env qa/ai/evaluate.js --live",
+    "eval:ai:models": "node --env-file-if-exists=.env qa/ai/gemini-models.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "better-sqlite3": "^13.0.3",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "newman": "^6.2.2",
+    "newman-reporter-htmlextra": "^1.23.1"
+  }
+}

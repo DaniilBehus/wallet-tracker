@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport-fit=cover + the safe-area insets in style.css keep the bottom
+       navigation clear of the iPhone home indicator. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- One fixed light theme. spec §9 rules out dark mode, so there is no
+       prefers-color-scheme block and nothing to toggle. -->
+  <meta name="theme-color" content="#0d6b58">
+  <title>Wallet</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<!-- ============================================================= AUTH ==== -->
+<!-- Shown until a token exists. Not one of the four screens in spec §6, but
+     the app cannot be opened without it. -->
+<section id="screen-auth" class="auth">
+  <div class="auth__brand">
+    <span class="auth__mark" aria-hidden="true">W</span>
+    <div>
+      <p class="auth__eyebrow">PERSONAL FINANCE</p>
+      <h1 class="auth__logo">Wallet</h1>
+    </div>
+  </div>
+  <p class="auth__sub" id="auth-sub">Sign in</p>
+  <p class="auth__intro">Spend with intention. See every euro clearly.</p>
+
+  <form id="auth-form" class="auth__form" novalidate>
+    <label class="field">
+      <span class="field__label">E-mail</span>
+      <input id="auth-email" name="email" type="email" autocomplete="email"
+             inputmode="email" required data-testid="auth-email">
+    </label>
+
+    <label class="field">
+      <span class="field__label">Password</span>
+      <input id="auth-password" name="password" type="password"
+             autocomplete="current-password" required data-testid="auth-password">
+    </label>
+
+    <button type="submit" class="btn btn--primary" id="auth-submit"
+            data-testid="auth-submit">Sign in</button>
+  </form>
+
+  <button type="button" class="btn btn--link" id="auth-toggle" data-testid="auth-toggle">
+    No account? Sign up
+  </button>
+</section>
+
+<!-- ============================================================== APP ==== -->
+<main id="app" hidden>
+
+  <!-- ---------------------------------------------------------- 6.1 Add -->
+  <section id="screen-add" class="screen" aria-label="Add an expense">
+    <header class="screen__head screen__head--add">
+      <output class="amount" id="amount-display" data-testid="amount-display"
+              aria-live="polite" aria-label="Amount entered">€0.00</output>
+      <!-- AI expense entry (spec/ai-expense-entry.md). In the header, not the
+           category list, so it takes no height from a short phone (BUG-014).
+           Hidden until /api/ai/capabilities says the feature is on. -->
+      <button type="button" class="ai-open" id="ai-open" data-testid="ai-open" hidden>
+        <span aria-hidden="true">✨</span> Describe an expense
+      </button>
+    </header>
+
+    <div class="categories" id="category-grid" role="group" aria-label="Categories">
+      <!-- category-tile-{id} buttons, rendered by app.js -->
+    </div>
+
+    <label class="note">
+      <span class="note__label">Note (optional)</span>
+      <input id="expense-note" name="note" type="text" maxlength="60"
+             placeholder="what was it for?" data-testid="expense-note"
+             autocomplete="off">
+    </label>
+
+    <div class="keypad" role="group" aria-label="Number keypad">
+      <button type="button" class="key" data-digit="1" data-testid="keypad-1">1</button>
+      <button type="button" class="key" data-digit="2" data-testid="keypad-2">2</button>
+      <button type="button" class="key" data-digit="3" data-testid="keypad-3">3</button>
+      <button type="button" class="key" data-digit="4" data-testid="keypad-4">4</button>
+      <button type="button" class="key" data-digit="5" data-testid="keypad-5">5</button>
+      <button type="button" class="key" data-digit="6" data-testid="keypad-6">6</button>
+      <button type="button" class="key" data-digit="7" data-testid="keypad-7">7</button>
+      <button type="button" class="key" data-digit="8" data-testid="keypad-8">8</button>
+      <button type="button" class="key" data-digit="9" data-testid="keypad-9">9</button>
+      <button type="button" class="key key--clear" id="keypad-clear"
+              data-testid="keypad-clear" aria-label="Clear amount">C</button>
+      <button type="button" class="key" data-digit="0" data-testid="keypad-0">0</button>
+      <button type="button" class="key key--save" id="expense-save-btn"
+              data-testid="expense-save-btn">Save</button>
+    </div>
+  </section>
+
+  <!-- --------------------------------------------------- 6.2 This month -->
+  <section id="screen-month" class="screen" aria-label="This month" hidden>
+    <header class="screen__head screen__head--month">
+      <div class="overview">
+        <!-- Drawn by hand in SVG, no library (D-022). One arc per category,
+             plus the unspent part of the income in grey. -->
+        <svg class="donut" viewBox="0 0 120 120" role="img"
+             data-testid="donut" aria-labelledby="donut-caption">
+          <title id="donut-caption">Spending this month by category</title>
+          <circle class="donut__track" cx="60" cy="60" r="52"></circle>
+          <g id="donut-slices" transform="rotate(-90 60 60)"></g>
+          <text class="donut__value" x="60" y="58" text-anchor="middle"
+                data-testid="month-total">€0.00</text>
+          <text class="donut__caption" x="60" y="74" text-anchor="middle">spent</text>
+        </svg>
+
+        <dl class="figures">
+          <div class="figure">
+            <dt>Income</dt>
+            <dd>
+              <button type="button" class="figure__edit" id="income-edit"
+                      data-testid="income-edit" aria-label="Edit monthly income">
+                <span id="income-value" data-testid="income-value">—</span>
+              </button>
+            </dd>
+          </div>
+          <div class="figure figure--left">
+            <dt id="remaining-label" data-testid="remaining-label">Left</dt>
+            <dd><span id="month-remaining" data-testid="month-remaining">—</span></dd>
+          </div>
+        </dl>
+      </div>
+
+      <form id="income-form" class="income-form" hidden>
+        <label class="field">
+          <span class="field__label">Monthly income (€)</span>
+          <input id="income-input" name="income" type="text" inputmode="decimal"
+                 placeholder="1500.00" data-testid="income-input" autocomplete="off">
+        </label>
+        <div class="income-form__actions">
+          <button type="submit" class="btn btn--primary" data-testid="income-save">Save</button>
+          <button type="button" class="btn" id="income-cancel" data-testid="income-cancel">Cancel</button>
+        </div>
+      </form>
+    </header>
+
+    <div class="scroll">
+      <div id="category-bars" class="bars" role="list" aria-label="Share by category">
+        <!-- category-bar-{id}, rendered by app.js -->
+      </div>
+      <div id="tx-list" class="txlist">
+        <!-- tx-row-{id}, rendered by app.js -->
+      </div>
+
+      <!-- Pagination (D-031). Hidden whenever the month fits on one page,
+           which is the ordinary case. -->
+      <div class="loadmore" id="tx-more-wrap" hidden>
+        <button type="button" class="btn" id="tx-load-more" data-testid="tx-load-more">
+          Show more
+        </button>
+        <p class="loadmore__count" id="tx-count" data-testid="tx-count"></p>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ----------------------------------------------------- 6.3 Upcoming -->
+  <section id="screen-upcoming" class="screen" aria-label="Upcoming payments" hidden>
+    <header class="screen__head">
+      <p class="total__label">Upcoming</p>
+    </header>
+    <div class="scroll">
+      <div id="upcoming-list" class="rows">
+        <!-- schedule-row-{id}, rendered by app.js -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------- 6.4 Schedules -->
+  <section id="screen-schedules" class="screen" aria-label="Schedules" hidden>
+    <header class="screen__head">
+      <p class="total__label">Schedules</p>
+    </header>
+
+    <div class="scroll">
+      <form id="schedule-form" class="form" novalidate>
+        <label class="field">
+          <span class="field__label">Name</span>
+          <input name="name" type="text" maxlength="60" required
+                 data-testid="schedule-name">
+        </label>
+
+        <label class="field">
+          <span class="field__label">Amount (€)</span>
+          <input name="amount" type="text" inputmode="decimal" placeholder="15.00"
+                 required data-testid="schedule-amount">
+        </label>
+
+        <label class="field">
+          <span class="field__label">Category</span>
+          <select name="category_id" id="schedule-category" data-testid="schedule-category">
+            <option value="">Uncategorised</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span class="field__label">Day of month</span>
+          <input name="day_of_month" type="number" min="1" max="31" required
+                 inputmode="numeric" data-testid="schedule-day">
+          <span class="field__hint" id="schedule-day-hint"
+                data-testid="schedule-day-hint"></span>
+        </label>
+
+        <label class="field">
+          <span class="field__label">Starts on</span>
+          <input name="starts_on" type="date" required data-testid="schedule-starts-on">
+        </label>
+
+        <label class="check">
+          <input type="checkbox" name="is_loan" id="schedule-is-loan"
+                 data-testid="schedule-is-loan">
+          <span>This is a loan</span>
+        </label>
+
+        <label class="field" id="total-count-field" hidden>
+          <span class="field__label">Number of instalments</span>
+          <input name="total_count" type="number" min="1" inputmode="numeric"
+                 data-testid="schedule-total-count">
+        </label>
+
+        <button type="submit" class="btn btn--primary" data-testid="schedule-save-btn">
+          Add schedule
+        </button>
+      </form>
+
+      <div id="schedules-list" class="rows">
+        <!-- schedule-row-{id}, rendered by app.js -->
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ======================================================= NAVIGATION ==== -->
+<!-- Each button carries an explicit aria-label identical to its visible text.
+     Redundant in theory — the name would be computed from the label span, with
+     the emoji excluded by aria-hidden — but computed-from-contents names are
+     the fragile kind, and Block C selects these by role and name. An explicit
+     label is one attribute and removes the question. -->
+<!-- Moved out of #screen-month deliberately. Inside it, this panel could not
+     rise above the fixed bottom navigation: `.screen` is a flex child in its
+     own stacking order, so a z-index set in here was confined to it and the
+     nav sat on top of the Save button. Five of six end-to-end tests failed on
+     the 375x812 viewport and passed on the desktop one, which is the shape a
+     stacking bug has. As a sibling of the nav it competes with it directly. -->
+  <!-- Editing an expense (D-029). A dialog rather than an inline form: the
+       row being edited can be anywhere in a long list, and an inline form
+       would push the rest of the list under the reader's thumb. -->
+  <div class="sheet" id="tx-edit-sheet" hidden>
+    <form id="tx-edit-form" class="sheet__panel" aria-label="Edit expense">
+      <h2 class="sheet__title">Edit expense</h2>
+
+      <label class="field">
+        <span class="field__label">Amount (€)</span>
+        <input id="tx-edit-amount" name="amount" type="text" inputmode="decimal"
+               data-testid="tx-edit-amount" autocomplete="off">
+      </label>
+
+      <label class="field">
+        <span class="field__label">Category</span>
+        <select id="tx-edit-category" name="category_id" data-testid="tx-edit-category"></select>
+      </label>
+
+      <label class="field">
+        <span class="field__label">Date</span>
+        <input id="tx-edit-date" name="spent_on" type="date" data-testid="tx-edit-date">
+      </label>
+
+      <label class="field">
+        <span class="field__label">Note</span>
+        <input id="tx-edit-note" name="note" type="text" maxlength="200"
+               data-testid="tx-edit-note" autocomplete="off">
+      </label>
+
+      <div class="sheet__actions">
+        <button type="submit" class="btn btn--primary" data-testid="tx-edit-save">Save</button>
+        <button type="button" class="btn" id="tx-edit-cancel" data-testid="tx-edit-cancel">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+<!-- ================================================== AI EXPENSE ENTRY ==== -->
+<!-- A native modal dialog: focus moves in, stays in, Escape closes it and focus
+     returns to the opener — the behaviour BUG-022's sheet lacks, without code.
+     Nothing in here is saved until "Save expense" (AI-R01). -->
+<dialog class="ai" id="ai-dialog" data-testid="ai-dialog" aria-labelledby="ai-title">
+  <div class="ai__panel">
+    <header class="ai__head">
+      <h2 class="ai__title" id="ai-title">Describe an expense</h2>
+      <button type="button" class="ai__close" id="ai-close" data-testid="ai-close"
+              aria-label="Close">✕</button>
+    </header>
+
+    <p class="ai__demo" id="ai-demo-banner" data-testid="ai-demo-banner" hidden>
+      Demo — sample responses, no AI service contacted
+    </p>
+
+    <!-- ------------------------------------------------------- describe -->
+    <form class="ai__body" id="ai-edit" data-testid="ai-edit" novalidate>
+      <p class="ai__example">For example: <q>Yesterday I paid 18 euros for lunch</q></p>
+
+      <label class="field">
+        <span class="field__label">Expense description</span>
+        <textarea id="ai-text" name="text" rows="3" data-testid="ai-text"
+                  aria-describedby="ai-count" autocomplete="off"></textarea>
+        <span class="field__hint ai__count" id="ai-count" data-testid="ai-count"
+              aria-live="polite">0 / 500</span>
+      </label>
+
+      <div class="ai__examples" role="group" aria-label="Examples">
+        <button type="button" class="chip" data-testid="ai-example-en" lang="en"
+                data-example="Yesterday I paid 18 euros for lunch">EN</button>
+        <button type="button" class="chip" data-testid="ai-example-uk" lang="uk"
+                data-example="Учора витратив 18 євро на обід">UK</button>
+        <button type="button" class="chip" data-testid="ai-example-sk" lang="sk"
+                data-example="Včera som zaplatil 18 eur za obed">SK</button>
+      </div>
+
+      <div class="ai__consent" id="ai-live-notice" data-testid="ai-live-notice" hidden>
+        <p>Your description and your category names are sent to OpenAI to prepare
+          the suggestion. Nothing is saved until you press Save.</p>
+        <label class="check">
+          <input type="checkbox" id="ai-consent" data-testid="ai-consent">
+          <span>Send this description and my category names to OpenAI</span>
+        </label>
+      </div>
+
+      <p class="ai__progress" id="ai-progress" data-testid="ai-progress" role="status" hidden>
+        Reading your description…
+      </p>
+      <p class="ai__error" id="ai-error" data-testid="ai-error" role="alert" hidden></p>
+
+      <div class="ai__actions">
+        <button type="submit" class="btn btn--primary" id="ai-suggest"
+                data-testid="ai-suggest">Suggest expense</button>
+        <button type="button" class="btn" id="ai-cancel" data-testid="ai-cancel">Cancel</button>
+      </div>
+    </form>
+
+    <!-- --------------------------------------------------------- review -->
+    <form class="ai__body" id="ai-review" data-testid="ai-review" novalidate hidden>
+      <div class="ai__source">
+        <span class="field__label">You wrote</span>
+        <p id="ai-source" data-testid="ai-source"></p>
+      </div>
+
+      <p class="ai__status" id="ai-status" data-testid="ai-status" role="status"></p>
+
+      <div id="ai-fields">
+        <label class="field">
+          <span class="field__label">Amount (EUR)</span>
+          <input id="ai-amount" name="amount" type="text" inputmode="decimal"
+                 autocomplete="off" data-testid="ai-amount" aria-describedby="ai-amount-hint">
+          <span class="field__hint" id="ai-amount-hint" data-testid="ai-amount-hint"></span>
+          <span class="field__hint" id="ai-currency-hint" data-testid="ai-currency-hint"></span>
+        </label>
+
+        <label class="field">
+          <span class="field__label">Category</span>
+          <select id="ai-category" name="category_id" data-testid="ai-category"
+                  aria-describedby="ai-category-hint"></select>
+          <span class="field__hint" id="ai-category-hint" data-testid="ai-category-hint"></span>
+        </label>
+
+        <label class="field">
+          <span class="field__label">Date</span>
+          <input id="ai-date" name="spent_on" type="date" data-testid="ai-date"
+                 aria-describedby="ai-date-hint">
+          <span class="field__hint" id="ai-date-hint" data-testid="ai-date-hint"></span>
+        </label>
+
+        <label class="field">
+          <span class="field__label">Note (optional)</span>
+          <input id="ai-note" name="note" type="text" autocomplete="off"
+                 data-testid="ai-note" aria-describedby="ai-note-hint">
+          <span class="field__hint" id="ai-note-hint" data-testid="ai-note-hint"></span>
+        </label>
+      </div>
+
+      <p class="ai__error" id="ai-save-error" data-testid="ai-save-error" role="alert" hidden></p>
+
+      <div class="ai__actions">
+        <button type="submit" class="btn btn--primary" id="ai-save" data-testid="ai-save">Save expense</button>
+        <button type="button" class="btn" id="ai-retry-save" data-testid="ai-retry-save" hidden>Check / retry this save</button>
+        <button type="button" class="btn" id="ai-abandon" data-testid="ai-abandon" hidden>Stop and check This month</button>
+        <button type="button" class="btn" id="ai-edit-description" data-testid="ai-edit-description">Edit description</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<nav id="nav" class="nav" aria-label="Main navigation" hidden>
+  <button type="button" class="nav__btn" data-screen="add"
+          data-testid="nav-add" aria-label="Add">
+    <span class="nav__icon" aria-hidden="true">➕</span><span>Add</span>
+  </button>
+  <button type="button" class="nav__btn" data-screen="month"
+          data-testid="nav-month" aria-label="Month">
+    <span class="nav__icon" aria-hidden="true">📅</span><span>Month</span>
+  </button>
+  <button type="button" class="nav__btn" data-screen="upcoming"
+          data-testid="nav-upcoming" aria-label="Upcoming">
+    <span class="nav__icon" aria-hidden="true">⏳</span><span>Upcoming</span>
+  </button>
+  <button type="button" class="nav__btn" data-screen="schedules"
+          data-testid="nav-schedules" aria-label="Schedules">
+    <span class="nav__icon" aria-hidden="true">🔁</span><span>Schedules</span>
+  </button>
+</nav>
+
+<!-- =========================================================== TOASTS ==== -->
+<!-- Two elements rather than one whose testid changes: spec §6.5 requires the
+     attributes to be stable and never generated. -->
+<div class="toast toast--success" id="toast-success" data-testid="toast-success"
+     role="status" aria-live="polite" hidden></div>
+<div class="toast toast--error" id="toast-error" data-testid="toast-error"
+     role="alert" aria-live="assertive" hidden></div>
+
+<!-- Before app.js: it registers itself, and app.js installs it (D-036). -->
+<script src="/ai-expense.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
