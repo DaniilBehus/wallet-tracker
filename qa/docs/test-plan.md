@@ -1,6 +1,6 @@
 # Test plan · WALLET
 
-**Version 1.1 · 2026-09-07 · covers releases built from `spec/handoff.md`
+**Version 1.1 · 2026-09-07 · covers releases built from `spec/architecture.md`
 (SHA-256 `233a027e…572ea`).**
 
 The specification is the only source of requirements. Where this plan cites a

@@ -9,7 +9,7 @@
 // that was never added, a route or status nobody tests. Behaviour is checked
 // by the test layers in qa/.
 //
-// No dependencies, by design (spec §2). Node built-ins only.
+// No dependencies, by design (architecture §2). Node built-ins only.
 
 const fs = require('fs');
 const path = require('path');
@@ -36,30 +36,30 @@ function walk(dir, ext, out = []) {
 }
 
 // ---------------------------------------------------------------------- C1
-// The spec is immutable. If this fails, either it was edited by accident or a
+// The architecture note is immutable. If this fails, either it was edited by accident or a
 // deliberate change was made and nobody re-recorded the hash. Both need a
 // human, so this check never auto-heals.
 function c1SpecUnchanged() {
-  const id = 'C1', name = 'spec/handoff.md unchanged';
-  if (!has('spec/handoff.md') || !has('spec/handoff.sha256')) {
+  const id = 'C1', name = 'spec/architecture.md unchanged';
+  if (!has('spec/architecture.md') || !has('spec/architecture.sha256')) {
     return skip(id, name, 'spec or recorded hash is missing');
   }
   const actual = crypto.createHash('sha256')
-    .update(fs.readFileSync(at('spec/handoff.md')))
+    .update(fs.readFileSync(at('spec/architecture.md')))
     .digest('hex');
-  const recorded = fs.readFileSync(at('spec/handoff.sha256'), 'utf8').trim();
+  const recorded = fs.readFileSync(at('spec/architecture.sha256'), 'utf8').trim();
   if (actual === recorded) return pass(id, name);
   fail(id, name, [
     `recorded  ${recorded}`,
     `actual    ${actual}`,
     'The spec was edited. Revert it — or, if the change is intended, record',
     'why in the commit message and re-run:',
-    '  sha256sum spec/handoff.md | cut -d" " -f1 > spec/handoff.sha256',
+    '  sha256sum spec/architecture.md | cut -d" " -f1 > spec/architecture.sha256',
   ]);
 }
 
 // ---------------------------------------------------------------------- C2
-// Money is integer cents on the server, always (spec §3). Converting to a
+// Money is integer cents on the server, always (architecture §§2–3). Converting to a
 // display string happens only in the browser, at the edge. So the server has
 // no legitimate reason to contain float arithmetic or currency formatting —
 // if one of these appears in src/, money has leaked into a float.
@@ -85,11 +85,11 @@ function c2NoFloatMoney() {
   if (hits.length === 0) return pass(id, name);
   fail(id, name, [...hits, '',
     'Money is amount_cents, an integer, everywhere on the server.',
-    'Formatting belongs in public/, not here (spec §3).']);
+    'Formatting belongs in public/, not here (architecture §§2–3).']);
 }
 
 // ---------------------------------------------------------------------- C3
-// Every testid from spec §6.5 must be present in public/. This check is the
+// Every testid from architecture §5 must be present in public/. This check is the
 // whole reason the attributes go in from the start: retrofitting them across
 // four screens is tedious, and a separate project depends on them existing.
 const TESTIDS_EXACT = [
@@ -104,7 +104,7 @@ const TESTIDS_PREFIX = [
   'schedule-row-', 'schedule-pay-', 'schedule-next-due-', 'schedule-remaining-',
 ];
 function c3Testids() {
-  const id = 'C3', name = 'every data-testid from spec §6.5 is present';
+  const id = 'C3', name = 'every data-testid from architecture §5 is present';
   if (!has('public')) return skip(id, name, 'public/ does not exist yet');
   const files = [...walk(at('public'), '.html'), ...walk(at('public'), '.js')];
   if (files.length === 0) return skip(id, name, 'public/ has no .html or .js yet');

@@ -199,7 +199,7 @@ or an explicit `No rule — one-off.`
 |---|---|
 | `src/`, `public/` | The application: Express API, SQLite schema, and the plain-JS frontend |
 | `qa/` | All test layers and their documentation |
-| [`spec/handoff.md`](spec/handoff.md) | The specification. Hashed — `check.js` fails if a byte moves without the hash being re-recorded |
+| [`spec/architecture.md`](spec/architecture.md) | Architecture and development notes. Hashed — `check.js` fails if a byte moves without the hash being re-recorded |
 | [`spec/ai-expense-entry.md`](spec/ai-expense-entry.md) | The contract for the optional AI feature |
 | [`log/BUGS.md`](log/BUGS.md) | Defect register — reproduction, root cause, fix, regression check |
 | `scripts/` | The self-check gate and the screenshot generator |

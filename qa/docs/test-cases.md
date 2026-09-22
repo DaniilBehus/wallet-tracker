@@ -1,6 +1,6 @@
 # Test cases · WALLET
 
-**Python layer last executed 2026-09-07** against `spec/handoff.md` SHA-256
+**Python layer last executed 2026-09-07** against `spec/architecture.md` SHA-256
 `233a027e…572ea`. Other statuses retain the session evidence named in their
 sections; local Playwright execution additionally needs a host allowed to launch
 Chromium.
@@ -351,6 +351,6 @@ writing tests by hand had skipped.
 API cases number 73 against 75 requests because TC-API-068 loops: one request,
 run once per allowed attempt.
 
-Traceability: every case above cites a clause of `spec/handoff.md`, a recorded
+Traceability: every case above cites a clause of `spec/architecture.md`, a recorded
 decision, or a `BUG-###`. Three cases trace to defects, and each of those three
 has been re-verified against the defect it guards.

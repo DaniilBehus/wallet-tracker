@@ -2,9 +2,9 @@
 
 Status: ACTIVE since 2026-09-14.
 
-This file is normative for the feature. `spec/handoff.md` §1, §5, §6.1 and §9
-point here. Where this file and the plan disagree, this file wins and the
-difference is listed in D-036.
+This file is normative for the feature. `spec/architecture.md` §§1, 4, 5 and 7
+provide the surrounding product, API, interface and scope decisions. Where this
+file and the test plan disagree, this file takes precedence.
 
 ---
 
