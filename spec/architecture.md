@@ -1,5 +1,7 @@
 # Wallet Tracker — architecture and development notes
 
+[← Back to README](../README.md#architecture) · [Next: server modules →](../src/)
+
 ## 1. Product and scope
 
 Wallet Tracker is a phone-first web application for recording expenses,
@@ -38,12 +40,17 @@ product models personal spending rather than cross-timezone accounting.
 | `categories` | Per-user expense categories | A category name is unique for its owner |
 | `transactions` | Expenses that happened | Positive integer cents; optional source schedule |
 | `schedules` | Future recurring charges and loans | Positive amount, valid day of month, active state and payment count |
-| `settings` | Per-user monthly income | At most one row per user; non-negative cents |
+| `settings` | Per-user monthly income and spending limit | At most one row per user; income is non-negative, while `NULL` means no limit |
 
 A loan is represented by a schedule with `total_count`; a subscription has
 `total_count = NULL`. `remaining_count`, `remaining_cents` and `next_due` are
 computed on read instead of stored, preventing derived data from becoming
 stale.
+
+The spending limit is a signal, not a rule that blocks an expense. Its
+`not_set`, `within`, `reached` and `exceeded` states are computed from the same
+monthly total shown on screen. The [decision table and test trace](../qa/docs/analysis-monthly-limit.md)
+document the equality and zero-limit boundaries.
 
 For a schedule due on a day that does not exist in a month, the date is clamped
 to the last day of that month. A schedule set to the 31st therefore runs on
@@ -72,7 +79,7 @@ Every error has one stable shape:
 | Categories | List and create per-user categories; another user's resource is reported as `404` |
 | Transactions | Create, filter, update with `PATCH`, and delete expenses; server-owned fields are rejected on update |
 | Idempotency | `POST /transactions` can use `Idempotency-Key` to replay the original successful create safely; conflicting payloads are rejected |
-| Settings and summary | Store monthly income and calculate monthly totals, category shares and remaining income |
+| Settings and summary | Store income and a nullable monthly spending limit; calculate totals, category shares, remaining income and limit status |
 | Schedules | Create, list, update and pay recurring charges or loans; schedule state is validated atomically |
 | AI draft | Capabilities plus an expense-draft endpoint that returns a validated draft only |
 
@@ -91,8 +98,8 @@ The product has four mobile-first screens:
 
 - **Add:** a custom numeric keypad, category selection and a save action; an
   optional note remains secondary to the quick expense flow.
-- **This month:** totals, category shares, income and remaining income, with
-  transactions grouped by day and editable in place.
+- **This month:** totals, category shares, income, remaining income and a
+  user-set spending limit, with transactions grouped by day and editable in place.
 - **Upcoming:** active schedules ordered by next charge date, including loan
   progress and a Pay action.
 - **Schedules:** one form for recurring charges and loans; a loan is selected

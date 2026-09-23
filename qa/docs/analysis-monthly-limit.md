@@ -1,5 +1,7 @@
 # Monthly spending limit — requirements and test analysis
 
+[← Back to README](../../README.md#qa-evidence) · [Next: test cases →](test-cases.md#api--monthly-spending-limit--folder-12)
+
 A worked example of the analysis that comes *before* code: goal, scope,
 requirements with ids, a decision table, boundaries, state transitions, risks,
 a traceability matrix, and a change-impact note. Everything below was written

@@ -2,28 +2,52 @@
 
 # Wallet Tracker
 
-**Expenses, recurring charges and loans. A working app with a documented QA workflow.**
+**Track spending on a phone; inspect the tests and defect reports behind every key flow.**
 
 [![CI](https://github.com/DaniilBehus/wallet-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/DaniilBehus/wallet-tracker/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-087f6d.svg)](LICENSE)
 
-[Screenshots](#screenshots) · [QA evidence](#qa-evidence) · [Quick start](#quick-start) · [AI feature](#ai-expense-entry) · [Architecture](#architecture)
+[Start here](#start-here) · [Screenshots](#screenshots) · [QA evidence](#qa-evidence) · [Quick start](#quick-start) · [Architecture](#architecture)
 
 </div>
-
-A personal finance web app designed for a phone: record an expense, review the month,
-set a monthly spending limit, and track subscriptions and loan instalments. This repository includes the
-application, test design, automated checks and documented defects.
 
 ## Screenshots
 
 <p align="center">
-  <a href="docs/screenshots/1-add.png"><img src="docs/screenshots/1-add.png" width="270" alt="Add an expense: amount keypad, categories and save action"></a>
+  <a href="docs/screenshots/1-add.png"><img src="docs/screenshots/1-add.png" width="350" alt="Add screen with amount keypad, category choices and Save button"></a>
   &nbsp;
-  <a href="docs/screenshots/2-month.png"><img src="docs/screenshots/2-month.png" width="270" alt="Monthly overview: spending total, monthly limit, category breakdown and transaction history"></a>
+  <a href="docs/screenshots/2-month.png"><img src="docs/screenshots/2-month.png" width="350" alt="Month screen showing €822.70 spent against an €800 limit and a category breakdown"></a>
 </p>
 
-<p align="center"><strong>Add an expense</strong> · <strong>Review the month</strong><br>English interface · EUR amounts · Demo account data</p>
+<p align="center"><strong>Add an expense</strong> · <strong>Review the month and its limit</strong><br>Real app screens with demo account data</p>
+
+A personal finance web app for expenses, monthly spending limits, recurring
+charges and loan instalments. The repository includes its test design, automated
+checks, recorded results and defect investigations.
+
+## Start here
+
+| Want to… | Open | Then continue to… |
+|---|---|---|
+| See the app | [Screenshots](#screenshots) | [Features and limits](#ai-expense-entry) |
+| Run it | [Quick start](#quick-start) | [Test setup](docs/testing.md) |
+| Review QA work | [QA evidence](#qa-evidence) | [Monthly limit case study](qa/docs/analysis-monthly-limit.md) |
+| Read the code | [Folder map](#architecture) | [Architecture notes](spec/architecture.md) |
+
+```mermaid
+flowchart TD
+  R[README] --> S[Screenshots]
+  R --> Q[Quick start]
+  R --> E[QA evidence]
+  R --> C[Code map]
+  E --> T[Test cases]
+  T --> P[Test report]
+  C --> A[Architecture]
+  P --> R
+  A --> R
+```
+
+The table supplies the clickable route; each linked guide leads back here.
 
 <details>
 <summary><strong>More screens: upcoming payments and schedules</strong></summary>
@@ -44,15 +68,14 @@ schedule model. Recreate these four screenshots with `npm run screenshots`.
 **Start with [test design](qa/docs/test-design.md), browse the [test cases](qa/docs/test-cases.md),
 then follow a [defect from reproduction to regression](qa/docs/defects/).**
 
-| Area | Scope | Evidence |
-|---|---|---|
-| Test planning | Risks, scope, entry and exit criteria | [Test plan](qa/docs/test-plan.md) |
-| Test design | Catalogued cases with priorities and traceability | [Case catalogue](qa/docs/test-cases.md) |
-| API | 171 requests · 621 assertions; 16 Python scenarios | [Postman](qa/api/) · [pytest](qa/python/) |
-| Database migration | 3 cases for the existing-database column upgrade | [Migration tests](qa/db/migration.test.js) |
-| Browser | 69 scenarios, each at phone and desktop sizes | [Playwright specs & page objects](qa/e2e/) |
-| Concurrency & load | Two server processes on one database; k6 write and login workloads | [Race checks](qa/race/) · [k6](qa/load/) |
-| AI feature | Offline tests, browser checks and fixture evaluation | [AI case study](qa/docs/ai-case-study.md) |
+| Evidence | Open the source |
+|---|---|
+| Plan and case design | [Test plan](qa/docs/test-plan.md) · [Design method](qa/docs/test-design.md) · [Case catalogue](qa/docs/test-cases.md) |
+| API and database | [Postman collection](qa/api/wallet.postman_collection.json) · [pytest scenarios](qa/python/test_api.py) · [migration tests](qa/db/migration.test.js) |
+| Browser flows | [Playwright specs](qa/e2e/) · [page objects](qa/e2e/pages/) |
+| Concurrency and load | [Race runner](qa/race/run.js) · [k6 workloads](qa/load/) |
+| Recorded results | [Monthly limit report](qa/docs/test-report-monthly-limit.md) · [GitHub CI](https://github.com/DaniilBehus/wallet-tracker/actions/workflows/ci.yml) |
+| AI boundaries | [AI case study](qa/docs/ai-case-study.md) · [evaluation limits](qa/docs/ai-evaluation.md) |
 
 GitHub Actions runs the secret scan, migration, API, Python, Playwright and offline AI checks.
 The self-check command enforces eight invariant and coverage gates.
@@ -63,7 +86,13 @@ The self-check command enforces eight invariant and coverage gates.
 Follow one feature from requirements to acceptance checks. The analysis covers a
 decision table, boundaries, states, risks, traceability and change impact.
 
-[Requirements & test analysis](qa/docs/analysis-monthly-limit.md) · [Test report](qa/docs/test-report-monthly-limit.md) · [UAT & rehearsal](qa/docs/uat-monthly-limit.md)
+**Follow the evidence:** [requirement](qa/docs/analysis-monthly-limit.md#2-requirements-and-acceptance-criteria)
+→ [decision table](qa/docs/analysis-monthly-limit.md#3-decision-table--limit-state)
+→ [test cases](qa/docs/test-cases.md#api--monthly-spending-limit--folder-12)
+→ [recorded result](qa/docs/test-report-monthly-limit.md#4-results--the-local-run-of-2026-09-23)
+→ [remaining acceptance limit](qa/docs/uat-monthly-limit.md#recorded-run--2026-09-23).
+
+[Read the complete analysis](qa/docs/analysis-monthly-limit.md) · [inspect the browser test](qa/e2e/month.spec.js) · [review the migration test](qa/db/migration.test.js)
 
 The report distinguishes recorded local results from reproducible checks. The
 migration tests include a repeatable negative control; the UAT rehearsal uses a
@@ -71,11 +100,11 @@ disposable database, and the owner's sign-off is still open.
 
 ### Defects worth opening
 
-| Finding | What exposed it | Read the investigation |
-|---|---|---|
-| Failed logins blocked unrelated requests | Load testing caught synchronous bcrypt blocking the event loop | [BUG-004](qa/docs/defects/BUG-004-bcrypt-blocks-event-loop.md) |
-| Concurrent writes returned 500 | Two server processes revealed a SQLite transaction race | [BUG-012](qa/docs/defects/BUG-012-deferred-transaction-500.md) |
-| An unsupported currency became a EUR draft | Negative AI cases exposed missing validation | [AI case study](qa/docs/ai-case-study.md) |
+| Finding | Investigation |
+|---|---|
+| Failed logins blocked unrelated requests | [BUG-004: load test and bcrypt fix](qa/docs/defects/BUG-004-bcrypt-blocks-event-loop.md) |
+| Concurrent writes returned 500 | [BUG-012: two-process SQLite race](qa/docs/defects/BUG-012-deferred-transaction-500.md) |
+| An unsupported currency became a EUR draft | [AI negative-case investigation](qa/docs/ai-case-study.md) |
 
 [Full defect register: reproduction → root cause → fix → regression check](log/BUGS.md)
 

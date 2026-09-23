@@ -1,9 +1,11 @@
 # Test cases · WALLET
 
-**Python layer last executed 2026-09-07** against `spec/architecture.md` SHA-256
-`233a027e…572ea`. Other statuses retain the session evidence named in their
-sections; local Playwright execution additionally needs a host allowed to launch
-Chromium.
+[← Back to README](../../README.md#qa-evidence) · [Next: monthly limit analysis →](analysis-monthly-limit.md)
+
+**Result dates matter.** Historical case statuses retain the evidence named in
+their sections. The current automated run is visible in [GitHub Actions](https://github.com/DaniilBehus/wallet-tracker/actions/workflows/ci.yml);
+the public architecture notes are in [`spec/architecture.md`](../../spec/architecture.md).
+Local Playwright execution needs a host allowed to launch Chromium.
 
 The interface is English and money reads `€12.50` (D-018, D-019). Expected
 values below are the current ones; the Slovak strings that used to be here are
@@ -408,6 +410,7 @@ which is evidence anyone can reproduce.
 API cases number 73 against 75 requests because TC-API-068 loops: one request,
 run once per allowed attempt.
 
-Traceability: every case above cites a clause of `spec/architecture.md`, a recorded
-decision, or a `BUG-###`. Three cases trace to defects, and each of those three
-has been re-verified against the defect it guards.
+Traceability: cases cite the [architecture notes](../../spec/architecture.md),
+the [monthly limit analysis](analysis-monthly-limit.md), a recorded decision or
+a `BUG-###`. Three cases trace to defects, and each of those three has been
+re-verified against the defect it guards.

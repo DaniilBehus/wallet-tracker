@@ -1,6 +1,6 @@
 # AI expense entry
 
-[← Back to Wallet Tracker](../README.md#ai-expense-entry)
+[← Back to README](../README.md#ai-expense-entry) · [Next: AI case study →](../qa/docs/ai-case-study.md)
 
 <img src="screenshots/ai-3-review-ready-demo.png" alt="Review of a suggested expense in demo mode" width="260"> <img src="screenshots/ai-4-review-needs-input-demo.png" alt="A suggestion that still needs an amount, in demo mode" width="260">
 

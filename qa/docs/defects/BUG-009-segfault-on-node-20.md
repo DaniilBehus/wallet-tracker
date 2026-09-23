@@ -1,5 +1,7 @@
 # BUG-009 · The server segfaults on Node 20 in CI, so the first build was red
 
+[← Back to README](../../../README.md#qa-evidence) · [Next: CI configuration →](../../../.github/workflows/ci.yml)
+
 ![severity](https://img.shields.io/badge/severity-High-orange?style=flat-square)
 ![state](https://img.shields.io/badge/state-CLOSED-brightgreen?style=flat-square)
 
