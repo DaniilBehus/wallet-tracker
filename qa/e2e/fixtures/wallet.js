@@ -131,6 +131,9 @@ const test = base.test.extend({
       paySchedule: async (id) =>
         json(await request.patch(`/api/schedules/${id}/pay`, { headers }), 200),
       summary: async () => json(await request.get('/api/summary', { headers }), 200),
+      settings: async () => json(await request.get('/api/settings', { headers }), 200),
+      setSettings: async (data, expected = 200) =>
+        json(await request.put('/api/settings', { headers, data }), expected),
     });
   },
 

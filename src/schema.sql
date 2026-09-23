@@ -68,7 +68,12 @@ CREATE INDEX IF NOT EXISTS idx_sched_user   ON schedules (user_id, active);
 -- moment the next expense is added.
 CREATE TABLE IF NOT EXISTS settings (
   user_id              INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-  monthly_income_cents INTEGER NOT NULL DEFAULT 0 CHECK (monthly_income_cents >= 0)
+  monthly_income_cents INTEGER NOT NULL DEFAULT 0 CHECK (monthly_income_cents >= 0),
+  -- The monthly spending limit. NULL means "no limit set", which is a
+  -- different state from 0, "nothing may be spent this month"
+  -- (qa/docs/analysis-monthly-limit.md, assumption A3). Nullable, so an
+  -- existing row keeps "no limit" when the column is added.
+  monthly_limit_cents  INTEGER CHECK (monthly_limit_cents IS NULL OR monthly_limit_cents >= 0)
 );
 
 -- AI draft quotas (D-034). Counters only: period, scope, user, count. No text.

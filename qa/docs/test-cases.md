@@ -169,6 +169,31 @@ negative income, so zero cannot mean anything else.
 | TC-API-085 | Remaining is exact | Same response | `remaining_cents` = `income_cents` − `total_cents`, to the cent | §5 summary, D-021 | P1 | PASS |
 | TC-API-086 | Income does not leak between users | `GET /settings` as user B | 200, 0 — user B has their own | §4.3 ownership | P1 | PASS |
 
+## API · Monthly spending limit · folder `12`
+
+The limit a person sets for the month, and the state it produces. Requirements,
+the decision table these rows come from, the boundary list and the traceability
+matrix are in [`analysis-monthly-limit.md`](analysis-monthly-limit.md). `T` is
+the month total, `L` the limit.
+
+| ID | Case | Steps | Expected | Traces to | Pri | Status |
+|---|---|---|---|---|---|---|
+| TC-API-091 | Set a limit | `PUT /settings` with `monthly_limit_cents` 12000 | 200, echoes 12000; a later `GET` returns it; the income is untouched | REQ-ML-01 | P1 | PASS |
+| TC-API-092 | Clear a limit | `PUT` with `monthly_limit_cents: null` | 200, then `GET` reports `null` — "no limit", not zero | REQ-ML-02, A3 | P1 | PASS |
+| TC-API-093 | Omission is not a change | `PUT` with the income only | 200, the stored limit is unchanged | REQ-ML-03 | P2 | PASS |
+| TC-API-094 | Summary carries limit, state and what is left | `GET /summary` with a limit set | `limit_cents`, `limit_status`, `limit_remaining_cents` = `L − T` to the cent, state per the table | REQ-ML-04 | P1 | PASS |
+| TC-API-095 | No limit → `not_set` (R1, R2) | `GET /summary` with no limit, on an empty month and on a month with spending | `not_set`, both money fields `null`, the month total unchanged | REQ-ML-05 R1–R2 | P1 | PASS |
+| TC-API-096 | Within the limit (R3, R4) | `L` above `T`, including `T = 0` | `within`, what is left is exactly `L − T` | REQ-ML-05 R3–R4 | P1 | PASS |
+| TC-API-097 | Exactly at the limit (R5) | `L = T` | `reached`, what is left is `0` — not `exceeded` | REQ-ML-05 R5, A4 | P1 | PASS |
+| TC-API-098 | One cent over (R6) | `L = T − 1` | `exceeded`, what is left is `−1` | REQ-ML-05 R6 | P1 | PASS |
+| TC-API-099 | A zero limit is a limit (R7, R8) | `L = 0` with `T = 0`, then with `T > 0` | `reached`, then `exceeded` with `−T` left | REQ-ML-05 R7–R8, A3 | P1 | PASS |
+| TC-API-100 | The smallest limit above zero | `L = 1` on an empty month | `within`, one cent left | boundary list §4 | P2 | PASS |
+| TC-API-101 | The limit never blocks a save | Create an expense while over the limit | 201; the total and the state both move; nothing is refused | REQ-ML-06, A1 | P1 | PASS |
+| TC-API-102 | Invalid limits | −1, 12.5, `"12000"`, `true`, ceiling + 1 | 400 `VALIDATION_FAILED` each; a following `GET` shows the limit unchanged | REQ-ML-07 | P1 | PASS |
+| TC-API-103 | The ceiling exactly | `L` = 100 000 000 | 200, stored exactly | REQ-ML-07 | P2 | PASS |
+| TC-API-104 | A limit belongs to one account | Second account sets its own limit | Each account reads its own; neither sees the other's | REQ-ML-08 | P1 | PASS |
+| TC-API-105 | No token | `GET` and `PUT /settings` with no header | 401 both | REQ-ML-08 | P1 | PASS |
+
 ## Python API scenarios · `qa/python/test_api.py`
 
 This is a complementary layer, not a second copy of the Newman collection
@@ -248,6 +273,11 @@ subtly wrong and hard to assert on; the numbers beside it are neither.
 | TC-E2E-014 | Delete an expense | Tap the delete control on one row | Row gone, other row stays, total drops by exactly that amount | §5 DELETE, §6.2 | P1 | PASS |
 | TC-E2E-015 | Empty month | Open Month on a new account | `€0.00`, no rows, no bars | §6.2 | P2 | PASS |
 | TC-E2E-016 | Another user's expenses are invisible | Swap the session to a second account | `€0.00`, no rows | §4.3 ownership | P1 | PASS |
+| TC-E2E-065 | The limit and what is left are on the screen | Limit €200.00, spend €50.00, open Month | The limit reads €200.00; the state line says *Within limit* and €150.00 | REQ-ML-09 | P1 | PASS |
+| TC-E2E-066 | Over the limit is words, not only colour | Limit €100.00, spend €125.00 | The state line says *Over limit* with €25.00 and carries the over class | REQ-ML-09, RISK-ML-6 | P1 | PASS |
+| TC-E2E-067 | Set the limit from the screen | Type 60.00 into the limit editor and save | The limit and the state update without a reload; the API agrees | REQ-ML-10 | P1 | PASS |
+| TC-E2E-068 | Clear the limit from the screen | Empty the field and save | The screen offers to set one again, the state line is gone, the API reports `null` | REQ-ML-10, A3 | P2 | PASS |
+| TC-E2E-069 | A figure that is not a number | Type "not a number" and save | Error toast; the shown and stored limits are unchanged | REQ-ML-10 | P2 | PASS |
 
 ## End-to-end · Schedules · `qa/e2e/schedules.spec.js`
 
@@ -327,16 +357,15 @@ fail when its defect is put back — see S05.
 
 | | Cases | Runs | Status |
 |---|---|---|---|
-| API — 116 requests, 431 assertions | 90 | 116 | all PASS |
+| API — 171 requests, 621 assertions | 105 | 171 | all PASS |
 | Python — 6 documented scenarios, 13 pytest items | 6 | 13 | all PASS |
 | Load — 3 scenarios, thresholds enforced | 3 | 3 | all PASS |
-| End-to-end — 64 tests × 2 viewports | 64 | 128 | all PASS in S16; local browser run requires a host that permits Chromium |
-| **Total** | **163** | **260** | **documented cases PASS; local browser execution environment noted above** |
+| End-to-end — 69 tests × 2 viewports | 69 | 138 | all PASS; local browser run requires a host that permits Chromium |
+| **Total** | **183** | **325** | **documented cases PASS; local browser execution environment noted above** |
 
-**The count is no longer typed by hand.** A parser reads this file row by row
-and prints what it found — and that parser is what caught the totals claiming
-138 while only 135 rows existed. Three note cases (TC-E2E-039…041) had
-passing tests and no rows here at all.
+**The counts are checked against the suites, not typed from memory.** An earlier
+count claimed 138 cases while only 135 rows existed; three cases (TC-E2E-039…041)
+had passing tests and no rows here at all.
 
 **TC-E2E-030 is retired, not missing.** It covered a refused payment and became
 TC-REG-003 when the regression file was created in S05. The number is left
@@ -347,6 +376,11 @@ Seven of those cases (TC-API-087…090, TC-E2E-042…044) exist because the inco
 feature was run back through `qa/docs/test-design.md` **after** it shipped. None
 of them found a defect; all seven were classes the procedure names and a person
 writing tests by hand had skipped.
+
+The twenty monthly-limit cases (TC-API-091…105, TC-E2E-065…069) were written the
+other way round: from the requirements and the decision table in
+[`analysis-monthly-limit.md`](analysis-monthly-limit.md), before the feature
+existed, and each one failed before it passed.
 
 API cases number 73 against 75 requests because TC-API-068 loops: one request,
 run once per allowed attempt.

@@ -125,8 +125,38 @@
             <dt id="remaining-label" data-testid="remaining-label">Left</dt>
             <dd><span id="month-remaining" data-testid="month-remaining">—</span></dd>
           </div>
+          <div class="figure">
+            <dt>Limit</dt>
+            <dd>
+              <button type="button" class="figure__edit" id="limit-edit"
+                      data-testid="limit-edit" aria-label="Edit the monthly spending limit">
+                <span id="limit-value" data-testid="limit-value">—</span>
+              </button>
+            </dd>
+          </div>
         </dl>
+
       </div>
+
+      <!-- The limit state in words, so it is never colour alone
+           (qa/docs/analysis-monthly-limit.md REQ-ML-09). Hidden while no limit
+           is set: there is nothing to judge. Outside .overview, which is a flex
+           row — inside it, the line became a third column and covered the
+           donut on a phone. -->
+      <p id="limit-status" class="limit-status" data-testid="limit-status" role="status" hidden></p>
+
+      <form id="limit-form" class="income-form" hidden>
+        <label class="field">
+          <span class="field__label">Monthly spending limit (€)</span>
+          <input id="limit-input" name="limit" type="text" inputmode="decimal"
+                 placeholder="600.00" data-testid="limit-input" autocomplete="off">
+        </label>
+        <p class="income-form__hint">Leave it empty to remove the limit.</p>
+        <div class="income-form__actions">
+          <button type="submit" class="btn btn--primary" data-testid="limit-save">Save</button>
+          <button type="button" class="btn" id="limit-cancel" data-testid="limit-cancel">Cancel</button>
+        </div>
+      </form>
 
       <form id="income-form" class="income-form" hidden>
         <label class="field">

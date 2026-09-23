@@ -59,6 +59,28 @@ function incomeCents(value) {
   return value;
 }
 
+/**
+ * The monthly spending limit (qa/docs/analysis-monthly-limit.md).
+ *
+ * Three answers, not two: a number sets the limit, an explicit null clears it,
+ * and an absent field leaves whatever is stored alone. That is why this returns
+ * `undefined` for "absent" rather than treating it as zero — 0 is a real limit
+ * meaning "nothing may be spent", and silently turning "no limit" into it would
+ * be the app inventing a budget nobody set (assumption A3).
+ */
+function limitCents(value) {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (typeof value !== 'number' || !Number.isInteger(value)) {
+    throw badRequest('monthly_limit_cents must be an integer number of cents, or null');
+  }
+  if (value < 0) throw badRequest('monthly_limit_cents must not be negative');
+  if (value > MAX_AMOUNT_CENTS) {
+    throw badRequest(`monthly_limit_cents must not exceed ${MAX_AMOUNT_CENTS}`);
+  }
+  return value;
+}
+
 function name(value) {
   if (typeof value !== 'string' || value.trim().length === 0) {
     throw badRequest('name is required');
@@ -188,6 +210,7 @@ module.exports = {
   conflict,
   amountCents,
   incomeCents,
+  limitCents,
   name,
   dayOfMonth,
   spentOn,

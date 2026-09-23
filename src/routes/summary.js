@@ -3,7 +3,7 @@
 const express = require('express');
 const { db } = require('../db');
 const { monthBounds, currentMonth } = require('../dates');
-const { readIncome } = require('../settings');
+const { readSettings, limitState } = require('../settings');
 const v = require('../validate');
 
 const router = express.Router();
@@ -44,13 +44,17 @@ router.get('/', (req, res) => {
   // the moment the next expense is added — the same reason next_due is not
   // stored. It may be negative: spending more than you earned is a fact, not an
   // error, and hiding it behind a zero would be the app lying to be polite.
-  const incomeCents = readIncome(req.userId);
+  const settings = readSettings(req.userId);
+  const incomeCents = settings.monthly_income_cents;
 
   res.status(200).json({
     month,
     total_cents: totalCents,
     income_cents: incomeCents,
     remaining_cents: incomeCents - totalCents,
+    // The limit and the state it produces, computed here for the same reason
+    // as the balance above and never stored.
+    ...limitState(settings.monthly_limit_cents, totalCents),
     by_category: byCategory,
   });
 });

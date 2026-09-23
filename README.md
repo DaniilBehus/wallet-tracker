@@ -11,21 +11,45 @@ offline-evaluated AI feature that turns a sentence into an expense draft.
 | | |
 |---|---|
 | Self-check gate | 8 invariant and coverage gates, `npm run check` |
-| API contract | 128 requests · 475 assertions · Postman + newman |
+| API contract | 171 requests · 621 assertions · Postman + newman |
 | API scenarios | 16 pytest scenarios · Python + httpx · JUnit XML |
-| End-to-end | 64 scenarios × 2 viewports (phone and desktop) · Playwright |
+| End-to-end | 69 scenarios × 2 viewports (phone and desktop) · Playwright |
 | Concurrency | race checks with two real server processes on one SQLite file |
 | Load | k6 · 50 concurrent writers, a burst of failed logins, and the logins the limiter allows |
 | AI expense entry | 237 offline tests, 50 browser runs, a 116-row evaluation corpus — no real AI call needed |
 | CI | GitHub Actions: secret scan, API, Python, Playwright and the offline AI suite |
+| Test analysis | Requirements, decision table and traceability for one feature — [`qa/docs/analysis-monthly-limit.md`](qa/docs/analysis-monthly-limit.md) |
 | Defects | Reproduction, root cause, fix and regression check — [`log/BUGS.md`](log/BUGS.md) |
+
+## Test analysis, start to finish — the monthly spending limit
+
+One small feature carries the analysis trail a tester is usually asked for, in
+the order it was actually done. Each link is a page, not a claim:
+
+| Step | Where | What it contains |
+|---|---|---|
+| 1 · Requirements | [`analysis-monthly-limit.md` §1–2](qa/docs/analysis-monthly-limit.md) | Business goal, what is deliberately out of scope, six named assumptions, and REQ-ML-01…10 with acceptance criteria |
+| 2 · Decision table | [§3](qa/docs/analysis-monthly-limit.md) | Eight rules over "limit set?" × "spent against the limit", including zero spending and a zero limit |
+| 3 · Boundaries, states, risks | [§4](qa/docs/analysis-monthly-limit.md) | `L−1 / L / L+1`, the ceiling, `null` versus `0`, the state diagram, negative cases and six risks with mitigations |
+| 4 · Traceability | [§5](qa/docs/analysis-monthly-limit.md) | Requirement → test condition → case id → the automated test that runs it → result |
+| 5 · Change impact | [§6](qa/docs/analysis-monthly-limit.md) | Which API fields, screens, data and existing tests the change touches, and what it does not |
+| 6 · Cases | [`test-cases.md`](qa/docs/test-cases.md) | TC-API-091…105 and TC-E2E-065…069 in the same register as every other case |
+| 7 · Automated tests | [API folder 12](qa/api/wallet.postman_collection.json) · [browser cases](qa/e2e/month.spec.js) | Each request and each test names the case id it runs |
+| 8 · UAT | [`uat-monthly-limit.md`](qa/docs/uat-monthly-limit.md) | Eleven steps a non-technical reviewer can run and sign |
+| 9 · Report | [`test-report-monthly-limit.md`](qa/docs/test-report-monthly-limit.md) | What failed before the code existed, the defect the tests found, the results, and the known limitations |
+
+The tests were written from the requirements **before** the feature existed:
+92 API assertions and 10 browser runs failed first. One defect came out of it —
+on a phone-width screen the new state line landed inside a flex row and the
+donut covered the limit control — found by two browser cases that passed on
+desktop and failed on mobile.
 
 ## The four screens
 
 | Add | This month | Upcoming | Schedules |
 |---|---|---|---|
 | ![Add](docs/screenshots/1-add.png) | ![This month](docs/screenshots/2-month.png) | ![Upcoming](docs/screenshots/3-upcoming.png) | ![Schedules](docs/screenshots/4-schedules.png) |
-| An amount, a category, save — two taps | Total, share per category, grouped by day | Next charge, and a loan counting down | One form; the checkbox is the only branch |
+| An amount, a category, save — two taps | Total, share per category, the monthly limit and its state, grouped by day | Next charge, and a loan counting down | One form; the checkbox is the only branch |
 
 Interface in English, money as `€12.50`. The pictures are produced by
 `npm run screenshots`, which creates its own demo account and captures all four
@@ -111,9 +135,9 @@ quality result is claimed here. Details:
 
 ```bash
 npm run check        # invariants: spec hash, no float money, testids, e2e discipline, coverage gates
-npm run test:api     # 128 requests, 475 assertions
+npm run test:api     # 171 requests, 621 assertions
 npm run test:python  # 16 isolated Python/httpx API scenarios; writes JUnit XML
-npm run test:e2e     # 64 scenarios across a phone and a desktop viewport
+npm run test:e2e     # 69 scenarios across a phone and a desktop viewport
 npm run test:race    # two server processes, one database, concurrent writes
 npm test             # check, Newman, pytest, Playwright and race checks
 npm run test:load    # k6; needs k6 installed separately
@@ -143,7 +167,9 @@ catalogue does not list fails before the test runs.
 |---|---|
 | [`qa/docs/test-design.md`](qa/docs/test-design.md) | How a change becomes a set of cases — nine steps, each with an example from this app |
 | [`qa/docs/test-plan.md`](qa/docs/test-plan.md) | Scope, entry and exit criteria, risks |
-| [`qa/docs/test-cases.md`](qa/docs/test-cases.md) | 163 cases with ids, priorities, results and a trace to a spec clause or a defect |
+| [`qa/docs/test-cases.md`](qa/docs/test-cases.md) | 183 cases with ids, priorities, results and a trace to a requirement, a spec clause or a defect |
+| [`qa/docs/analysis-monthly-limit.md`](qa/docs/analysis-monthly-limit.md) | Requirements, decision table, boundaries, traceability and change impact for the monthly limit |
+| [`qa/docs/uat-monthly-limit.md`](qa/docs/uat-monthly-limit.md) · [`test-report-monthly-limit.md`](qa/docs/test-report-monthly-limit.md) | The acceptance script and the result of running it |
 | [`qa/docs/defects/`](qa/docs/defects/) | Full defect reports from the test layers |
 | [`qa/api/`](qa/api/) | Postman collection; the environment holds two variables and no literals |
 | [`qa/python/`](qa/python/) | pytest + httpx scenarios; a real Express child, temporary SQLite, health check and JUnit XML |
