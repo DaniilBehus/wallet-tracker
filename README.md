@@ -153,7 +153,7 @@ One offline test is skipped on hosts where file symlinks require extra privilege
 
 ## Architecture
 
-**Node.js 22+ · Express · SQLite · JWT · bcrypt**  
+**Node.js 22+ · Express · SQLite · JWT · bcrypt**
 Plain HTML, CSS and JavaScript in the browser. Four runtime dependencies, no frontend build step.
 
 | Decision | Why it matters |
