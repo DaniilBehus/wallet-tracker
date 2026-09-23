@@ -194,6 +194,21 @@ the month total, `L` the limit.
 | TC-API-104 | A limit belongs to one account | Second account sets its own limit | Each account reads its own; neither sees the other's | REQ-ML-08 | P1 | PASS |
 | TC-API-105 | No token | `GET` and `PUT /settings` with no header | 401 both | REQ-ML-08 | P1 | PASS |
 
+## Database · The limit column migration · `qa/db/migration.test.js`
+
+The one upgrade this feature performs on a database that already exists. Every
+other layer starts from an empty file, where `CREATE TABLE` already carries the
+column and the guarded `ALTER TABLE` in `src/db.js` never runs — so these three
+cases are the only ones that exercise the code that upgrades a database
+somebody is already using. Each case builds its own temporary database in the
+pre-limit shape and deletes it afterwards; none of them touches `data/`.
+
+| ID | Case | Steps | Expected | Traces to | Pri | Status |
+|---|---|---|---|---|---|---|
+| TC-DB-001 | An old database gains the column | Build a database with the pre-limit `settings` table, one account and a stored income; boot the database layer against it | The column exists and is nullable; the income is unchanged; the limit reads `null` — "not set", not zero | RISK-ML-5, A3, change impact §6 | P1 | PASS |
+| TC-DB-002 | Booting again is safe | Boot, store a limit, boot twice more, clear the limit | The column is added once; the boot succeeds each time; the stored limit survives the next boot; clearing restores `null` | RISK-ML-5, REQ-ML-02 | P1 | PASS |
+| TC-DB-003 | Both paths end at the same table | Compare `table_info(settings)` of an upgraded database with one created fresh by the current schema | Identical columns, types and nullability | RISK-ML-5 | P2 | PASS |
+
 ## Python API scenarios · `qa/python/test_api.py`
 
 This is a complementary layer, not a second copy of the Newman collection
@@ -358,10 +373,11 @@ fail when its defect is put back — see S05.
 | | Cases | Runs | Status |
 |---|---|---|---|
 | API — 171 requests, 621 assertions | 105 | 171 | all PASS |
+| Database — the one in-place migration, node:test | 3 | 3 | all PASS |
 | Python — 6 documented scenarios, 13 pytest items | 6 | 13 | all PASS |
 | Load — 3 scenarios, thresholds enforced | 3 | 3 | all PASS |
 | End-to-end — 69 tests × 2 viewports | 69 | 138 | all PASS; local browser run requires a host that permits Chromium |
-| **Total** | **183** | **325** | **documented cases PASS; local browser execution environment noted above** |
+| **Total** | **186** | **328** | **documented cases PASS; local browser execution environment noted above** |
 
 **The counts are checked against the suites, not typed from memory.** An earlier
 count claimed 138 cases while only 135 rows existed; three cases (TC-E2E-039…041)
@@ -380,7 +396,14 @@ writing tests by hand had skipped.
 The twenty monthly-limit cases (TC-API-091…105, TC-E2E-065…069) were written the
 other way round: from the requirements and the decision table in
 [`analysis-monthly-limit.md`](analysis-monthly-limit.md), before the feature
-existed, and each one failed before it passed.
+existed, and each one failed before it passed — locally, in the session that
+wrote them; that run is not reproducible from the history, and
+[`test-report-monthly-limit.md`](test-report-monthly-limit.md) §2 says so.
+
+TC-DB-001…003 came later, from a gap rather than from a requirement: the guarded
+`ALTER TABLE` that upgrades a database somebody is already using was the one
+line of this feature no layer executed. Disabling that guard fails all three,
+which is evidence anyone can reproduce.
 
 API cases number 73 against 75 requests because TC-API-068 loops: one request,
 run once per allowed attempt.

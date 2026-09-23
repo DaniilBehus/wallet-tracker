@@ -13,11 +13,12 @@ offline-evaluated AI feature that turns a sentence into an expense draft.
 | Self-check gate | 8 invariant and coverage gates, `npm run check` |
 | API contract | 171 requests · 621 assertions · Postman + newman |
 | API scenarios | 16 pytest scenarios · Python + httpx · JUnit XML |
+| Database migration | 3 node:test cases for the one in-place column upgrade, on temporary databases |
 | End-to-end | 69 scenarios × 2 viewports (phone and desktop) · Playwright |
 | Concurrency | race checks with two real server processes on one SQLite file |
 | Load | k6 · 50 concurrent writers, a burst of failed logins, and the logins the limiter allows |
 | AI expense entry | 237 offline tests, 50 browser runs, a 116-row evaluation corpus — no real AI call needed |
-| CI | GitHub Actions: secret scan, API, Python, Playwright and the offline AI suite |
+| CI | GitHub Actions: secret scan, the migration test, API, Python, Playwright and the offline AI suite |
 | Test analysis | Requirements, decision table and traceability for one feature — [`qa/docs/analysis-monthly-limit.md`](qa/docs/analysis-monthly-limit.md) |
 | Defects | Reproduction, root cause, fix and regression check — [`log/BUGS.md`](log/BUGS.md) |
 
@@ -33,16 +34,21 @@ the order it was actually done. Each link is a page, not a claim:
 | 3 · Boundaries, states, risks | [§4](qa/docs/analysis-monthly-limit.md) | `L−1 / L / L+1`, the ceiling, `null` versus `0`, the state diagram, negative cases and six risks with mitigations |
 | 4 · Traceability | [§5](qa/docs/analysis-monthly-limit.md) | Requirement → test condition → case id → the automated test that runs it → result |
 | 5 · Change impact | [§6](qa/docs/analysis-monthly-limit.md) | Which API fields, screens, data and existing tests the change touches, and what it does not |
-| 6 · Cases | [`test-cases.md`](qa/docs/test-cases.md) | TC-API-091…105 and TC-E2E-065…069 in the same register as every other case |
-| 7 · Automated tests | [API folder 12](qa/api/wallet.postman_collection.json) · [browser cases](qa/e2e/month.spec.js) | Each request and each test names the case id it runs |
-| 8 · UAT | [`uat-monthly-limit.md`](qa/docs/uat-monthly-limit.md) | Eleven steps a non-technical reviewer can run and sign |
+| 6 · Cases | [`test-cases.md`](qa/docs/test-cases.md) | TC-API-091…105, TC-E2E-065…069 and TC-DB-001…003 in the same register as every other case |
+| 7 · Automated tests | [API folder 12](qa/api/wallet.postman_collection.json) · [browser cases](qa/e2e/month.spec.js) · [migration](qa/db/migration.test.js) | Each request and each test names the case id it runs |
+| 8 · UAT | [`uat-monthly-limit.md`](qa/docs/uat-monthly-limit.md) | Eleven steps a non-technical reviewer can run and sign, and the recorded rehearsal of them — the owner's sign-off is still open |
 | 9 · Report | [`test-report-monthly-limit.md`](qa/docs/test-report-monthly-limit.md) | What failed before the code existed, the defect the tests found, the results, and the known limitations |
 
 The tests were written from the requirements **before** the feature existed:
-92 API assertions and 10 browser runs failed first. One defect came out of it —
-on a phone-width screen the new state line landed inside a flex row and the
-donut covered the limit control — found by two browser cases that passed on
-desktop and failed on mobile.
+92 API assertions and 10 browser runs failed first. That is a local observation —
+the tests and the code landed in one commit, so nobody else can replay it — and
+the report says so. The part anyone can reproduce in a minute is the migration
+test: disable the column guard in `src/db.js` and its three cases fail; restore
+it and they pass.
+
+One defect came out of the pass — on a phone-width screen the new state line
+landed inside a flex row and the donut covered the limit control — found by two
+browser cases that passed on desktop and failed on mobile.
 
 ## The four screens
 
@@ -136,6 +142,7 @@ quality result is claimed here. Details:
 ```bash
 npm run check        # invariants: spec hash, no float money, testids, e2e discipline, coverage gates
 npm run test:api     # 171 requests, 621 assertions
+npm run test:db      # the in-place database upgrade, on temporary files it makes itself
 npm run test:python  # 16 isolated Python/httpx API scenarios; writes JUnit XML
 npm run test:e2e     # 69 scenarios across a phone and a desktop viewport
 npm run test:race    # two server processes, one database, concurrent writes
@@ -167,9 +174,9 @@ catalogue does not list fails before the test runs.
 |---|---|
 | [`qa/docs/test-design.md`](qa/docs/test-design.md) | How a change becomes a set of cases — nine steps, each with an example from this app |
 | [`qa/docs/test-plan.md`](qa/docs/test-plan.md) | Scope, entry and exit criteria, risks |
-| [`qa/docs/test-cases.md`](qa/docs/test-cases.md) | 183 cases with ids, priorities, results and a trace to a requirement, a spec clause or a defect |
+| [`qa/docs/test-cases.md`](qa/docs/test-cases.md) | 186 cases with ids, priorities, results and a trace to a requirement, a spec clause or a defect |
 | [`qa/docs/analysis-monthly-limit.md`](qa/docs/analysis-monthly-limit.md) | Requirements, decision table, boundaries, traceability and change impact for the monthly limit |
-| [`qa/docs/uat-monthly-limit.md`](qa/docs/uat-monthly-limit.md) · [`test-report-monthly-limit.md`](qa/docs/test-report-monthly-limit.md) | The acceptance script and the result of running it |
+| [`qa/docs/uat-monthly-limit.md`](qa/docs/uat-monthly-limit.md) · [`test-report-monthly-limit.md`](qa/docs/test-report-monthly-limit.md) | The acceptance script with a recorded rehearsal of all eleven steps (not a signed acceptance), and the test report: local results, what CI has not yet seen, and the known limitations |
 | [`qa/docs/defects/`](qa/docs/defects/) | Full defect reports from the test layers |
 | [`qa/api/`](qa/api/) | Postman collection; the environment holds two variables and no literals |
 | [`qa/python/`](qa/python/) | pytest + httpx scenarios; a real Express child, temporary SQLite, health check and JUnit XML |
