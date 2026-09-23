@@ -1,5 +1,7 @@
 # BUG-005 · One end-to-end test times out on runs that are ~3× slower than normal
 
+[← Back to README](../../../README.md#qa-evidence) · [Next: browser suite →](../../../qa/e2e/)
+
 ![severity](https://img.shields.io/badge/severity-Low-lightgrey?style=flat-square)
 ![state](https://img.shields.io/badge/state-OPEN-red?style=flat-square)
 

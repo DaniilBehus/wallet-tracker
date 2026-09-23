@@ -1,5 +1,7 @@
 # LIMIT-001 · Every request queues behind database work — 23× slower under write load
 
+[← Back to README](../../../README.md#qa-evidence) · [Next: write-load test →](../../../qa/load/expense-write.js)
+
 ![type](https://img.shields.io/badge/type-limit-blueviolet?style=flat-square)
 ![state](https://img.shields.io/badge/state-ACCEPTED-blue?style=flat-square)
 

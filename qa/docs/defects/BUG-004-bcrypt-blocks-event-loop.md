@@ -1,5 +1,7 @@
 # BUG-004 · Twenty wrong passwords a second make the app unusable for everyone
 
+[← Back to README](../../../README.md#qa-evidence) · [Next: load test source →](../../../qa/load/auth-burst.js)
+
 ![severity](https://img.shields.io/badge/severity-High-orange?style=flat-square)
 ![state](https://img.shields.io/badge/state-CLOSED-brightgreen?style=flat-square)
 
