@@ -71,6 +71,21 @@ whileLocked('schema', () =>
   db.exec(fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8'))
 );
 
+// One additive column, guarded by a look at the table rather than by a version
+// number: CREATE TABLE IF NOT EXISTS leaves an existing settings row untouched,
+// so a database made before the monthly spending limit would never gain the
+// column. SQLite has no ADD COLUMN IF NOT EXISTS, so the guard is explicit.
+// Additive and nullable, so every existing row reads as "no limit set".
+whileLocked('settings.monthly_limit_cents', () => {
+  const columns = db.pragma('table_info(settings)').map((column) => column.name);
+  if (!columns.includes('monthly_limit_cents')) {
+    db.exec(
+      'ALTER TABLE settings ADD COLUMN monthly_limit_cents INTEGER'
+      + ' CHECK (monthly_limit_cents IS NULL OR monthly_limit_cents >= 0)'
+    );
+  }
+});
+
 // Categories are user-owned (spec §3), so the starter set is seeded per user at
 // registration rather than globally.
 //

@@ -328,6 +328,8 @@ button:focus-visible {
   flex-direction: column;
   gap: 12px;
 }
+.limit-status { margin: 10px 0 0; font-size: 13px; font-weight: 700; }
+.income-form__hint { margin: -4px 0 10px; font-size: 12px; color: var(--muted); }
 .income-form__actions { display: flex; gap: 8px; }
 .income-form__actions .btn { flex: 1; }
 
@@ -908,6 +910,11 @@ button:focus-visible {
 .screen__head--month .figure dd { color: #fff; font-size: 23px; }
 .screen__head--month .figure__edit { color: #fff; border-bottom-color: rgba(255, 255, 255, 0.45); }
 .screen__head--month .figure--over { color: #ffd4ca; }
+.screen__head--month .limit-status { color: rgba(255, 255, 255, 0.85); }
+/* After the line above, or the same specificity would leave "over limit"
+   white on the dark header — the one state that must stand out. */
+.screen__head--month .limit-status.figure--over { color: #ffd4ca; }
+.screen__head--month .income-form__hint { color: rgba(255, 255, 255, 0.7); }
 .screen__head--month .income-form { margin-top: 18px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.2); }
 .screen__head--month .income-form .field__label { color: rgba(255, 255, 255, 0.76); font-weight: 700; }
 .screen__head--month .income-form input { background: rgba(255, 255, 255, 0.96); }

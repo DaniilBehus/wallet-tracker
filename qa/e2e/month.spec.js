@@ -1,6 +1,6 @@
 'use strict';
 
-const { test, expect, eurPattern } = require('./fixtures/wallet');
+const { test, expect, eur, eurPattern, eurWithin } = require('./fixtures/wallet');
 const { testCase } = require('./case-link');
 const { MonthPage } = require('./pages/month.page');
 
@@ -92,5 +92,82 @@ test.describe('This month', () => {
 
     await expect(month.total).toHaveText(eurPattern(0));
     await expect(month.rows).toHaveCount(0);
+  });
+});
+/**
+ * The monthly spending limit. Requirements, decision table, boundaries and the
+ * traceability matrix: qa/docs/analysis-monthly-limit.md. These five cases are
+ * the screen half of that matrix; the decision table itself is exercised
+ * against the API in collection folder 12.
+ */
+test.describe('Monthly spending limit', () => {
+  test('the screen states the limit and how much of it is left', testCase('TC-E2E-065'), async ({ signedIn, api }) => {
+    const month = new MonthPage(signedIn);
+    const [groceries] = await api.categories();
+    await api.setSettings({ monthly_income_cents: 150000, monthly_limit_cents: 20000 });
+    await api.addExpense({ amount_cents: 5000, category_id: groceries.id });
+
+    await month.goToMonth();
+
+    await expect(month.limit).toHaveText(eurPattern(20000));
+    await expect(month.limitStatus).toContainText('Within limit');
+    await expect(month.limitStatus).toContainText(eurWithin(15000));
+  });
+
+  test('over the limit is said in words and marked, not only coloured', testCase('TC-E2E-066'), async ({ signedIn, api }) => {
+    const month = new MonthPage(signedIn);
+    const [groceries] = await api.categories();
+    await api.setSettings({ monthly_income_cents: 150000, monthly_limit_cents: 10000 });
+    await api.addExpense({ amount_cents: 12500, category_id: groceries.id });
+
+    await month.goToMonth();
+
+    await expect(month.limitStatus).toContainText('Over limit');
+    await expect(month.limitStatus).toContainText(eurWithin(2500));
+    // The class carries the same fact for anyone styling it; the words above
+    // are what a person reads (REQ-ML-09, RISK-ML-6).
+    await expect(month.limitStatus).toHaveClass(/figure--over/);
+  });
+
+  test('setting a limit on the screen updates the state without a reload', testCase('TC-E2E-067'), async ({ signedIn, api }) => {
+    const month = new MonthPage(signedIn);
+    const [groceries] = await api.categories();
+    await api.addExpense({ amount_cents: 5000, category_id: groceries.id });
+
+    await month.goToMonth();
+    await expect(month.limit).toHaveText('Set limit');
+
+    await month.setLimit('60.00');
+
+    await expect(month.limit).toHaveText(eurPattern(6000));
+    await expect(month.limitStatus).toContainText('Within limit');
+    await expect(month.limitStatus).toContainText(eurWithin(1000));
+    expect((await api.settings()).monthly_limit_cents).toBe(6000);
+  });
+
+  test('clearing the field removes the limit and the state line', testCase('TC-E2E-068'), async ({ signedIn, api }) => {
+    const month = new MonthPage(signedIn);
+    await api.setSettings({ monthly_income_cents: 150000, monthly_limit_cents: 20000 });
+
+    await month.goToMonth();
+    await expect(month.limit).toHaveText(eurPattern(20000));
+
+    await month.setLimit('');
+
+    await expect(month.limit).toHaveText('Set limit');
+    await expect(month.limitStatus).toBeHidden();
+    expect((await api.settings()).monthly_limit_cents).toBeNull();
+  });
+
+  test('a figure that is not a number is refused and changes nothing', testCase('TC-E2E-069'), async ({ signedIn, api }) => {
+    const month = new MonthPage(signedIn);
+    await api.setSettings({ monthly_income_cents: 150000, monthly_limit_cents: 20000 });
+
+    await month.goToMonth();
+    await month.setLimit('not a number');
+
+    await expect(month.toastError).toBeVisible();
+    await expect(month.limit).toHaveText(eurPattern(20000));
+    expect((await api.settings()).monthly_limit_cents).toBe(20000);
   });
 });

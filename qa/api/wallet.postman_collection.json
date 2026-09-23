@@ -103,8 +103,13 @@
           "            properties: { token: { type: 'string', pattern: '^[\\\\w-]+\\\\.[\\\\w-]+\\\\.[\\\\w-]+$' } }",
           "        },",
           "        settings: {",
-          "            type: 'object', required: ['monthly_income_cents'], additionalProperties: false,",
-          "            properties: { monthly_income_cents: { type: 'integer', minimum: 0 } }",
+          "            type: 'object', required: ['monthly_income_cents', 'monthly_limit_cents'], additionalProperties: false,",
+          "            properties: {",
+          "                monthly_income_cents: { type: 'integer', minimum: 0 },",
+          "                // null is \"no limit set\", which is a different state from 0",
+          "                // (\"nothing may be spent\"). See qa/docs/analysis-monthly-limit.md A3.",
+          "                monthly_limit_cents: { type: ['integer', 'null'], minimum: 0 }",
+          "            }",
           "        },",
           "        category: category,",
           "        categoryList: { type: 'array', items: category },",
@@ -127,7 +132,9 @@
           "            }",
           "        },",
           "        summary: {",
-          "            type: 'object', required: ['month', 'total_cents', 'income_cents', 'remaining_cents', 'by_category'], additionalProperties: false,",
+          "            type: 'object',",
+          "            required: ['month', 'total_cents', 'income_cents', 'remaining_cents', 'limit_cents', 'limit_status', 'limit_remaining_cents', 'by_category'],",
+          "            additionalProperties: false,",
           "            properties: {",
           "                month: { type: 'string', pattern: '^\\\\d{4}-\\\\d{2}$' },",
           "                total_cents: { type: 'integer', minimum: 0 },",
@@ -135,6 +142,12 @@
           "                // May be negative: spending more than you earned is a fact the",
           "                // API reports rather than clamps (D-021).",
           "                remaining_cents: { type: 'integer' },",
+          "                // The monthly spending limit and the state it produces",
+          "                // (qa/docs/analysis-monthly-limit.md §3). Both are null when no",
+          "                // limit is set; limit_remaining_cents goes negative once exceeded.",
+          "                limit_cents: { type: ['integer', 'null'], minimum: 0 },",
+          "                limit_status: { type: 'string', enum: ['not_set', 'within', 'reached', 'exceeded'] },",
+          "                limit_remaining_cents: { type: ['integer', 'null'] },",
           "                by_category: {",
           "                    type: 'array',",
           "                    items: {",
@@ -5095,6 +5108,1886 @@
               "raw": "{\n  \"amount_cents\": 1,\n  \"note\": \"{{bigNote}}\"\n}"
             }
           }
+        }
+      ]
+    },
+    {
+      "name": "12 · Monthly spending limit",
+      "description": "Requirements, decision table and boundaries: qa/docs/analysis-monthly-limit.md. Each request names the case it runs. The decision-table rules run on the second account, whose month is empty, so every total here is exact.",
+      "item": [
+        {
+          "name": "TC-API-091 · PUT /settings sets a monthly limit",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 150000,\n  \"monthly_limit_cents\": 12000\n}"
+            },
+            "description": "REQ-ML-01. The limit is stored in whole cents beside the income."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('the stored limit is 12000', function () {",
+                  "    pm.expect(pm.response.json().monthly_limit_cents).to.eql(12000);",
+                  "});",
+                  "pm.test('the income is untouched', function () {",
+                  "    pm.expect(pm.response.json().monthly_income_cents).to.eql(150000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-091 · GET /settings returns the stored limit",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('the stored limit is 12000', function () {",
+                  "    pm.expect(pm.response.json().monthly_limit_cents).to.eql(12000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-092 · PUT /settings with null clears the limit",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 150000,\n  \"monthly_limit_cents\": null\n}"
+            },
+            "description": "REQ-ML-02. Explicit null is 'no limit', which is not the same as 0."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('the stored limit is null', function () {",
+                  "    pm.expect(pm.response.json().monthly_limit_cents).to.eql(null);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-092 · GET /settings after clearing reports null",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('the stored limit is null', function () {",
+                  "    pm.expect(pm.response.json().monthly_limit_cents).to.eql(null);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-093 · arrange: set the limit to 9900",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 150000,\n  \"monthly_limit_cents\": 9900\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('the stored limit is 9900', function () {",
+                  "    pm.expect(pm.response.json().monthly_limit_cents).to.eql(9900);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-093 · PUT /settings without the field leaves the limit alone",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 150000\n}"
+            },
+            "description": "REQ-ML-03. Omission means unchanged, not cleared."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('the omitted limit is 9900', function () {",
+                  "    pm.expect(pm.response.json().monthly_limit_cents).to.eql(9900);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-094 · GET /summary carries the limit, its state and what is left",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            },
+            "description": "REQ-ML-04: the summary reports the limit, the state and what is left, for whatever this account has already spent."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const s = pm.response.json();",
+                  "pm.collectionVariables.set('mlTotalA', s.total_cents);",
+                  "pm.test('the limit is reported', function () {",
+                  "    pm.expect(s.limit_cents).to.eql(9900);",
+                  "});",
+                  "pm.test('what is left is the limit minus the month total, to the cent', function () {",
+                  "    pm.expect(s.limit_remaining_cents).to.eql(9900 - s.total_cents);",
+                  "});",
+                  "pm.test('the state follows the decision table', function () {",
+                  "    const expected = s.total_cents < 9900 ? 'within' : (s.total_cents === 9900 ? 'reached' : 'exceeded');",
+                  "    pm.expect(s.limit_status).to.eql(expected);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-102 · a negative limit is refused",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 150000,\n  \"monthly_limit_cents\": -1\n}"
+            },
+            "description": "REQ-ML-07."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-102 · a fractional limit is refused",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 150000,\n  \"monthly_limit_cents\": 12.5\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-102 · a limit sent as a string is refused",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 150000,\n  \"monthly_limit_cents\": \"12000\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-102 · a boolean limit is refused",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 150000,\n  \"monthly_limit_cents\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-102 · one cent above the ceiling is refused",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 150000,\n  \"monthly_limit_cents\": 100000001\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-102 · five refusals changed nothing",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('the limit from before the refusals is 9900', function () {",
+                  "    pm.expect(pm.response.json().monthly_limit_cents).to.eql(9900);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-103 · the ceiling exactly is accepted",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 150000,\n  \"monthly_limit_cents\": {{ceiling}}\n}"
+            },
+            "description": "REQ-ML-07: the same one-million-euro ceiling as amounts and income."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('the ceiling is stored exactly', function () {",
+                  "    pm.expect(pm.response.json().monthly_limit_cents).to.eql(Number(pm.collectionVariables.get('ceiling')));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-105 · GET /settings without a token is refused",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "REQ-ML-08."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(401, 'UNAUTHORIZED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-105 · PUT /settings without a token is refused",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 150000,\n  \"monthly_limit_cents\": 12000\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(401, 'UNAUTHORIZED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-095 · R1 no limit on an empty month is not_set",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Decision table R1. The second account's month is empty, so every total below is exact."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const s = pm.response.json();",
+                  "pm.test('an untouched account has no limit and no state', function () {",
+                  "    pm.expect(s.total_cents).to.eql(0);",
+                  "    pm.expect(s.limit_status).to.eql('not_set');",
+                  "    pm.expect(s.limit_cents).to.eql(null);",
+                  "    pm.expect(s.limit_remaining_cents).to.eql(null);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-096 · R3 arrange: a limit on an empty month",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 0,\n  \"monthly_limit_cents\": 5000\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('the stored limit is 5000', function () {",
+                  "    pm.expect(pm.response.json().monthly_limit_cents).to.eql(5000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-096 · R3 zero spending is within the limit",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Decision table R3: T = 0 < L."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const s = pm.response.json();",
+                  "pm.test('limit_status is within', function () {",
+                  "    pm.expect(s.limit_status).to.eql('within');",
+                  "});",
+                  "pm.test('what is left of the limit is exact', function () {",
+                  "    pm.expect(s.limit_remaining_cents).to.eql(5000);",
+                  "});",
+                  "pm.test('the month total is 0', function () {",
+                  "    pm.expect(s.total_cents).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-099 · R7 arrange: a zero limit on an empty month",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 0,\n  \"monthly_limit_cents\": 0\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('the stored limit is 0', function () {",
+                  "    pm.expect(pm.response.json().monthly_limit_cents).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-099 · R7 a zero limit with no spending is reached",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Decision table R7: T = L = 0. A zero limit is a limit, not an absent one (A3)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const s = pm.response.json();",
+                  "pm.test('limit_status is reached', function () {",
+                  "    pm.expect(s.limit_status).to.eql('reached');",
+                  "});",
+                  "pm.test('what is left of the limit is exact', function () {",
+                  "    pm.expect(s.limit_remaining_cents).to.eql(0);",
+                  "});",
+                  "pm.test('the month total is 0', function () {",
+                  "    pm.expect(s.total_cents).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-100 · arrange: the smallest limit above zero",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 0,\n  \"monthly_limit_cents\": 1\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('the stored limit is 1', function () {",
+                  "    pm.expect(pm.response.json().monthly_limit_cents).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-100 · one cent of limit on an empty month is within",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Boundary: L = 1, T = 0."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const s = pm.response.json();",
+                  "pm.test('limit_status is within', function () {",
+                  "    pm.expect(s.limit_status).to.eql('within');",
+                  "});",
+                  "pm.test('what is left of the limit is exact', function () {",
+                  "    pm.expect(s.limit_remaining_cents).to.eql(1);",
+                  "});",
+                  "pm.test('the month total is 0', function () {",
+                  "    pm.expect(s.total_cents).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-096 · arrange: spend exactly 2500 on the empty account",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 2500,\n  \"category_id\": {{catB}},\n  \"note\": \"limit boundary\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'transaction');",
+                  "pm.collectionVariables.set('mlTxB', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-096 · R4 arrange: a limit above that total",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 0,\n  \"monthly_limit_cents\": 3000\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-096 · R4 spending below the limit is within",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Decision table R4: 0 < T < L."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const s = pm.response.json();",
+                  "pm.test('limit_status is within', function () {",
+                  "    pm.expect(s.limit_status).to.eql('within');",
+                  "});",
+                  "pm.test('what is left of the limit is exact', function () {",
+                  "    pm.expect(s.limit_remaining_cents).to.eql(500);",
+                  "});",
+                  "pm.test('the month total is 2500', function () {",
+                  "    pm.expect(s.total_cents).to.eql(2500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-097 · R5 arrange: the limit is exactly the month total",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 0,\n  \"monthly_limit_cents\": 2500\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-097 · R5 exactly at the limit is reached, not exceeded",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Decision table R5 and assumption A4 - the boundary this feature is most likely to get wrong."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const s = pm.response.json();",
+                  "pm.test('limit_status is reached', function () {",
+                  "    pm.expect(s.limit_status).to.eql('reached');",
+                  "});",
+                  "pm.test('what is left of the limit is exact', function () {",
+                  "    pm.expect(s.limit_remaining_cents).to.eql(0);",
+                  "});",
+                  "pm.test('the month total is 2500', function () {",
+                  "    pm.expect(s.total_cents).to.eql(2500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-098 · R6 arrange: one cent below the month total",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 0,\n  \"monthly_limit_cents\": 2499\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-098 · R6 one cent over is exceeded and what is left is negative",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Decision table R6. One cent apart from R5, and a different answer."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const s = pm.response.json();",
+                  "pm.test('limit_status is exceeded', function () {",
+                  "    pm.expect(s.limit_status).to.eql('exceeded');",
+                  "});",
+                  "pm.test('what is left of the limit is exact', function () {",
+                  "    pm.expect(s.limit_remaining_cents).to.eql(-1);",
+                  "});",
+                  "pm.test('the month total is 2500', function () {",
+                  "    pm.expect(s.total_cents).to.eql(2500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-099 · R8 arrange: a zero limit while the month has spending",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 0,\n  \"monthly_limit_cents\": 0\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-099 · R8 a zero limit with spending is exceeded",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Decision table R8."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const s = pm.response.json();",
+                  "pm.test('limit_status is exceeded', function () {",
+                  "    pm.expect(s.limit_status).to.eql('exceeded');",
+                  "});",
+                  "pm.test('what is left of the limit is exact', function () {",
+                  "    pm.expect(s.limit_remaining_cents).to.eql(-2500);",
+                  "});",
+                  "pm.test('the month total is 2500', function () {",
+                  "    pm.expect(s.total_cents).to.eql(2500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-101 · arrange: a limit already exceeded",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 0,\n  \"monthly_limit_cents\": 1000\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-101 · an expense above the limit is still created",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_cents\": 1000,\n  \"category_id\": {{catB}},\n  \"note\": \"over the limit on purpose\"\n}"
+            },
+            "description": "REQ-ML-06, assumption A1: the limit is a signal, never a block."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'transaction');",
+                  "pm.collectionVariables.set('mlTxB2', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-101 · the month total moved and the state followed",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const s = pm.response.json();",
+                  "pm.test('limit_status is exceeded', function () {",
+                  "    pm.expect(s.limit_status).to.eql('exceeded');",
+                  "});",
+                  "pm.test('what is left of the limit is exact', function () {",
+                  "    pm.expect(s.limit_remaining_cents).to.eql(-2500);",
+                  "});",
+                  "pm.test('the month total is 3500', function () {",
+                  "    pm.expect(s.total_cents).to.eql(3500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-095 · R2 arrange: clear the limit while the month has spending",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 0,\n  \"monthly_limit_cents\": null\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('the stored limit is null', function () {",
+                  "    pm.expect(pm.response.json().monthly_limit_cents).to.eql(null);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-095 · R2 no limit on a month with spending is not_set",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Decision table R2, and REQ-ML-06: the limit changes nothing else."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const s = pm.response.json();",
+                  "pm.test('no limit means no judgement', function () {",
+                  "    pm.expect(s.limit_status).to.eql('not_set');",
+                  "    pm.expect(s.limit_cents).to.eql(null);",
+                  "    pm.expect(s.limit_remaining_cents).to.eql(null);",
+                  "});",
+                  "pm.test('the month total is unaffected by the limit', function () {",
+                  "    pm.expect(s.total_cents).to.eql(3500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-104 · the other account's limit stays its own",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "description": "REQ-ML-08. The second account has been setting and clearing limits throughout; none of it reached this one."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('the first account still has the ceiling it set, not the second account\\'s figures', function () {",
+                  "    pm.expect(pm.response.json().monthly_limit_cents).to.eql(Number(pm.collectionVariables.get('ceiling')));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-104 · and the first account's spending is still its own",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "pm.test('the month total did not move while the other account spent', function () {",
+                  "    pm.expect(pm.response.json().total_cents).to.eql(Number(pm.collectionVariables.get('mlTotalA')));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Clean up: remove the second account's boundary expense",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/{{mlTxB}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "{{mlTxB}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectStatus(204);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Clean up: remove the second account's over-the-limit expense",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/{{mlTxB2}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "{{mlTxB2}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectStatus(204);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Restore: the second account has no limit and no income again",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 0,\n  \"monthly_limit_cents\": null\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('the stored limit is null', function () {",
+                  "    pm.expect(pm.response.json().monthly_limit_cents).to.eql(null);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Restore: the first account keeps its income and no limit",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_income_cents\": 150000,\n  \"monthly_limit_cents\": null\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "pm.test('the stored limit is null', function () {",
+                  "    pm.expect(pm.response.json().monthly_limit_cents).to.eql(null);",
+                  "});",
+                  "pm.test('the income survived every limit change', function () {",
+                  "    pm.expect(pm.response.json().monthly_income_cents).to.eql(150000);",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },

@@ -116,7 +116,9 @@ async function seed() {
   await api('/api/settings', {
     method: 'PUT',
     token,
-    body: { monthly_income_cents: 150000 },
+    // A limit a little above the month below, so the picture shows the state
+    // line rather than an empty "Set limit" control.
+    body: { monthly_income_cents: 150000, monthly_limit_cents: 80000 },
   });
 
   // A month shaped like a real one: rent dominates, then food, then the rest.

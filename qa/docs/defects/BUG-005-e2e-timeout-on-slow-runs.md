@@ -12,7 +12,7 @@
 | **Component** | unknown — that is the point of this entry |
 | **Affects** | `qa/e2e/schedules.spec.js › the 31st is accepted and explains itself` |
 | **Environment** | Chromium, four Playwright workers, local server |
-| **Fixed in** | Fixed. The original commit is not part of this public snapshot. |
+| **Fixed in** | Not fixed. The cause was never characterised; see below. |
 ## Summary
 
 The suite normally finishes in about 11 seconds. Twice it has taken 36–39
