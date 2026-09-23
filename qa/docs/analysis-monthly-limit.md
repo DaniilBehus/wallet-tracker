@@ -129,14 +129,17 @@ month total already counts it.
 | RISK-ML-2 | Money handled as a float, so 12000 vs 119.999… | Integer cents end to end; the `check.js` no-float gate covers `src/`. |
 | RISK-ML-3 | The status is computed twice — server and browser — and the two drift. | The server computes it; the browser only renders what it is given. |
 | RISK-ML-4 | `null` (no limit) is coerced to `0`, so "no limit" silently becomes "no spending allowed". | A3; explicit `null` handling with its own tests (R1/R2 vs R7/R8). |
-| RISK-ML-5 | The new field breaks existing settings and summary consumers. | Additive fields only; the existing settings and summary cases stay unchanged and must still pass. |
+| RISK-ML-5 | The new field breaks existing settings and summary consumers, or a database made before the column cannot be read. | Additive fields only; the existing settings and summary cases stay unchanged and must still pass; the in-place upgrade of an older database has three cases of its own (TC-DB-001…003), because no other layer ever runs it. |
 | RISK-ML-6 | Colour alone communicates "over limit" (accessibility). | AC-09.3: text first, class second. |
 
 ## 5. Traceability
 
 Requirement → test condition → case id → the automated test that runs it. The
-result column is filled from the recorded run in
-[`test-report-monthly-limit.md`](test-report-monthly-limit.md).
+result column is filled from the recorded **local** run in
+[`test-report-monthly-limit.md`](test-report-monthly-limit.md); that report also
+states which of these have and have not been through CI. The last three rows
+trace to a risk rather than to a requirement: RISK-ML-5 is about the databases
+that already exist, which no requirement describes.
 
 | Requirement | Test condition | Case | Automated test | Result |
 |---|---|---|---|---|
@@ -160,18 +163,21 @@ result column is filled from the recorded run in
 | REQ-ML-10 | Setting from the screen updates the state live | TC-E2E-067 | `qa/e2e/month.spec.js` | PASS |
 | REQ-ML-10 | Clearing from the screen removes the limit | TC-E2E-068 | `qa/e2e/month.spec.js` | PASS |
 | REQ-ML-10 | An invalid figure is refused without changing the stored limit | TC-E2E-069 | `qa/e2e/month.spec.js` | PASS |
+| RISK-ML-5 | An existing database gains the column and keeps its settings | TC-DB-001 | `qa/db/migration.test.js` | PASS |
+| RISK-ML-5 | Booting the upgraded database again is safe | TC-DB-002 | `qa/db/migration.test.js` | PASS |
+| RISK-ML-5 | Upgrade and fresh create end at the same table | TC-DB-003 | `qa/db/migration.test.js` | PASS |
 
 ## 6. Change-impact analysis
 
 | Area | Change | Risk to what exists |
 |---|---|---|
-| Database | `settings.monthly_limit_cents`, nullable, added by a guarded `ALTER TABLE` on boot; existing rows keep `NULL` = no limit | Additive; an older database upgrades in place on the next start |
+| Database | `settings.monthly_limit_cents`, nullable, added by a guarded `ALTER TABLE` on boot; existing rows keep `NULL` = no limit | Additive; an older database upgrades in place on the next start — the only claim here that needed a test of its own, because every other layer starts from an empty file (TC-DB-001…003) |
 | API `GET /api/settings` | new field `monthly_limit_cents` | Additive; existing assertions read `monthly_income_cents` and still pass |
 | API `PUT /api/settings` | optional field; `null` clears, omission keeps | The income contract is untouched, including its 400s |
 | API `GET /api/summary` | new fields `limit_cents`, `limit_status`, `limit_remaining_cents` | Additive; `total_cents`, `income_cents`, `remaining_cents` and `by_category` unchanged |
-| Server | `limitStatus()` in `src/settings.js`; the summary route calls it | One place computes the judgement |
+| Server | `limitState()` in `src/settings.js`; the summary route calls it | One place computes the judgement |
 | Screen *This month* | limit row, editor and status line; new test ids `limit-value`, `limit-edit`, `limit-input`, `limit-save`, `limit-cancel`, `limit-status` | Income, donut, bars and the expense list are untouched |
 | Page object | `qa/e2e/pages/month.page.js` gains the same ids | Required by the coverage gate: every test id in `public/` is addressed from a page object |
-| Tests | new Postman folder 12, new cases in `qa/e2e/month.spec.js`, new rows in `qa/docs/test-cases.md` | Existing cases are unchanged and must stay green |
+| Tests | new Postman folder 12, new cases in `qa/e2e/month.spec.js`, a new `qa/db/migration.test.js` for the upgrade, new rows in `qa/docs/test-cases.md` | Existing cases are unchanged and must stay green; `npm test` and the CI API job gain one fast step |
 | Gates | `check.js` C3 (ids), C6 (routes covered), C7 (ids in page objects), C8 (statuses asserted) | No new route and no new status code, so C6 and C8 keep their counts |
 | Not touched | AI expense entry, schedules, loans, categories, auth, rate limiting, load and race layers | — |

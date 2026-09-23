@@ -52,6 +52,11 @@ jobs:
       - name: Self-check gate
         run: npm run check
 
+      # The in-place database upgrade, on temporary files it makes itself. No
+      # server and no secret, so it runs before anything is started.
+      - name: Database migration test
+        run: npm run test:db
+
       # A throwaway secret per run; nothing signed with it outlives the job.
       - name: Generate a throwaway secret
         run: echo "JWT_SECRET=$(openssl rand -hex 48)" >> "$GITHUB_ENV"
