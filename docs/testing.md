@@ -1,6 +1,6 @@
 # Running the tests
 
-[← Back to Wallet Tracker](../README.md#qa-evidence)
+[← Back to README](../README.md#qa-evidence) · [Next: test plan →](../qa/docs/test-plan.md)
 
 Install the application dependencies with `npm ci` first. Use Node.js 22+, Python 3.12+ for pytest, and Chromium for Playwright. Install the browser with `npx playwright install chromium` (`--with-deps chromium` on Linux when system dependencies are needed). Set up Python using the commands below before running `npm test`. k6 is a separate installation.
 

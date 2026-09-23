@@ -1,5 +1,7 @@
 # BUG-010 · The API runner exits 0 when the server never starts, so CI called it green
 
+[← Back to README](../../../README.md#qa-evidence) · [Next: API runner →](../../../qa/api/run.js)
+
 ![severity](https://img.shields.io/badge/severity-Critical-critical?style=flat-square)
 ![state](https://img.shields.io/badge/state-CLOSED-brightgreen?style=flat-square)
 

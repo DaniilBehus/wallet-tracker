@@ -1,5 +1,7 @@
 # Monthly spending limit — test report
 
+[← Back to README](../../README.md#qa-evidence) · [Next: UAT script →](uat-monthly-limit.md)
+
 **Date:** 2026-09-23
 
 **Build under test.** The application code of commit `4ad444d`

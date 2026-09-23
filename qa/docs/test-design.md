@@ -1,5 +1,7 @@
 # Test design · WALLET
 
+[← Back to README](../../README.md#qa-evidence) · [Next: test cases →](test-cases.md)
+
 **How a change becomes a set of tests — the same way every time.**
 
 This is not a checklist of good intentions. It is nine steps that take a

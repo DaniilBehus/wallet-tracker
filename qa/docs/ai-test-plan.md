@@ -1,5 +1,7 @@
 # AI expense entry — test plan and case register
 
+[← Back to README](../../README.md#ai-expense-entry) · [Next: AI case study →](ai-case-study.md)
+
 Scope: the optional "Describe an expense" feature (`spec/ai-expense-entry.md`,
 D-033…D-040). Written in S23 alongside the implementation; label provenance of
 every case below is **AGENT_AUTHORED** until an independent review.

@@ -1,5 +1,7 @@
 # Wallet · AI expense entry — feature contract
 
+[← Back to README](../README.md#ai-expense-entry) · [Next: AI test plan →](../qa/docs/ai-test-plan.md)
+
 Status: ACTIVE since 2026-09-14.
 
 This file is normative for the feature. `spec/architecture.md` §§1, 4, 5 and 7
