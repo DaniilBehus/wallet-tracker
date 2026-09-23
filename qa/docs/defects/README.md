@@ -1,5 +1,7 @@
 # Defects found by the test layer
 
+[← Back to README](../../../README.md#qa-evidence) · [Next: a load-testing defect →](BUG-004-bcrypt-blocks-event-loop.md)
+
 Reports for defects **found by `qa/`** — the API collection, the end-to-end
 suite, the load smoke, the concurrency layer, or the CI gates. One file per
 defect, named after its id.

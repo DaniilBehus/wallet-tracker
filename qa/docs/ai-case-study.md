@@ -1,5 +1,7 @@
 # Case study — putting a language model next to money, and keeping it honest
 
+[← Back to README](../../README.md#qa-evidence) · [Next: evaluation method →](ai-evaluation.md)
+
 Wallet is a small phone-first expense tracker: a keypad, category tiles, Save.
 The project added an optional way in: type *"Учора витратив 18 євро на обід"* and get a
 form filled in for you — €18.00, Restaurants, yesterday, "обід" — which you

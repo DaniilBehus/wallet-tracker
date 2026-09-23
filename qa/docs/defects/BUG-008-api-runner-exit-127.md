@@ -1,5 +1,7 @@
 # BUG-008 · The API runner exits 127 on a green run, so the first CI build would be red
 
+[← Back to README](../../../README.md#qa-evidence) · [Next: API runner →](../../../qa/api/run.js)
+
 ![severity](https://img.shields.io/badge/severity-High-orange?style=flat-square)
 ![state](https://img.shields.io/badge/state-CLOSED-brightgreen?style=flat-square)
 

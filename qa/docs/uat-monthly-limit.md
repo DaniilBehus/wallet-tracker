@@ -1,5 +1,7 @@
 # Monthly spending limit — UAT script
 
+[← Back to README](../../README.md#qa-evidence) · [Next: defect investigations →](defects/README.md)
+
 Ten minutes, one person, a browser. No test tooling and no API client: this is
 the acceptance pass a non-technical reviewer can run and sign. Requirements and
 the decision table it checks: [`analysis-monthly-limit.md`](analysis-monthly-limit.md).

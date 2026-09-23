@@ -1,5 +1,7 @@
 # BUG-007 · A test script never ran, and the suite reported it as green
 
+[← Back to README](../../../README.md#qa-evidence) · [Next: API runner →](../../../qa/api/run.js)
+
 ![severity](https://img.shields.io/badge/severity-Medium-yellow?style=flat-square)
 ![state](https://img.shields.io/badge/state-CLOSED-brightgreen?style=flat-square)
 

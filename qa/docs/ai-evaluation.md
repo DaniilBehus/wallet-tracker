@@ -1,5 +1,7 @@
 # AI expense entry — evaluation
 
+[← Back to README](../../README.md#ai-expense-entry) · [Next: demo and modes →](../../docs/ai-feature.md)
+
 **Status on 2026-09-15:** fixture evaluation PASS · real-model evaluation **NOT RUN**.
 
 Nothing on this page measures how well any language model extracts expenses.

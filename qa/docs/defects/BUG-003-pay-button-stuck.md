@@ -1,5 +1,7 @@
 # BUG-003 · The pay button stays on its busy label after a refused payment
 
+[← Back to README](../../../README.md#qa-evidence) · [Next: browser regression tests →](../../../qa/e2e/upcoming.spec.js)
+
 ![severity](https://img.shields.io/badge/severity-Medium-yellow?style=flat-square)
 ![state](https://img.shields.io/badge/state-CLOSED-brightgreen?style=flat-square)
 

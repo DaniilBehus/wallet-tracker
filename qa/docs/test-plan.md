@@ -1,11 +1,16 @@
 # Test plan · WALLET
 
-**Version 1.1 · 2026-09-07 · covers releases built from `spec/architecture.md`
-(SHA-256 `233a027e…572ea`).**
+[← Back to README](../../README.md#qa-evidence) · [Next: test design →](test-design.md)
 
-The specification is the only source of requirements. Where this plan cites a
-rule it cites the section it comes from; anything not traceable to a section is
-not a requirement and is not tested.
+**Version 1.1 · originally written 2026-09-07; later extended for the monthly
+spending limit.** The current public architecture notes are in
+[`spec/architecture.md`](../../spec/architecture.md). Dated run results are
+recorded separately in the reports and CI.
+
+The [architecture notes](../../spec/architecture.md) and feature analyses,
+including the [monthly limit analysis](analysis-monthly-limit.md), define the
+documented requirements. Test conditions trace back to those sources or to a
+recorded defect.
 
 ---
 
