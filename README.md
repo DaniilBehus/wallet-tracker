@@ -25,11 +25,25 @@ A personal finance web app for expenses, monthly spending limits, recurring
 charges and loan instalments. The repository includes its test design, automated
 checks, recorded results and defect investigations.
 
+<details>
+<summary><strong>More screens: upcoming payments and schedules</strong></summary>
+
+<p align="center">
+  <a href="docs/screenshots/3-upcoming.png"><img src="docs/screenshots/3-upcoming.png" width="270" alt="Upcoming subscription payments and remaining loan instalments"></a>
+  &nbsp;
+  <a href="docs/screenshots/4-schedules.png"><img src="docs/screenshots/4-schedules.png" width="270" alt="Schedule form for recurring payments and finite loans"></a>
+</p>
+
+Subscriptions repeat; loans stop after a set number of instalments. Both use the same
+schedule model. Recreate these four screenshots with `npm run screenshots`.
+
+</details>
+
 ## Start here
 
 | Want to… | Open | Then continue to… |
 |---|---|---|
-| See the app | [Screenshots](#screenshots) | [Features and limits](#ai-expense-entry) |
+| See the app | [Screenshots](#screenshots) | [Product scope](spec/architecture.md#1-product-and-scope) |
 | Run it | [Quick start](#quick-start) | [Test setup](docs/testing.md) |
 | Review QA work | [QA evidence](#qa-evidence) | [Monthly limit case study](qa/docs/analysis-monthly-limit.md) |
 | Read the code | [Folder map](#architecture) | [Architecture notes](spec/architecture.md) |
@@ -48,20 +62,6 @@ flowchart TD
 ```
 
 The table supplies the clickable route; each linked guide leads back here.
-
-<details>
-<summary><strong>More screens: upcoming payments and schedules</strong></summary>
-
-<p align="center">
-  <a href="docs/screenshots/3-upcoming.png"><img src="docs/screenshots/3-upcoming.png" width="270" alt="Upcoming subscription payments and remaining loan instalments"></a>
-  &nbsp;
-  <a href="docs/screenshots/4-schedules.png"><img src="docs/screenshots/4-schedules.png" width="270" alt="Schedule form for recurring payments and finite loans"></a>
-</p>
-
-Subscriptions repeat; loans stop after a set number of instalments. Both use the same
-schedule model. Recreate these four screenshots with `npm run screenshots`.
-
-</details>
 
 ## QA evidence
 
