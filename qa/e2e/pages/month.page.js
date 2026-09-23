@@ -35,6 +35,17 @@ class MonthPage extends BasePage {
     this.editSave = page.getByTestId('tx-edit-save');
     this.editCancel = page.getByTestId('tx-edit-cancel');
 
+    // The monthly spending limit and the state it produces
+    // (qa/docs/analysis-monthly-limit.md).
+    this.limit = page.getByTestId('limit-value');
+    this.limitEdit = page.getByTestId('limit-edit');
+    this.limitInput = page.getByTestId('limit-input');
+    this.limitSave = page.getByTestId('limit-save');
+    this.limitCancel = page.getByTestId('limit-cancel');
+    // Reads "Within limit · €… left", "Limit reached" or "Over limit by €…",
+    // so the state is in words and not only in colour (REQ-ML-09).
+    this.limitStatus = page.getByTestId('limit-status');
+
     // Paging the month list (D-031).
     this.loadMore = page.getByTestId('tx-load-more');
     this.count = page.getByTestId('tx-count');
@@ -68,6 +79,13 @@ class MonthPage extends BasePage {
 
   slice(categoryId) {
     return this.page.getByTestId(`donut-slice-${categoryId}`);
+  }
+
+  /** Open the limit editor, type a figure, save. An empty figure clears it. */
+  async setLimit(amount) {
+    await this.limitEdit.click();
+    await this.limitInput.fill(amount);
+    await this.limitSave.click();
   }
 
   /** Open the income editor, type a figure, save. */

@@ -12,7 +12,7 @@
 </div>
 
 A personal finance web app designed for a phone: record an expense, review the month,
-and keep track of subscriptions and loan instalments. This repository includes the
+set a monthly spending limit, and track subscriptions and loan instalments. This repository includes the
 application, test design, automated checks and documented defects.
 
 ## Screenshots
@@ -20,7 +20,7 @@ application, test design, automated checks and documented defects.
 <p align="center">
   <a href="docs/screenshots/1-add.png"><img src="docs/screenshots/1-add.png" width="270" alt="Add an expense: amount keypad, categories and save action"></a>
   &nbsp;
-  <a href="docs/screenshots/2-month.png"><img src="docs/screenshots/2-month.png" width="270" alt="Monthly overview: spending total, category breakdown and transaction history"></a>
+  <a href="docs/screenshots/2-month.png"><img src="docs/screenshots/2-month.png" width="270" alt="Monthly overview: spending total, monthly limit, category breakdown and transaction history"></a>
 </p>
 
 <p align="center"><strong>Add an expense</strong> · <strong>Review the month</strong><br>English interface · EUR amounts · Demo account data</p>
@@ -47,15 +47,27 @@ then follow a [defect from reproduction to regression](qa/docs/defects/).**
 | Area | Scope | Evidence |
 |---|---|---|
 | Test planning | Risks, scope, entry and exit criteria | [Test plan](qa/docs/test-plan.md) |
-| Test design | 163 catalogued cases with priorities and traceability | [Case catalogue](qa/docs/test-cases.md) |
-| API | 128 requests · 475 assertions; 16 Python scenarios | [Postman](qa/api/) · [pytest](qa/python/) |
-| Browser | 64 scenarios, each at phone and desktop sizes | [Playwright specs & page objects](qa/e2e/) |
+| Test design | Catalogued cases with priorities and traceability | [Case catalogue](qa/docs/test-cases.md) |
+| API | 171 requests · 621 assertions; 16 Python scenarios | [Postman](qa/api/) · [pytest](qa/python/) |
+| Database migration | 3 cases for the existing-database column upgrade | [Migration tests](qa/db/migration.test.js) |
+| Browser | 69 scenarios, each at phone and desktop sizes | [Playwright specs & page objects](qa/e2e/) |
 | Concurrency & load | Two server processes on one database; k6 write and login workloads | [Race checks](qa/race/) · [k6](qa/load/) |
 | AI feature | Offline tests, browser checks and fixture evaluation | [AI case study](qa/docs/ai-case-study.md) |
 
-GitHub Actions runs the secret scan, API, Python, Playwright and offline AI checks.
+GitHub Actions runs the secret scan, migration, API, Python, Playwright and offline AI checks.
 The self-check command enforces eight invariant and coverage gates.
 [Run the suites and inspect their setup →](docs/testing.md)
+
+### Case study: a monthly spending limit
+
+Follow one feature from requirements to acceptance checks. The analysis covers a
+decision table, boundaries, states, risks, traceability and change impact.
+
+[Requirements & test analysis](qa/docs/analysis-monthly-limit.md) · [Test report](qa/docs/test-report-monthly-limit.md) · [UAT & rehearsal](qa/docs/uat-monthly-limit.md)
+
+The report distinguishes recorded local results from reproducible checks. The
+migration tests include a repeatable negative control; the UAT rehearsal uses a
+disposable database, and the owner's sign-off is still open.
 
 ### Defects worth opening
 

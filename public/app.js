@@ -49,6 +49,15 @@
     incomeNotSet: 'Set income',
     incomeSaved: 'Income saved',
 
+    // monthly spending limit (qa/docs/analysis-monthly-limit.md)
+    limitNotSet: 'Set limit',
+    limitSaved: 'Limit saved',
+    limitCleared: 'Limit removed',
+    limitInvalid: 'Limit must be a number, for example 600.00',
+    limitWithin: (left) => `Within limit · ${left} left`,
+    limitReached: 'Limit reached',
+    limitOver: (amount) => `Over limit by ${amount}`,
+
     // editing (D-029) and pagination (D-031)
     editExpense: (what) => `Edit ${what}`,
     expenseSaved: 'Expense updated',
@@ -277,6 +286,7 @@
     amountDigits: '',      // raw cents as typed, e.g. "1250" -> 12,50 €
     selectedCategoryId: null,
     incomeCents: 0,
+    limitCents: null,
     busy: false,
     // The month list is paged (D-031). `loaded` is what is on screen, `total`
     // is what the server says exists, and the two together are the only thing
@@ -557,6 +567,7 @@
     }
 
     state.incomeCents = summary.income_cents;
+    state.limitCents = summary.limit_cents;
     state.month.items = transactions.items;
     state.month.total = transactions.total;
 
@@ -627,6 +638,7 @@
     $('[data-testid="month-total"]').textContent = formatMoney(spent);
     renderDonut(summary, whole);
     renderFigures(income, spent);
+    renderLimit(summary);
   }
 
   function renderDonut(summary, whole) {
@@ -682,6 +694,37 @@
     }
     if (text !== undefined) node.textContent = text;
     return node;
+  }
+
+  /**
+   * The limit and the state the server computed from it.
+   *
+   * The browser renders, it does not judge: `limit_status` arrives decided, so
+   * the screen and the API can never disagree about whether a month is over
+   * budget (qa/docs/analysis-monthly-limit.md, RISK-ML-3).
+   */
+  function renderLimit(summary) {
+    const value = $('#limit-value');
+    const status = $('#limit-status');
+    const left = summary.limit_remaining_cents;
+
+    value.textContent = summary.limit_cents === null
+      ? T.limitNotSet
+      : formatMoney(summary.limit_cents);
+
+    if (summary.limit_status === 'not_set') {
+      status.hidden = true;
+      status.textContent = '';
+      status.classList.remove('figure--over');
+      return;
+    }
+
+    status.hidden = false;
+    if (summary.limit_status === 'within') status.textContent = T.limitWithin(formatMoney(left));
+    else if (summary.limit_status === 'reached') status.textContent = T.limitReached;
+    else status.textContent = T.limitOver(formatMoney(Math.abs(left)));
+    // Text first; the class is for anyone styling it, never the only signal.
+    status.classList.toggle('figure--over', summary.limit_status === 'exceeded');
   }
 
   function renderCategoryBars(container, summary) {
@@ -922,6 +965,50 @@
         });
         toastOk(T.incomeSaved);
         closeIncomeForm();
+        await loadMonth();
+      } catch (err) {
+        toastErr(messageFor(err));
+      }
+    });
+  }
+
+  // ------------------------------- monthly spending limit (analysis doc §2)
+
+  function openLimitForm() {
+    const form = $('#limit-form');
+    const input = $('#limit-input');
+    // Empty when nothing is set, so the placeholder shows and saving an empty
+    // field is the same gesture as "I do not want a limit".
+    input.value = state.limitCents === null ? '' : centsToInput(state.limitCents);
+    form.hidden = false;
+    $('.overview').hidden = true;
+    input.focus();
+  }
+
+  function closeLimitForm() {
+    $('#limit-form').hidden = true;
+    $('.overview').hidden = false;
+  }
+
+  async function submitLimit(event) {
+    event.preventDefault();
+    if (state.busy) return;
+
+    const raw = $('#limit-input').value.trim();
+    // An empty field clears the limit. null is "no limit", which is a
+    // different state from a limit of zero (assumption A3).
+    const cents = raw === '' ? null : parseAmountToCents(raw);
+    if (raw !== '' && cents === null) return toastErr(T.limitInvalid);
+    if (cents !== null && cents > MAX_AMOUNT_CENTS) return toastErr(T.amountTooBig);
+
+    await withBusy($('[data-testid="limit-save"]'), async () => {
+      try {
+        await api('/settings', {
+          method: 'PUT',
+          body: { monthly_income_cents: state.incomeCents, monthly_limit_cents: cents },
+        });
+        toastOk(cents === null ? T.limitCleared : T.limitSaved);
+        closeLimitForm();
         await loadMonth();
       } catch (err) {
         toastErr(messageFor(err));
@@ -1275,6 +1362,9 @@
     $('#income-edit').addEventListener('click', openIncomeForm);
     $('#income-cancel').addEventListener('click', closeIncomeForm);
     $('#income-form').addEventListener('submit', submitIncome);
+    $('#limit-edit').addEventListener('click', openLimitForm);
+    $('#limit-cancel').addEventListener('click', closeLimitForm);
+    $('#limit-form').addEventListener('submit', submitLimit);
 
     $('#tx-load-more').addEventListener('click', loadMoreTransactions);
     $('#tx-edit-cancel').addEventListener('click', closeTransactionEditor);
