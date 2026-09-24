@@ -109,9 +109,9 @@ Testing starts only when all of these hold:
 
 A cycle is finished when **all** of these hold:
 
-1. Every Newman assertion passes — currently 431 across 116 requests.
-2. Every Python scenario passes and writes `qa/reports/python-junit.xml` — currently 13 pytest items.
-3. Every end-to-end test passes in both viewports — currently 64 scenarios × 2 viewports.
+1. Every Newman assertion passes — currently 621 across 171 requests.
+2. Every Python scenario passes and writes `qa/reports/python-junit.xml` — currently 16 pytest items.
+3. Every end-to-end test passes in both viewports — currently 69 scenarios × 2 viewports.
 4. All three load scenarios stay inside their thresholds.
 3. `gitleaks` reports no findings.
 4. No defect of severity **Critical** or **High** is open. BUG-005 is open at
@@ -181,9 +181,9 @@ edited until it agrees with the code has stopped being a test suite.
 npm install
 
 npm run check      # invariants
-npm run test:api   # 116 requests, 431 assertions
-npm run test:python # 13 pytest items; Python 3.12+ and qa/python/requirements.txt
-npm run test:e2e   # 64 tests × 2 viewports
+npm run test:api   # 171 requests, 621 assertions
+npm run test:python # 16 pytest items; Python 3.12+ and qa/python/requirements.txt
+npm run test:e2e   # 69 tests × 2 viewports
 npm run test:load  # k6; needs k6 installed separately
 ```
 
