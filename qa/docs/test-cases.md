@@ -407,8 +407,10 @@ TC-DB-001…003 came later, from a gap rather than from a requirement: the guard
 line of this feature no layer executed. Disabling that guard fails all three,
 which is evidence anyone can reproduce.
 
-API cases number 73 against 75 requests because TC-API-068 loops: one request,
-run once per allowed attempt.
+API cases number 105 while Newman executes 171 requests. Two reasons, and
+neither is a case without a row: a case may take several requests to arrange
+the state it then asserts, and TC-API-068 is one request executed once per
+allowed attempt.
 
 Traceability: cases cite the [architecture notes](../../spec/architecture.md),
 the [monthly limit analysis](analysis-monthly-limit.md), a recorded decision or
