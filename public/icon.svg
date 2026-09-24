@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Wallet">
   <!-- A single scalable icon rather than a set of PNGs: no build step exists
        here to generate sizes, and "sizes": "any" covers the home screen. -->
-  <rect width="512" height="512" rx="112" fill="#3d5afe"/>
-  <rect x="112" y="160" width="288" height="200" rx="34" fill="#ffffff"/>
-  <rect x="112" y="160" width="288" height="52" rx="26" fill="#dfe4ff"/>
-  <circle cx="332" cy="264" r="26" fill="#3d5afe"/>
+  <rect width="512" height="512" rx="112" fill="#071C1B"/>
+  <rect x="112" y="160" width="288" height="200" rx="34" fill="#48D6C4"/>
+  <rect x="112" y="160" width="288" height="52" rx="26" fill="#A6F0E5"/>
+  <circle cx="332" cy="264" r="26" fill="#071C1B"/>
 </svg>

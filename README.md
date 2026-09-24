@@ -167,6 +167,7 @@ Plain HTML, CSS and JavaScript in the browser. Four runtime dependencies, no fro
 | [`src/`](src/) · [`public/`](public/) | Express API, SQLite schema and browser interface |
 | [`qa/`](qa/) | Test suites, test design, cases and reports |
 | [`spec/architecture.md`](spec/architecture.md) | Detailed architecture and development notes |
+| [`docs/design-system.md`](docs/design-system.md) | Interface palette, component rules and visual checks |
 | [`log/BUGS.md`](log/BUGS.md) | Defect register and regression evidence |
 | [`scripts/`](scripts/) | Self-check gates and screenshot generator |
 

@@ -49,8 +49,14 @@ function startServer() {
   return server;
 }
 
-function cleanUp(server) {
-  if (server && !server.killed) server.kill();
+async function cleanUp(server) {
+  // On Windows the SQLite child may still have the database open after kill()
+  // returns. Wait for its exit before removing only this run's throwaway files.
+  if (server && server.exitCode === null && !server.killed) {
+    const exited = new Promise((resolve) => server.once('exit', resolve));
+    server.kill();
+    await exited;
+  }
   for (const suffix of ['', '-wal', '-shm', '-journal']) {
     fs.rmSync(DB_PATH + suffix, { force: true });
   }
@@ -220,6 +226,12 @@ async function capture() {
     // reason the test suite does (D-013): a screenshot taken half-rendered is
     // worse than no screenshot.
     await page.getByTestId(new RegExp(`^${shot.settle}`)).first().waitFor();
+    // A click leaves the pointer on the navigation. Its 160 ms hover fade can
+    // otherwise appear under the previously active tab in the next picture.
+    await page.mouse.move(0, 0);
+    await page.waitForFunction(() => [...document.querySelectorAll('.nav__btn:not([aria-current="page"])')]
+      .every((button) => !button.matches(':hover') &&
+        getComputedStyle(button).backgroundColor === 'rgba(0, 0, 0, 0)'));
     await page.screenshot({ path: path.join(OUT_DIR, shot.file) });
     console.log(`wrote docs/screenshots/${shot.file}`);
   }
@@ -230,8 +242,8 @@ async function capture() {
 async function main() {
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   const server = EXTERNAL_URL ? null : startServer();
-  process.on('SIGINT', () => {
-    cleanUp(server);
+  process.on('SIGINT', async () => {
+    await cleanUp(server);
     process.exit(130);
   });
 
@@ -242,7 +254,7 @@ async function main() {
     console.error(err.message);
     process.exitCode = 1;
   } finally {
-    cleanUp(server);
+    await cleanUp(server);
   }
 }
 
