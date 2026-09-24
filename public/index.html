@@ -5,12 +5,12 @@
   <!-- viewport-fit=cover + the safe-area insets in style.css keep the bottom
        navigation clear of the iPhone home indicator. -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <!-- One fixed light theme. spec §9 rules out dark mode, so there is no
-       prefers-color-scheme block and nothing to toggle. -->
-  <meta name="theme-color" content="#0d6b58">
+  <!-- A fixed dark product theme; form controls use the same colour scheme. -->
+  <meta name="theme-color" content="#071C1B">
   <title>Wallet</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/theme.css">
 </head>
 <body>
 
@@ -62,7 +62,7 @@
            category list, so it takes no height from a short phone (BUG-014).
            Hidden until /api/ai/capabilities says the feature is on. -->
       <button type="button" class="ai-open" id="ai-open" data-testid="ai-open" hidden>
-        <span aria-hidden="true">✨</span> Describe an expense
+        <span aria-hidden="true">✦</span> Describe an expense
       </button>
     </header>
 
@@ -271,7 +271,7 @@
 <!-- ======================================================= NAVIGATION ==== -->
 <!-- Each button carries an explicit aria-label identical to its visible text.
      Redundant in theory — the name would be computed from the label span, with
-     the emoji excluded by aria-hidden — but computed-from-contents names are
+     the SVG excluded by aria-hidden — but computed-from-contents names are
      the fragile kind, and Block C selects these by role and name. An explicit
      label is one attribute and removes the question. -->
 <!-- Moved out of #screen-month deliberately. Inside it, this panel could not
@@ -429,19 +429,19 @@
 <nav id="nav" class="nav" aria-label="Main navigation" hidden>
   <button type="button" class="nav__btn" data-screen="add"
           data-testid="nav-add" aria-label="Add">
-    <span class="nav__icon" aria-hidden="true">➕</span><span>Add</span>
+    <svg class="nav__icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>Add</span>
   </button>
   <button type="button" class="nav__btn" data-screen="month"
           data-testid="nav-month" aria-label="Month">
-    <span class="nav__icon" aria-hidden="true">📅</span><span>Month</span>
+    <svg class="nav__icon" aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/></svg><span>Month</span>
   </button>
   <button type="button" class="nav__btn" data-screen="upcoming"
           data-testid="nav-upcoming" aria-label="Upcoming">
-    <span class="nav__icon" aria-hidden="true">⏳</span><span>Upcoming</span>
+    <svg class="nav__icon" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Upcoming</span>
   </button>
   <button type="button" class="nav__btn" data-screen="schedules"
           data-testid="nav-schedules" aria-label="Schedules">
-    <span class="nav__icon" aria-hidden="true">🔁</span><span>Schedules</span>
+    <svg class="nav__icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 8a7 7 0 0 1 12-3l2 2m0-4v4h-4M20 16a7 7 0 0 1-12 3l-2-2m0 4v-4h4"/></svg><span>Schedules</span>
   </button>
 </nav>
 

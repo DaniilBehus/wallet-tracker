@@ -134,11 +134,12 @@
    * Eight fixed hues for the donut (D-022), assigned by position in the
    * summary's by_category list — which the API returns largest first. Fixed
    * rather than generated so the same category keeps its colour between
-   * renders, and readable against white at these widths.
+   * renders. The cool hues remain visible on the dark chart surface; the
+   * adjacent text labels and values carry meaning without colour.
    */
   const SLICE_COLOURS = [
-    '#3d5afe', '#00b8a9', '#ff8a3d', '#8e5cf7',
-    '#e0457b', '#2fb344', '#f2b705', '#4a7fd4',
+    '#48D6C4', '#78AEE8', '#A392E5', '#7CD4AF',
+    '#D49AC7', '#69B9C8', '#A6C5E7', '#8CCAA8',
   ];
   const DONUT_RADIUS = 52;
   const DONUT_CIRCUMFERENCE = 2 * Math.PI * DONUT_RADIUS;
@@ -635,7 +636,9 @@
     const income = summary.income_cents;
     const whole = Math.max(income, spent);
 
-    $('[data-testid="month-total"]').textContent = formatMoney(spent);
+    const total = $('[data-testid="month-total"]');
+    total.textContent = formatMoney(spent);
+    total.classList.toggle('donut__value--compact', total.textContent.length > 10);
     renderDonut(summary, whole);
     renderFigures(income, spent);
     renderLimit(summary);

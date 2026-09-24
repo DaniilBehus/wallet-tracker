@@ -52,7 +52,7 @@ error here is not a cosmetic defect — it is a total that cannot be reconciled.
 
 | Not tested | Why |
 |---|---|
-| What remains in spec §9 | Not built: budgets, limits and warnings, multiple currencies, CSV/PDF export, offline sync, dark mode, password reset, Docker, notifications. Charts and income left that list in S10 — D-022 and D-021 — and are in scope above |
+| What remains in spec §9 | Not built: budgets, limits and warnings, multiple currencies, CSV/PDF export, offline sync, theme switching, password reset, Docker, notifications. The interface now uses a fixed dark palette; there is no light/dark toggle. Charts and income left that list in S10 — D-022 and D-021 — and are in scope above |
 | ~~Load and performance~~ | **Now in scope** (S07). This line used to read "a single-user personal application over a local SQLite file, there is no concurrency model to stress". That reasoning was wrong in an instructive way: the concurrency model worth stressing was never SQLite's, it was Node's single thread. `qa/load/` found BUG-004 on the first run |
 | Security beyond authorisation and secret scanning | No penetration testing, no dependency CVE scanning. Named here so its absence is a decision, not an oversight |
 | Cross-browser | Chromium only, in two viewports. The application uses no API that varies between engines, and one browser that is actually run beats four that are aspirational |

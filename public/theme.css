@@ -1,0 +1,246 @@
+/* Deep tide — one fixed, mobile-first product palette. style.css owns layout;
+   this file owns appearance. Effects stay on the app shell and summary cards,
+   never behind form labels, body copy or small numerical details. */
+
+:root {
+  --bg: #071c1b;
+  --surface: #102b2a;
+  --surface-raised: #163532;
+  --surface-soft: #193b37;
+  --line: #2b514b;
+  --line-strong: #5a8e84;
+  --text: #f0f7f4;
+  --muted: #a7c0ba;
+  --accent: #48d6c4;
+  --accent-dk: #32b7a7;
+  --accent-soft: #153e3a;
+  --danger: #ffb5ac;
+  --danger-bg: #3b2427;
+  --ok: #9ce9ca;
+  --ok-bg: #153d34;
+  --radius: 18px;
+  --radius-sm: 12px;
+  --shadow-sm: 0 8px 28px rgba(0, 0, 0, 0.16);
+  --shadow-lg: 0 22px 52px rgba(0, 0, 0, 0.32);
+}
+
+html { color-scheme: dark; }
+
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 480px 200px at 90% -90px, transparent 68%, rgba(72, 214, 196, 0.19) 68.3%, transparent 68.8%),
+    radial-gradient(ellipse 640px 260px at 38% -110px, transparent 70%, rgba(72, 214, 196, 0.11) 70.2%, transparent 70.6%),
+    radial-gradient(circle at 78% -60px, rgba(72, 214, 196, 0.11), transparent 320px);
+  background-repeat: no-repeat;
+  color: var(--text);
+  font: 16px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+::selection { background: #48d6c4; color: #071c1b; }
+
+input, select, .ai textarea {
+  background: #0c2423;
+  color: var(--text);
+  border: 1px solid var(--line-strong);
+  box-shadow: none;
+}
+input::placeholder, .ai textarea::placeholder { color: #94ada6; opacity: 1; }
+input:hover, select:hover, .ai textarea:hover { border-color: #82b7ad; }
+input:focus-visible, select:focus-visible, button:focus-visible,
+.ai textarea:focus-visible, .tx__body:focus-visible, .ai-open:focus-visible {
+  outline: 2px solid #9af1e4;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px rgba(72, 214, 196, 0.16);
+}
+input[type="checkbox"] { accent-color: var(--accent); }
+.field__label, .note__label { color: var(--muted); }
+.field__hint { color: var(--muted); }
+.field__hint--need { color: var(--danger); }
+.check { background: var(--surface-soft); color: var(--text); }
+
+/* Solid fills make the primary action obvious without relying on a glow. */
+.btn {
+  background: var(--surface-raised);
+  border-color: var(--line-strong);
+  color: var(--text);
+  box-shadow: none;
+}
+.btn:hover:not([disabled]) { background: #1d4540; border-color: #7aada2; }
+.btn--primary, .key--save.key {
+  background: var(--accent);
+  background-image: none;
+  border-color: var(--accent);
+  color: #062522;
+  box-shadow: none;
+}
+.btn--primary:hover:not([disabled]), .key--save.key:hover:not([disabled]) {
+  background: #76e5d7;
+  background-image: none;
+  border-color: #76e5d7;
+  color: #062522;
+}
+.btn--primary:active, .key--save.key:active {
+  background: var(--accent-dk);
+  color: #062522;
+}
+.btn--link { color: var(--accent); background: transparent; }
+.btn[disabled] { opacity: 0.56; }
+
+/* Authentication shares the palette, without a full-screen illustration. */
+.auth::before {
+  background: var(--surface);
+  border-color: var(--line);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: none;
+}
+.auth__mark {
+  background: var(--accent);
+  color: #062522;
+  box-shadow: none;
+}
+.auth__eyebrow { color: var(--accent); }
+.auth__logo, .auth__sub { color: var(--text); }
+.auth__intro, .auth .field__label { color: var(--muted); }
+
+.screen__head {
+  background: var(--surface);
+  border-color: var(--line);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: none;
+}
+.screen__head > .total__label { color: var(--text); }
+.screen__head--add, .screen__head--month {
+  background: linear-gradient(145deg, #183d39, #0b2a29);
+  border-color: #3c6861;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.21);
+}
+.screen__head--add::before { color: var(--muted); }
+.screen__head--add .amount { color: var(--text); font-size: 48px; }
+.screen__head--add .amount--empty { color: #b4cac4; }
+.total { color: var(--text); font-size: 38px; }
+
+.tile, .key, .tx, .row, .form, .bars {
+  background: var(--surface);
+  border-color: var(--line);
+  box-shadow: var(--shadow-sm);
+}
+.tile:hover, .key:hover { background: var(--surface-raised); border-color: var(--line-strong); }
+.tile__icon, .tx__icon { background: var(--surface-soft); }
+.tile__name, .tx__name, .row__name { color: var(--text); }
+.tile__name, .tx__name, .row__name, .bar__name {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.tile[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.tile[aria-pressed="true"] .tile__icon { background: #1d4a44; }
+.tile[aria-pressed="true"] .tile__name { color: #a5f3e7; }
+.note input { background: #0c2423; }
+.key { color: var(--text); }
+.key:active { background: #234b45; }
+.key--clear { background: #2b2527; color: var(--danger); }
+.key--clear:hover { background: var(--danger-bg); }
+
+/* Chart colour is supplementary: values and category names remain visible. */
+.screen__head--month .donut { filter: none; }
+.screen__head--month .donut__track { stroke: #365c55; }
+.screen__head--month .donut__value { fill: var(--text); font-size: 17px; }
+.screen__head--month .donut__value--compact { font-size: 11.5px; }
+.screen__head--month .donut__caption { fill: var(--muted); }
+.screen__head--month .figure dt { color: var(--muted); }
+.screen__head--month .figure dd { color: var(--text); font-size: clamp(17px, 4vw, 23px); overflow: visible; overflow-wrap: anywhere; }
+.screen__head--month .figure__edit { color: var(--text); border-bottom-color: var(--accent); }
+.screen__head--month .figure--over,
+.screen__head--month .limit-status.figure--over { color: var(--danger); }
+.screen__head--month .limit-status { color: var(--text); }
+.screen__head--month .income-form { border-top-color: var(--line-strong); }
+.screen__head--month .income-form__hint,
+.screen__head--month .income-form .field__label { color: var(--muted); }
+.screen__head--month .income-form input { background: #0c2423; }
+.screen__head--month .income-form .btn:not(.btn--primary) {
+  background: var(--surface-raised);
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+.bar__amount, .tx__note, .row__date, .row__meta { color: var(--muted); }
+.bar__track { background: #24443f; }
+.daygroup__label { color: var(--muted); }
+.tx__amount, .row__amount { color: var(--text); }
+.tx__del { color: var(--muted); }
+.tx__del:hover, .tx__del:active { background: var(--danger-bg); color: var(--danger); }
+.row--done { background: var(--ok-bg); border-color: #33745f; }
+.row__done { color: var(--ok); }
+.empty {
+  background: var(--surface);
+  border-color: var(--line-strong);
+  color: var(--muted);
+}
+.loadmore__count { color: var(--muted); }
+
+.nav {
+  background: rgba(16, 43, 42, 0.96);
+  border-color: var(--line-strong);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+.nav__btn { color: var(--muted); }
+.nav__btn:hover { color: var(--text); background: #1a3a37; }
+.nav__btn[aria-current="page"] { color: var(--accent); }
+.nav__btn[aria-current="page"]::before { background: var(--accent); }
+.nav__icon {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.nav__btn:hover .nav__icon { transform: none; }
+
+.toast { box-shadow: var(--shadow-lg); }
+.toast--success { background: var(--ok-bg); color: var(--ok); border-color: #33745f; }
+.toast--error { background: var(--danger-bg); color: var(--danger); border-color: #855057; }
+.sheet { background: rgba(2, 12, 12, 0.76); }
+.sheet__panel {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+}
+.sheet select, .sheet input[type="date"] {
+  background: #0c2423;
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
+/* Native AI dialog: the demo label is informational, not a warning accent. */
+.ai { background: var(--surface); color: var(--text); border: 1px solid var(--line-strong); }
+.ai::backdrop { background: rgba(2, 12, 12, 0.78); }
+.ai__head { background: var(--surface); border-bottom-color: var(--line); }
+.ai__close { color: var(--text); }
+.ai__close:hover { background: var(--surface-soft); }
+.ai__demo { background: #173d3a; color: #b4eee4; border-bottom: 1px solid var(--line); }
+.ai__example { color: var(--muted); }
+.ai__source p { background: var(--surface-soft); }
+.ai__progress { color: var(--accent); }
+.ai__error { background: var(--danger-bg); color: var(--danger); }
+.chip { background: var(--surface-raised); border-color: var(--line-strong); color: var(--text); }
+.chip:hover { background: #205149; border-color: var(--accent); }
+.ai-open { background: #1c4842; border-color: #6aa89d; color: var(--text); }
+.ai-open:hover { background: #285c54; }
+
+@media (max-width: 360px) {
+  .screen__head--month .figure dd { font-size: 18px; }
+  .screen__head--month .donut { width: 112px; height: 112px; }
+  .row__top { flex-wrap: wrap; }
+}
+
+@media (max-width: 699px) and (max-height: 760px) {
+  .screen__head--add .amount { font-size: 38px; }
+}
