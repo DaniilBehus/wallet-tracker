@@ -98,15 +98,41 @@ registered for the pass on that database only.
   month. It is not a defect in this feature; the retained amount is how the Add
   screen already behaved.
 
-**Sign-off** — to be completed by a person, not by the agent above.
+## Second run — the owner, 2026-09-24
+
+The same eleven steps, run by the owner on build `3d4e9a7`, independently of the
+rehearsal above. **All eleven passed**, and the result agrees with the recorded
+run step for step. The owner accepted the feature and raised one observation.
+
+The two runs are kept apart on purpose rather than merged. The rehearsal says
+what an agent could and could not verify; this one says what a person saw,
+including the things the rehearsal explicitly could not judge — the over-limit
+colour and the 375 px layout by eye. Two independent executions of one script
+are a stronger record than either alone.
+
+What exists as evidence is this entry: no screenshots were captured, and the
+account of the run is the owner's own.
+
+### UAT-OBS-01 · the over-limit state is marked too weakly
+
+Accepted with a comment. The owner asks for a frame around the limit figure:
+red when the limit is exceeded, a neutral frame while budget remains, and no
+frame when no limit is set; colours chosen to sit inside the existing theme.
+
+**This does not fail step 6.** The state already carries both the words *Over
+limit by €X* and the `figure--over` class, so REQ-ML-09 AC-09.3 — colour is
+never the only carrier — still holds. It is a presentation improvement, tracked
+separately from this pass, and it did not block acceptance.
+
+**Sign-off** — completed by the owner, not by the agent above.
 
 | | |
 |---|---|
-| Date | |
-| Build (commit) | |
-| Steps passed | / 11 |
-| Defects raised | |
-| Accepted by owner | |
+| Date | 2026-09-24 |
+| Build (commit) | `3d4e9a7` |
+| Steps passed | 11 / 11 |
+| Defects raised | 0 defects; 1 usability finding, UAT-OBS-01 |
+| Accepted by owner | Yes — accepted by the owner on 2026-09-24 |
 
 **Out of scope for this pass** (agreed in the analysis, not gaps found here):
 per-category limits, notifications, blocking saves, a different limit per month,

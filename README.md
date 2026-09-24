@@ -95,8 +95,10 @@ decision table, boundaries, states, risks, traceability and change impact.
 [Read the complete analysis](qa/docs/analysis-monthly-limit.md) · [inspect the browser test](qa/e2e/month.spec.js) · [review the migration test](qa/db/migration.test.js)
 
 The report distinguishes recorded local results from reproducible checks. The
-migration tests include a repeatable negative control; the UAT rehearsal uses a
-disposable database, and the owner's sign-off is still open.
+migration tests include a repeatable negative control; the UAT ran twice on a
+disposable database — an agent's rehearsal, then the owner's own pass of all
+eleven steps on build `3d4e9a7`, signed off on 2026-09-24 with no defects and
+one presentation finding (UAT-OBS-01).
 
 ### Defects worth opening
 
