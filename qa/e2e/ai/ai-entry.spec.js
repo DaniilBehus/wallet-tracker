@@ -266,7 +266,8 @@ test.describe('AI entry · 320x568', () => {
 
     for (const control of [ai.amount, ai.category, ai.date, ai.note, ai.save]) {
       await control.scrollIntoViewIfNeeded();
-      await expect(control).toBeInViewport({ ratio: 1 });
+      // 0.99, not 1: the scrolling review body clips a sub-pixel sliver off a control that fits inside it — 0.30px on CI run 36000657644, 0.28px measured here.
+      await expect(control).toBeInViewport({ ratio: 0.99 });
     }
     const width = await signedIn.evaluate(() => document.documentElement.scrollWidth);
     expect(width).toBeLessThanOrEqual(320);
