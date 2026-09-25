@@ -41,27 +41,10 @@ schedule model. Recreate these four screenshots with `npm run screenshots`.
 
 ## Start here
 
-| Want to… | Open | Then continue to… |
-|---|---|---|
-| See the app | [Screenshots](#screenshots) | [Product scope](spec/architecture.md#1-product-and-scope) |
-| Run it | [Quick start](#quick-start) | [Test setup](docs/testing.md) |
-| Review QA work | [QA evidence](#qa-evidence) | [Monthly limit case study](qa/docs/analysis-monthly-limit.md) |
-| Read the code | [Folder map](#architecture) | [Architecture notes](spec/architecture.md) |
-
-```mermaid
-flowchart TD
-  R[README] --> S[Screenshots]
-  R --> Q[Quick start]
-  R --> E[QA evidence]
-  R --> C[Code map]
-  E --> T[Test cases]
-  T --> P[Test report]
-  C --> A[Architecture]
-  P --> R
-  A --> R
-```
-
-The table supplies the clickable route; each linked guide leads back here.
+- **See the app:** [Screenshots](#screenshots) → [Product scope](spec/architecture.md#1-product-and-scope)
+- **Run it:** [Quick start](#quick-start) → [Test setup](docs/testing.md)
+- **Review QA work:** [QA evidence](#qa-evidence) → [Monthly limit case study](qa/docs/analysis-monthly-limit.md)
+- **Read the code:** [Folder map](#architecture) → [Architecture notes](spec/architecture.md)
 
 ## QA evidence
 
