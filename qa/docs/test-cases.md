@@ -261,6 +261,15 @@ read-only connection to the session server's database, written by the app.
 | TC-PY-015 | The month and limit queries agree with the summary | Ask for the user id by a messily typed e-mail; compare month total and limit state for three accounts | Same total and state as `GET /api/summary`; *no settings*, *no limit* and *a zero limit* read apart as the page's table says | support pack, REQ-ML-05 | P1 | PASS |
 | TC-PY-016 | Payments, keys and quota mean what the page says | A loan paid twice with one payment's expense deleted; a keyed save retried once and another deleted; AI off | 2 paid, 1 linked, 1 unlinked; one row per key, `live` and `tombstone`; no quota rows | support pack, D-035 | P2 | PASS |
 
+## Python · Log-reading exercise · `qa/python/test_log_exercise.py`
+
+The worked answer in `docs/support/log-exercise.md` quotes a log that
+`scripts/support-exercise.js` regenerates with new ids on every run.
+
+| ID | Case | Steps | Expected | Traces to | Pri | Status |
+|---|---|---|---|---|---|---|
+| TC-PY-017 | The exercise quotes its log exactly | Read the page's quoted lines and the committed log | Every quoted line is a line of the log; the first question's reference is the log's only 500, which has its `UNHANDLED` line; no machine folder or e-mail address in the log | support pack | P2 | PASS |
+
 ## Load · `qa/load/`
 
 Measured, not asserted-by-feel: every run records `GET /api/health` idle **and**
@@ -424,10 +433,10 @@ fail when its defect is put back — see S05.
 |---|---|---|---|
 | API — 179 requests, 650 assertions | 113 | 179 | all PASS |
 | Database — the one in-place migration, node:test | 3 | 3 | all PASS |
-| Python — 16 documented scenarios, 23 pytest items | 16 | 23 | all PASS |
+| Python — 17 documented scenarios, 24 pytest items | 17 | 24 | all PASS |
 | Load — 3 scenarios, thresholds enforced | 3 | 3 | all PASS |
 | End-to-end — 83 tests × 2 viewports | 83 | 166 | all PASS; local browser run requires a host that permits Chromium |
-| **Total** | **218** | **374** | **documented cases PASS; local browser execution environment noted above** |
+| **Total** | **219** | **375** | **documented cases PASS; local browser execution environment noted above** |
 
 **The counts are checked against the suites, not typed from memory.** An earlier
 count claimed 138 cases while only 135 rows existed; three cases (TC-E2E-039…041)
