@@ -58,9 +58,13 @@ node scripts/render-analysis.js output/analysis-tools
 
 The script uses bpmn-js import (with the bpmn-moddle XML parser) and Mermaid's
 actual `parse` and `render` APIs. Import warnings, broken local links, mismatched
-Mermaid blocks or cropped text fail the check. Four generated SVGs are refreshed;
-the UML SVG is checked but not regenerated. Five review PNGs go to
-`output/analysis-review/` and are not committed.
+Mermaid blocks, cropped text or a label that leaves its own box — a note, an
+actor, a task — fail the check. Four generated SVGs are refreshed; the UML SVG is
+checked but not regenerated. The previews are byte-stable: arrow markers are
+numbered instead of named at random, and Mermaid's line jitter has a fixed seed,
+so a second run changes nothing. Five review PNGs go to `output/analysis-review/`
+and are not committed; look at them too, because a label crossing a line is not
+something a bounding-box check sees.
 
 Tool references: [bpmn-js](https://bpmn.io/toolkit/bpmn-js/),
 [Mermaid API](https://mermaid.js.org/config/usage),
