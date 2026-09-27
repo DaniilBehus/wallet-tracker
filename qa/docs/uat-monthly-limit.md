@@ -160,8 +160,9 @@ limit figure. The owner asked for a fully red box with white text around the
 observation had also asked for white while budget remains and nothing without
 a limit.
 
-**Rev 2: implemented, awaiting the owner's re-check.** The owner has not looked
-at it yet, so this records an implementation, not an acceptance.
+**Rev 2: implemented in `4f1c737`, awaiting the owner's re-check.** The owner
+has not looked at it yet, so this records an implementation, not an
+acceptance.
 
 - The frame is gone: the limit figure looks as it did before UAT-OBS-01.
 - The status line under the ring is now the box. Once the limit is used up —
