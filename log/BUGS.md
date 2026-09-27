@@ -34,7 +34,7 @@ State: `OPEN` · `IN PROGRESS` · `CLOSED` · `WONTFIX` (needs a reason).
 | BUG-013 | The edit panel opened underneath the bottom navigation | Medium | CLOSED | S16 | fixed | R13 |
 | BUG-014 | Categories collapse to an 18 px strip on a short phone | High | CLOSED | S21 | S23 · uncommitted | R14 |
 | BUG-015 | Editing an uncategorised expense sends category zero | Medium | CLOSED | S21 | ORD-020 | R14 |
-| BUG-016 | Concurrent registrations of the same email return 500 | High | OPEN | S21 | — | R14 |
+| BUG-016 | Concurrent registrations of the same email return 500 | High | CLOSED | S21 | ORD-020 | R14 |
 | BUG-017 | Password suffixes after 72 bytes are silently ignored | High | OPEN | S21 | — | R14 |
 | BUG-018 | A large loan loses an integer cent in remaining money | Critical | OPEN | S21 | — | R14 |
 | BUG-019 | Oversized JSON is reported as an internal server failure | Medium | CLOSED | S21 | S23 · uncommitted | R14 |
@@ -1213,7 +1213,7 @@ with the two lines of the fix reverted, all three fail on both viewports (6 of
 6); with the fix, 18 of 18 in that file pass.
 **→ Rule R14.**
 
-### BUG-016 · Concurrent registrations of the same email return 500 · High · OPEN
+### BUG-016 · Concurrent registrations of the same email return 500 · High · CLOSED
 
 | | |
 |---|---|
@@ -1226,9 +1226,19 @@ with the same new synthetic email and valid password; repeat with fresh emails.
 **Actual:** all 5 pairs return 201 + 500; server sees SQLITE_CONSTRAINT_UNIQUE.
 **Root cause:** both SELECT checks finish before async bcrypt.hash; the losing
 INSERT violates UNIQUE, which is not mapped to the application's conflict error.
-**Fix:** not applied. Handle the constraint at the write boundary and review
-atomic account/category creation; do not assume a pre-read prevents races.
-**Regression:** 5/5 reproduced; add a deterministic concurrency regression.
+**Fix:** applied in ORD-020. The insert and the starter categories are now one
+`db.transaction`, so an account can no longer exist without the rows it needs,
+and `SQLITE_CONSTRAINT_UNIQUE` from that write is translated into the same
+`conflict` the pre-read raises — a 409, not a 500. The pre-read stays as a fast
+path that avoids hashing an obvious duplicate; it is no longer mistaken for a
+guard, because it cannot be one: `bcrypt.hash` yields, and both requests pass it
+before either writes.
+**Regression:** scenario E in `qa/race/run.js` — two registrations of one fresh
+address, sent together to two server processes sharing one database, 120 pairs
+per run. Invariant: one 201 and one 409, in either order; any 5xx or a second
+201 is a violation. Control: with the mapping removed the scenario reports
+`201 · 500` and a violation on every pair (3 of 3 in the control run), with
+`SQLITE_CONSTRAINT_UNIQUE` in the server log; with the fix, 0 violations.
 **→ Rule R14.**
 
 ### BUG-017 · Password suffixes after 72 bytes are silently ignored · High · OPEN
