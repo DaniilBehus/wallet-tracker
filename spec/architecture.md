@@ -37,7 +37,7 @@ product models personal spending rather than cross-timezone accounting.
 | Table | Responsibility | Important invariants |
 |---|---|---|
 | `users` | Account identity | Unique email; password hash only |
-| `categories` | Per-user expense categories | A category name is unique for its owner |
+| `categories` | Per-user expense categories and their optional monthly limits | A category name is unique for its owner; a limit is non-negative, while `NULL` means no limit |
 | `transactions` | Expenses that happened | Positive integer cents; optional source schedule |
 | `schedules` | Future recurring charges and loans | Positive amount, valid day of month, active state and payment count |
 | `settings` | Per-user monthly income and spending limit | At most one row per user; income is non-negative, while `NULL` means no limit |
@@ -51,6 +51,13 @@ The spending limit is a signal, not a rule that blocks an expense. Its
 `not_set`, `within`, `reached` and `exceeded` states are computed from the same
 monthly total shown on screen. The [decision table and test trace](../qa/docs/analysis-monthly-limit.md)
 document the equality and zero-limit boundaries.
+
+A category can carry its own monthly limit, judged by the same rule against that
+category's expenses for the month: computed on read, never stored, and
+independent of the overall limit. A paid instalment counts toward its category;
+an unpaid one does not, and an expense without a category falls under no
+category limit. The [category-limit analysis](../qa/docs/analysis-category-limits.md)
+holds its rules and decision table.
 
 For a schedule due on a day that does not exist in a month, the date is clamped
 to the last day of that month. A schedule set to the 31st therefore runs on
@@ -76,10 +83,10 @@ Every error has one stable shape:
 |---|---|
 | Health | `GET /health` verifies service and database availability without reading user data |
 | Authentication | Register and login issue JWTs; failed logins are rate-limited before password hashing |
-| Categories | List and create per-user categories; another user's resource is reported as `404` |
+| Categories | List and create per-user categories, and set or clear one category's monthly limit with `PATCH` (that field only); another user's resource is reported as `404` |
 | Transactions | Create, filter, update with `PATCH`, and delete expenses; server-owned fields are rejected on update |
 | Idempotency | `POST /transactions` can use `Idempotency-Key` to replay the original successful create safely; conflicting payloads are rejected |
-| Settings and summary | Store income and a nullable monthly spending limit; calculate totals, category shares, remaining income and limit status |
+| Settings and summary | Store income and a nullable monthly spending limit; calculate totals, category shares, remaining income, the limit status and each category's limit status |
 | Schedules | Create, list, update and pay recurring charges or loans; schedule state is validated atomically |
 | AI draft | Capabilities plus an expense-draft endpoint that returns a validated draft only |
 
@@ -88,9 +95,9 @@ invalid authentication, `404` for unavailable resources, `409` for a conflict
 with current state, and `429` for throttled failed logins. Oversized JSON is a
 `413`, never an unhandled server error.
 
-Transactions and schedules support partial `PATCH` updates. An empty update is
-rejected, and server-owned state such as identifiers, timestamps, `paid_count`
-and `active` cannot be set by a client.
+Transactions, schedules and a category's limit support partial `PATCH` updates.
+An empty update is rejected, and server-owned state such as identifiers,
+timestamps, `paid_count` and `active` cannot be set by a client.
 
 ## 5. Interface and interaction design
 
@@ -100,6 +107,9 @@ The product has four mobile-first screens:
   optional note remains secondary to the quick expense flow.
 - **This month:** totals, category shares, income, remaining income and a
   user-set spending limit, with transactions grouped by day and editable in place.
+  A category row opens a small editor for that category's limit; a category with
+  a limit shows what was spent of it and its state in words, even before anything
+  is spent.
 - **Upcoming:** active schedules ordered by next charge date, including loan
   progress and a Pay action.
 - **Schedules:** one form for recurring charges and loans; a loan is selected
