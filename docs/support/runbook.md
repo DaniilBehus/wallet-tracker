@@ -85,6 +85,32 @@ its ids or query — `status`, `duration_ms` and `user_id` (null when the reques
 was not signed in). The `ai_draft` line has no time of its own; its request line
 sits next to it with the same id.
 
+`duration_ms` counts time inside the app. A request that waited for a busy
+process before it got there still shows a small number — in
+[INC-002](incidents/INC-002.md) a health check took over a second and logged
+0.2 ms. When "everything is slow", time a request from outside and compare it
+with an idle moment measured the same way:
+
+```bash
+curl -s -o /dev/null -w '%{time_total}\n' http://localhost:3000/api/health
+```
+
+```text
+0.002279
+```
+
+```powershell
+(Measure-Command { Invoke-RestMethod http://localhost:3000/api/health }).TotalMilliseconds
+```
+
+```text
+40,5507
+```
+
+curl prints seconds; PowerShell prints milliseconds, here with a decimal comma,
+and about 40 of them are its own overhead, which is why the comparison is with
+an idle measurement taken the same way.
+
 **Never in the log:** e-mail addresses, passwords, tokens or the Authorization
 header, notes, AI descriptions or answers, request bodies.
 `qa/python/test_request_log.py` checks this against a real server's output.
