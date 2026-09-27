@@ -10,6 +10,19 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const TOKEN_TTL = '30d';
 const BCRYPT_ROUNDS = 10;
 const MIN_PASSWORD_LENGTH = 8;
+
+// bcrypt reads at most 72 bytes of a password and silently ignores the rest,
+// so two different passwords sharing their first 72 bytes produce the same
+// hash and both open the account (BUG-017). Decision D-045 (ORD-020): refuse
+// such a password at registration with a 400 rather than accept a password
+// whose tail does nothing. Login and stored hashes are untouched — changing
+// how existing passwords are verified would lock people out of their accounts,
+// and no account can have been created with a longer one after this check.
+//
+// Bytes, not characters: "ä" is two bytes in UTF-8 and an emoji is four, so a
+// 40-character password can exceed the limit while a 72-character ASCII one
+// sits exactly on it.
+const MAX_PASSWORD_BYTES = 72;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Fail at boot, not at the first login. A server running with an undefined
@@ -37,6 +50,13 @@ async function register(email, password) {
   }
   if (typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
     throw badRequest(`password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+  }
+  if (Buffer.byteLength(password, 'utf8') > MAX_PASSWORD_BYTES) {
+    throw badRequest(
+      `password must be at most ${MAX_PASSWORD_BYTES} bytes as UTF-8. ` +
+      'Characters outside the Latin alphabet take more than one byte each, ' +
+      'so a shorter password can still be over the limit.'
+    );
   }
 
   const normalised = email.trim().toLowerCase();

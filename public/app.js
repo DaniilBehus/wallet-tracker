@@ -32,6 +32,7 @@
     signedOut: 'You have been signed out',
     signOut: 'Sign out',
     passwordTooShort: 'Password must be at least 8 characters',
+    passwordTooLong: 'Password must be at most 72 bytes — accented and non-Latin letters count as more than one',
     credentialsRequired: 'Enter both an e-mail and a password',
 
     // add
@@ -404,6 +405,13 @@
     // instant Slovak sentence instead of a round trip and a generic one.
     if (state.authMode === 'register' && password.length < 8) {
       return toastErr(T.passwordTooShort);
+    }
+    // The upper bound is bcrypt's: it reads 72 bytes and ignores the rest, so
+    // a longer password would have a tail that does nothing (BUG-017, D-045).
+    // Counted in UTF-8 bytes, like the server does — TextEncoder, because
+    // password.length counts characters and an emoji is four bytes.
+    if (state.authMode === 'register' && new TextEncoder().encode(password).length > 72) {
+      return toastErr(T.passwordTooLong);
     }
 
     const path = state.authMode === 'register' ? '/auth/register' : '/auth/login';

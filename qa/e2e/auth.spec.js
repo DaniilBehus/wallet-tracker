@@ -89,4 +89,50 @@ test.describe('Authentication', () => {
     await expect(add.save).toBeVisible();
     await expect(add.amount).toBeVisible();
   });
+
+  // bcrypt reads 72 bytes and ignores the rest, so the server refuses anything
+  // longer (BUG-017, D-045). The form says so before the round trip; these two
+  // cases check that it does, and that it counts the same unit the server does.
+  test('a password over 72 bytes is refused before it is sent', testCase('TC-E2E-073'), async ({ page }) => {
+    const auth = new AuthPage(page);
+    const add = new AddPage(page);
+    const { email } = freshCredentials();
+
+    const sent = [];
+    page.on('request', (request) => {
+      if (request.method() === 'POST' && request.url().includes('/api/auth/register')) sent.push(request.url());
+    });
+
+    await page.goto('/');
+    await auth.register(email, 'a'.repeat(73));
+
+    await expect(auth.toastError).toBeVisible();
+    await expect(auth.toastError).toContainText('at most 72 bytes');
+    await expect(add.save).toBeHidden();
+    // The point of a client-side rule: the request never leaves the browser.
+    expect(sent).toHaveLength(0);
+  });
+
+  test('the browser counts bytes, not characters', testCase('TC-E2E-074'), async ({ page }) => {
+    const auth = new AuthPage(page);
+    const { email } = freshCredentials();
+
+    // 37 characters — comfortably under any character limit — and 74 bytes.
+    const password = 'é'.repeat(37);
+    expect(password.length).toBe(37);
+    expect(new TextEncoder().encode(password).length).toBe(74);
+
+    const sent = [];
+    page.on('request', (request) => {
+      if (request.method() === 'POST' && request.url().includes('/api/auth/register')) sent.push(request.url());
+    });
+
+    await page.goto('/');
+    await auth.register(email, password);
+
+    await expect(auth.toastError).toContainText('at most 72 bytes');
+    // The server's refusal contains the same words, so without this the case
+    // would pass even with no rule in the browser at all.
+    expect(sent).toHaveLength(0);
+  });
 });
