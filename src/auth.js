@@ -13,11 +13,12 @@ const MIN_PASSWORD_LENGTH = 8;
 
 // bcrypt reads at most 72 bytes of a password and silently ignores the rest,
 // so two different passwords sharing their first 72 bytes produce the same
-// hash and both open the account (BUG-017). Decision D-045 (ORD-020): refuse
-// such a password at registration with a 400 rather than accept a password
-// whose tail does nothing. Login and stored hashes are untouched — changing
-// how existing passwords are verified would lock people out of their accounts,
-// and no account can have been created with a longer one after this check.
+// hash and both open the account. Decision D-045, see log/BUGS.md BUG-017:
+// refuse such a password at registration with a 400 rather than accept a
+// password whose tail does nothing. Login and stored hashes are untouched —
+// changing how existing passwords are verified would lock people out of their
+// accounts, and no account can have been created with a longer one after this
+// check.
 //
 // Bytes, not characters: "ä" is two bytes in UTF-8 and an emoji is four, so a
 // 40-character password can exceed the limit while a 72-character ASCII one

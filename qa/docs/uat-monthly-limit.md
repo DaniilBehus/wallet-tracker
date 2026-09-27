@@ -116,26 +116,28 @@ account of the run is the owner's own.
 ### UAT-OBS-01 · the over-limit state is marked too weakly
 
 Accepted with a comment. The owner asks for a frame around the limit figure:
-red when the limit is exceeded, a neutral frame while budget remains, and no
-frame when no limit is set; colours chosen to sit inside the existing theme.
+red when the limit is used up, a light, neutral frame while budget remains, and
+no frame when no limit is set; colours chosen to sit inside the existing theme.
+(Corrected 2026-09-27: this entry first said "exceeded". That was an agent's
+paraphrase of the owner's Ukrainian words, which asked about a used-up limit.
+Nothing else in the record of this run has changed.)
 
 **This does not fail step 6.** The state already carries both the words *Over
 limit by €X* and the `figure--over` class, so REQ-ML-09 AC-09.3 — colour is
 never the only carrier — still holds. It is a presentation improvement, tracked
 separately from this pass, and it did not block acceptance.
 
-**Status: implemented in `8d7cdeb` (ORD-020), awaiting the owner's re-check.** The owner has
-not looked at it yet, so this records an implementation, not an acceptance.
+**Status: implemented in `8d7cdeb`, awaiting the owner's re-check.** The owner
+has not looked at it yet, so this records an implementation, not an acceptance.
 
 - The limit figure now has a frame: neutral while budget remains, red once it
   is used up, none while no limit is set. The border is always there and only
   changes colour, so the figures above it do not move when the state changes.
-- **One point to check at the re-check.** The order defined "used up" as
-  nothing left, so spending *exactly* the limit also gets the red frame. The
-  words still say *Limit reached*, not over (REQ-ML-05 R5), and the status line
-  keeps its separate over class. The owner's words at UAT were "red when the
-  limit is exceeded", so this is the one place the implementation reads the
-  request more broadly than it was worded.
+- **Red means nothing is left.** The owner asked for red once the limit is
+  used up, so spending *exactly* the limit gets the red frame, just as
+  spending more does. The words keep the finer distinction: at equality the
+  status line says *Limit reached*, not over (REQ-ML-05 R5), and carries no
+  over class.
 - Frame contrast was measured in the browser against both ends of the month
   header's gradient, the darkest and lightest points it sits on. WCAG 1.4.11
   asks 3:1 of a graphical object.
