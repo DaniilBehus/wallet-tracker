@@ -270,6 +270,24 @@ The worked answer in `docs/support/log-exercise.md` quotes a log that
 |---|---|---|---|---|---|---|
 | TC-PY-017 | The exercise quotes its log exactly | Read the page's quoted lines and the committed log | Every quoted line is a line of the log; the first question's reference is the log's only 500, which has its `UNHANDLED` line; no machine folder or e-mail address in the log | support pack | P2 | PASS |
 
+## Selenium · browser checks · `qa/selenium/`
+
+A second, smaller browser layer in Python: Selenium WebDriver with pytest and
+Page Objects, beside the Playwright suite rather than instead of it. Data is
+made through the API with a fresh account per test; the browser does only the
+behaviour under test.
+
+| ID | Case | Steps | Expected | Traces to | Pri | Status |
+|---|---|---|---|---|---|---|
+| TC-SEL-001 | Register through the form | Create an account on the sign-in screen | Signed in on the Add screen with the new account's categories; Month shows €0.00 and no rows | §6.1, TC-E2E-001 | P1 | PASS |
+| TC-SEL-002 | A wrong password shows its reference | Sign in with a wrong password | *E-mail or password is incorrect.* and an 8-character reference that is the start of the 401's `X-Request-Id`, read from Chrome's network log | support pack, §5 (401) | P1 | PASS |
+| TC-SEL-003 | An expense saved on the keypad joins the month | One expense through the API; type 7.40 on the keypad, pick Groceries, add a note, save | The total grows by exactly €7.40 and the new row shows the note, the category and the amount | §6.1, §6.2 | P1 | PASS |
+| TC-SEL-004 | The status box follows the limit | Within, exactly at and over the limit, one run each | A white outline and no fill with budget left; solid red with white text once used up; *Limit reached* at equality without the over class; the limit figure unframed | UAT-OBS-01, REQ-ML-05 R5 | P1 | PASS |
+| TC-SEL-005 | Clear the limit from the screen | Empty the limit field and save | *Set limit* is offered, the status box is gone, the limit figure is unframed and the API reports `null` | REQ-ML-10 | P2 | PASS |
+| TC-SEL-006 | BUG-015 through the screen | Edit only the note of an uncategorised expense | Saved; the row keeps *Uncategorised*; the API has the new note and a null category | **BUG-015** | P1 | PASS |
+| TC-SEL-007 | Pay a loan instalment | A loan of three instalments; pay once on Upcoming | *3 of 3 left · €150.00* becomes *2 of 3 left · €100.00*; the API counts 1 paid and 2 left | §4.2, §6.3 | P1 | PASS |
+| TC-SEL-008 | TC-SEL-003 at phone width | The same steps with the page emulated at 375 px | The same result | §6 phone-first | P2 | PASS |
+
 ## Load · `qa/load/`
 
 Measured, not asserted-by-feel: every run records `GET /api/health` idle **and**
@@ -436,9 +454,10 @@ fail when its defect is put back — see S05.
 | API — 179 requests, 650 assertions | 113 | 179 | all PASS |
 | Database — the one in-place migration, node:test | 3 | 3 | all PASS |
 | Python — 17 documented scenarios, 24 pytest items | 17 | 24 | all PASS |
+| Selenium — 8 documented scenarios, 10 pytest items | 8 | 10 | all PASS |
 | Load — 3 scenarios, thresholds enforced | 3 | 3 | all PASS |
 | End-to-end — 85 tests × 2 viewports | 85 | 170 | all PASS; local browser run requires a host that permits Chromium |
-| **Total** | **221** | **379** | **documented cases PASS; local browser execution environment noted above** |
+| **Total** | **229** | **389** | **documented cases PASS; local browser execution environment noted above** |
 
 **The counts are checked against the suites, not typed from memory.** An earlier
 count claimed 138 cases while only 135 rows existed; three cases (TC-E2E-039…041)

@@ -20,11 +20,17 @@ from pathlib import Path
 import pytest
 from selenium import webdriver
 
+from pages.add_page import AddPage
 from suite_rules import violations
+from wallet_api import Account
 
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
+
+# The tests take their case ids from the API layer's case_link.py, which
+# refuses an id that qa/docs/test-cases.md does not list.
+sys.path.append(str(ROOT / "qa" / "python"))
 
 
 def _api_layer():
@@ -71,8 +77,30 @@ def driver(request: pytest.FixtureRequest):
             "profile.password_manager_leak_detection": False,
         },
     )
+    # The network events, so a test can read a response header (browser_logs.py).
+    options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
 
     browser = webdriver.Chrome(options=options)
     browser.implicitly_wait(0)
     yield browser
     browser.quit()
+
+
+@pytest.fixture
+def account(api) -> Account:
+    """A brand-new account for one test, made through the API."""
+    return Account.register(api)
+
+
+@pytest.fixture
+def signed_in(driver, server, account):
+    """The app open in the browser as `account`, without the sign-in screen.
+
+    Signing in is tested once, through the form (test_auth.py). Everywhere else
+    the session is handed to the app the way it keeps one, in localStorage.
+    """
+    driver.get(server.base_url)
+    driver.execute_script("window.localStorage.setItem('wallet_token', arguments[0]);", account.token)
+    driver.refresh()
+    AddPage(driver).wait_until_open()
+    return driver
