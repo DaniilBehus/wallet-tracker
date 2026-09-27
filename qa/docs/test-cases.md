@@ -337,6 +337,9 @@ subtly wrong and hard to assert on; the numbers beside it are neither.
 | TC-E2E-051 | Deleted elsewhere while editing | Delete the row through the API before Save | UI reports the conflict and refreshes | D-029, §5 404 | P1 | PASS |
 | TC-E2E-052 | Rejected edit retains editor state | Send an amount the API refuses | Editor stays open and the stored row stays unchanged | D-029, §4.3 | P1 | PASS |
 | TC-E2E-053 | Keyboard opens editor | Focus a row and use the keyboard action | Same editor opens without a pointer | §6 accessibility | P2 | PASS |
+| TC-E2E-070 | A note-only edit of an uncategorised expense | Create an expense with no category; change only the note | The PATCH carries the note and no `category_id` at all; the row keeps *Uncategorised* | BUG-015, D-029 | P1 | PASS |
+| TC-E2E-071 | An unchanged save of an uncategorised expense | Open the editor and save without touching anything | The category select reads empty (*Uncategorised*) and **no request is sent** | BUG-015, D-029 | P2 | PASS |
+| TC-E2E-072 | A payment from an uncategorised schedule | Pay a schedule that has no category, then edit the note of the expense it created | Same as TC-E2E-070: no `category_id` in the PATCH | BUG-015 | P2 | PASS |
 
 ## End-to-end · Pagination · `qa/e2e/pagination.spec.js`
 
@@ -378,8 +381,8 @@ fail when its defect is put back — see S05.
 | Database — the one in-place migration, node:test | 3 | 3 | all PASS |
 | Python — 6 documented scenarios, 13 pytest items | 6 | 13 | all PASS |
 | Load — 3 scenarios, thresholds enforced | 3 | 3 | all PASS |
-| End-to-end — 69 tests × 2 viewports | 69 | 138 | all PASS; local browser run requires a host that permits Chromium |
-| **Total** | **186** | **328** | **documented cases PASS; local browser execution environment noted above** |
+| End-to-end — 72 tests × 2 viewports | 72 | 144 | all PASS; local browser run requires a host that permits Chromium |
+| **Total** | **189** | **334** | **documented cases PASS; local browser execution environment noted above** |
 
 **The counts are checked against the suites, not typed from memory.** An earlier
 count claimed 138 cases while only 135 rows existed; three cases (TC-E2E-039…041)
