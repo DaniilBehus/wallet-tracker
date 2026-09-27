@@ -2362,6 +2362,213 @@
           ]
         },
         {
+          "name": "POST /schedules total_count = 1200 → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ceiling loan {{runId}}\",\n  \"amount_cents\": 99999999,\n  \"day_of_month\": 9,\n  \"starts_on\": \"2026-01-01\",\n  \"total_count\": 1200\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "// The largest loan the app supports: a hundred years of monthly",
+                  "// instalments at the amount ceiling (BUG-018, D-046).",
+                  "expectOk(201, 'schedule');",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('schedCeiling', body.id);",
+                  "pm.test('the whole loan is still exact to the cent', function () {",
+                  "    pm.expect(body.total_count).to.eql(1200);",
+                  "    pm.expect(body.remaining_count).to.eql(1200);",
+                  "    // 99999999 × 1200, computed here rather than copied, and compared",
+                  "    // as an exact integer: this is the product that used to round.",
+                  "    pm.expect(body.remaining_cents).to.eql(99999999 * 1200);",
+                  "    pm.expect(Number.isSafeInteger(body.remaining_cents)).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /schedules total_count = 1201 → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"one instalment too many\",\n  \"amount_cents\": 1000,\n  \"day_of_month\": 9,\n  \"starts_on\": \"2026-01-01\",\n  \"total_count\": 1201\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /schedules the loan from BUG-018 → 400, not a lost cent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"99999999 instalments\",\n  \"amount_cents\": 99999999,\n  \"day_of_month\": 9,\n  \"starts_on\": \"2026-01-01\",\n  \"total_count\": 99999999\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "// Accepted before the fix: 201, with remaining_cents one cent below",
+                  "// the exact product, because 9999999800000001 is past 2^53.",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /schedules total_count = 1e30 → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"a number that is not a count\",\n  \"amount_cents\": 1000,\n  \"day_of_month\": 9,\n  \"starts_on\": \"2026-01-01\",\n  \"total_count\": 1e+30\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "// Number.isInteger(1e30) is true, which is why this used to be stored.",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /schedules/:id total_count past the ceiling → 400",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"total_count\": 1201\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{schedCeiling}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{schedCeiling}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "// The edit path validates the same pair the create path does.",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "POST /schedules starts_on malformed → 400",
           "request": {
             "method": "POST",

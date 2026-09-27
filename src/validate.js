@@ -16,6 +16,15 @@ const { isValidDate, today, dayAfter } = require('./dates');
 const MAX_AMOUNT_CENTS = 100000000; // 1 000 000 EUR, spec §4.3
 const MAX_NAME_LENGTH = 60;
 
+// A hundred years of monthly instalments (D-046, BUG-018). Number.isInteger
+// was the only bound the count had, and it is not a bound at all: it is true
+// for 1e30, which was accepted and stored. Past 2^53 a JavaScript number no
+// longer holds every integer, so the multiplication that produces
+// remaining_cents starts rounding — a loan of 99999999 instalments of
+// 99999999 cents reported one cent less than it owed, and the app's own
+// money invariant says cents are exact.
+const MAX_TOTAL_COUNT = 1200;
+
 // Defined in errors.js so that pure modules can throw it without opening the
 // database this file opens (S23). Re-exported below; nothing else changes.
 const { ApiError } = require('./errors');
@@ -122,7 +131,32 @@ function totalCount(value) {
   if (!Number.isInteger(value) || value <= 0) {
     throw badRequest('total_count must be a positive integer when present');
   }
+  if (value > MAX_TOTAL_COUNT) {
+    throw badRequest(`total_count must not exceed ${MAX_TOTAL_COUNT}`);
+  }
   return value;
+}
+
+/**
+ * What the whole loan comes to, refused when it cannot be counted to the cent
+ * (D-046). A subscription has no total, so there is nothing to check.
+ *
+ * With the two ceilings above the largest possible product is 1.2e11, well
+ * inside the safe range — so today this cannot fire, and that is the point:
+ * the rule is the invariant the money contract actually depends on, and it
+ * stays true if either ceiling is ever raised. Checked wherever the pair can
+ * change, which for a schedule means create and edit.
+ */
+function loanTotalCents(amount, count) {
+  if (count === null || count === undefined) return null;
+  const total = amount * count;
+  if (!Number.isSafeInteger(total)) {
+    throw badRequest(
+      `amount_cents × total_count must not exceed ${Number.MAX_SAFE_INTEGER}: ` +
+      `${amount} × ${count} cannot be represented to the cent`
+    );
+  }
+  return total;
 }
 
 /**
@@ -216,10 +250,12 @@ module.exports = {
   spentOn,
   startsOn,
   totalCount,
+  loanTotalCents,
   patchFields,
   positiveIntParam,
   id,
   ownedCategoryId,
   MAX_AMOUNT_CENTS,
   MAX_NAME_LENGTH,
+  MAX_TOTAL_COUNT,
 };

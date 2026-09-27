@@ -94,6 +94,7 @@
     dayInvalid: 'Day of month must be between 1 and 31',
     dateRequired: 'Enter a start date',
     totalCountInvalid: 'Number of instalments must be at least 1',
+    totalCountTooMany: 'A loan can run to at most 1200 instalments — a hundred years of monthly payments',
     amountInvalid: 'Amount must be a number, for example 15.00',
     // G5 / D-011 — shown only for a day past the 28th.
     clampHint: (day) =>
@@ -146,6 +147,7 @@
   const DONUT_CIRCUMFERENCE = 2 * Math.PI * DONUT_RADIUS;
 
   const MAX_AMOUNT_CENTS = 100000000;   // 1 000 000 €, mirrors spec §4.3
+  const MAX_TOTAL_COUNT = 1200;         // mirrors D-046 in src/validate.js
   const NBSP = ' ';                // keeps "15,00 €" from breaking in two
   const TOKEN_KEY = 'wallet_token';
 
@@ -1216,6 +1218,12 @@
     if (!startsOn) return toastErr(T.dateRequired);
     if (isLoan && (!Number.isInteger(totalCount) || totalCount < 1)) {
       return toastErr(T.totalCountInvalid);
+    }
+    // The server's ceiling, said here instead of after a round trip. Past it
+    // the instalments no longer multiply out to an exact number of cents
+    // (BUG-018, D-046).
+    if (isLoan && totalCount > MAX_TOTAL_COUNT) {
+      return toastErr(T.totalCountTooMany);
     }
 
     const categoryRaw = String(data.get('category_id') || '');
