@@ -1,0 +1,36 @@
+# Line endings are decided here, once, for everyone — not by whatever
+# core.autocrlf each machine happens to have.
+#
+# Why this file exists: two of this repository's gates hash the bytes of a file
+# on disk. C1 in scripts/check.js compares spec/architecture.md against
+# spec/architecture.sha256, and the AI evaluator compares qa/ai/data/
+# eval-cases.jsonl against its manifest. Both recorded hashes are of LF content.
+# On Windows with the default core.autocrlf=true, a fresh clone writes CRLF, so
+# both hashes miss by the line endings alone: `npm run check` and `npm run
+# eval:ai` fail on a clone where nothing is wrong, and `git status` reports
+# every text file as modified while `git diff` shows no change at all.
+#
+# `text=auto eol=lf` ends that: git decides what is text, and every text file is
+# written to the working tree with LF on every platform. Editors on Windows
+# handle LF; the gates and the hashes then mean what they say.
+
+* text=auto eol=lf
+
+# Binary files: never converted, never diffed as text. Listed by type rather
+# than by path so a new screenshot or font needs no change here.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.pdf  binary
+*.woff  binary
+*.woff2 binary
+*.ttf  binary
+*.otf  binary
+*.eot  binary
+*.zip  binary
+*.db      binary
+*.sqlite  binary
+*.sqlite3 binary
