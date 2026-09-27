@@ -33,7 +33,7 @@ State: `OPEN` · `IN PROGRESS` · `CLOSED` · `WONTFIX` (needs a reason).
 | BUG-012 | Two processes writing one database answer 500 | High | CLOSED | S16 | fixed | R12 |
 | BUG-013 | The edit panel opened underneath the bottom navigation | Medium | CLOSED | S16 | fixed | R13 |
 | BUG-014 | Categories collapse to an 18 px strip on a short phone | High | CLOSED | S21 | S23 · uncommitted | R14 |
-| BUG-015 | Editing an uncategorised expense sends category zero | Medium | OPEN | S21 | — | R14 |
+| BUG-015 | Editing an uncategorised expense sends category zero | Medium | CLOSED | S21 | ORD-020 | R14 |
 | BUG-016 | Concurrent registrations of the same email return 500 | High | OPEN | S21 | — | R14 |
 | BUG-017 | Password suffixes after 72 bytes are silently ignored | High | OPEN | S21 | — | R14 |
 | BUG-018 | A large loan loses an integer cent in remaining money | Critical | OPEN | S21 | — | R14 |
@@ -1183,7 +1183,7 @@ It lives in the AI suite because the defect guards the Add screen the AI entry
 point sits on.
 **→ Rule R14.**
 
-### BUG-015 · Editing an uncategorised expense sends category zero · Medium · OPEN
+### BUG-015 · Editing an uncategorised expense sends category zero · Medium · CLOSED
 
 | | |
 |---|---|
@@ -1197,9 +1197,20 @@ open its Month row; change only Note; save.
 category is a workaround, but incorrectly forces a classification change.
 **Root cause:** the select contains no empty option; null is rendered as an
 empty value and then Number('') becomes 0, differing from original null.
-**Fix:** not applied. Preserve null and represent Uncategorised explicitly.
-**Regression:** browser reproduced 400/category 0; add no-op and note-only
-uncategorised edits, including payments created by uncategorised schedules.
+**Fix:** applied in ORD-020. The editor's category list now opens with an
+explicit *Uncategorised* option (value `""`), the same one the AI review form
+already had, so "no category" is something the list can show and a person can
+choose. On save the value is read as `rawCategory === '' ? null : Number(...)`,
+so null stays null; the existing "send only what changed" comparison then sees
+no change and leaves `category_id` out of the patch entirely. The server needed
+nothing: `ownedCategoryId` already accepted null.
+**Regression:** TC-E2E-070 (note-only edit), TC-E2E-071 (unchanged save sends
+no request at all) and TC-E2E-072 (an expense created by paying a schedule that
+has no category) in `qa/e2e/editing.spec.js`. They read the PATCH off the wire
+rather than the screen, because the defect was in what the request carried: a
+screen assertion would have passed the moment the toast said "saved". Control:
+with the two lines of the fix reverted, all three fail on both viewports (6 of
+6); with the fix, 18 of 18 in that file pass.
 **→ Rule R14.**
 
 ### BUG-016 · Concurrent registrations of the same email return 500 · High · OPEN

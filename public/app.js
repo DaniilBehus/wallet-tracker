@@ -839,6 +839,11 @@
 
     const select = $('#tx-edit-category');
     select.textContent = '';
+    // An expense may legitimately have no category (D-029), so the list needs a
+    // way to say that. Without this option "no category" had no value to select,
+    // the select fell back to an empty string, and saving turned it into 0
+    // (BUG-015). The same option exists in the AI review form.
+    select.append(el('option', { value: '', textContent: T.uncategorised }));
     for (const category of state.categories) {
       const option = el('option', {
         value: String(category.id),
@@ -883,7 +888,11 @@
     if (cents === null) return toastErr(T.amountRequired);
     if (cents > MAX_AMOUNT_CENTS) return toastErr(T.amountTooBig);
 
-    const categoryId = Number($('#tx-edit-category').value);
+    // Empty means Uncategorised, which is null — not 0. Number('') is 0, and 0
+    // is neither a category nor the null it replaced, so the patch below saw a
+    // change that had not happened and the server refused it (BUG-015).
+    const rawCategory = $('#tx-edit-category').value;
+    const categoryId = rawCategory === '' ? null : Number(rawCategory);
     const spentOn = $('#tx-edit-date').value;
     const note = $('#tx-edit-note').value.trim();
 

@@ -114,4 +114,81 @@ test.describe('Editing an expense', () => {
     await expect(month.editAmount).toBeVisible();
     await expect(month.editAmount).toHaveValue('15.00');
   });
+
+  /**
+   * BUG-015. An expense may have no category, and the editor has to be able to
+   * say so. It could not: the select had no option for "none", the browser
+   * reported an empty value, and saving turned that into category 0 — a
+   * category that cannot exist — so a note-only edit was refused with 400.
+   *
+   * These three cases watch the request rather than the screen. A screen test
+   * would pass as soon as the toast said "saved"; the defect was in what the
+   * request carried, so that is what is asserted.
+   */
+  function patchesOf(page) {
+    const sent = [];
+    page.on('request', (request) => {
+      if (request.method() === 'PATCH' && /\/api\/transactions\/\d+$/.test(request.url())) {
+        sent.push(request.postDataJSON());
+      }
+    });
+    return sent;
+  }
+
+  test('a note-only edit of an uncategorised expense never sends a category', testCase('TC-E2E-070'), async ({ signedIn, api }) => {
+    const month = new MonthPage(signedIn);
+    const tx = await api.addExpense({ amount_cents: 1500, note: 'coffee' });
+    const patches = patchesOf(signedIn);
+
+    await month.goToMonth();
+    await expect(month.row(tx.id)).toContainText('Uncategorised');
+
+    await month.editExpense(tx.id, { note: 'coffee and a bun' });
+
+    await expect(month.editNote).toBeHidden();
+    await expect(month.row(tx.id)).toContainText('coffee and a bun');
+    await expect(month.row(tx.id)).toContainText('Uncategorised');
+    await expect(month.row(tx.id)).toContainText(eurWithin(1500));
+
+    expect(patches).toHaveLength(1);
+    expect(patches[0]).toEqual({ note: 'coffee and a bun' });
+    expect(patches[0]).not.toHaveProperty('category_id');
+  });
+
+  test('saving an uncategorised expense unchanged sends nothing at all', testCase('TC-E2E-071'), async ({ signedIn, api }) => {
+    const month = new MonthPage(signedIn);
+    const tx = await api.addExpense({ amount_cents: 1500, note: 'coffee' });
+    const patches = patchesOf(signedIn);
+
+    await month.goToMonth();
+    await month.editButton(tx.id).click();
+
+    // The editor must show what the expense is, including that it has no
+    // category; selecting nothing is a state, not a missing answer.
+    await expect(month.editCategory).toHaveValue('');
+    await month.editSave.click();
+
+    await expect(month.editAmount).toBeHidden();
+    await expect(month.row(tx.id)).toContainText('Uncategorised');
+    expect(patches, 'an unchanged save is not a request').toHaveLength(0);
+  });
+
+  test('a payment from an uncategorised schedule edits the same way', testCase('TC-E2E-072'), async ({ signedIn, api }) => {
+    const month = new MonthPage(signedIn);
+    const schedule = await api.addSchedule({
+      name: 'Locker', amount_cents: 900, day_of_month: 5, starts_on: '2026-01-01',
+    });
+    const paid = await api.paySchedule(schedule.id);
+    const patches = patchesOf(signedIn);
+
+    await month.goToMonth();
+    await expect(month.row(paid.transaction_id)).toContainText('Uncategorised');
+
+    await month.editExpense(paid.transaction_id, { note: 'storage' });
+
+    await expect(month.row(paid.transaction_id)).toContainText('storage');
+    await expect(month.row(paid.transaction_id)).toContainText(eurWithin(900));
+    expect(patches).toHaveLength(1);
+    expect(patches[0]).not.toHaveProperty('category_id');
+  });
 });
