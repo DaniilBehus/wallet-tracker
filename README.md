@@ -43,6 +43,7 @@ schedule model. Recreate these four screenshots with `npm run screenshots`.
 
 - **See the app:** [Screenshots](#screenshots) → [Product scope](spec/architecture.md#1-product-and-scope)
 - **Run it:** [Quick start](#quick-start) → [Test setup](docs/testing.md)
+- **Support it:** [Support pack](docs/support/README.md) → [Runbook](docs/support/runbook.md)
 - **Review QA work:** [QA evidence](#qa-evidence) → [Monthly limit case study](qa/docs/analysis-monthly-limit.md)
 - **Read the code:** [Folder map](#architecture) → [Architecture notes](spec/architecture.md)
 
