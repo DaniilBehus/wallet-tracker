@@ -127,8 +127,8 @@ limit by €X* and the `figure--over` class, so REQ-ML-09 AC-09.3 — colour is
 never the only carrier — still holds. It is a presentation improvement, tracked
 separately from this pass, and it did not block acceptance.
 
-**Status: implemented in `8d7cdeb`, awaiting the owner's re-check.** The owner
-has not looked at it yet, so this records an implementation, not an acceptance.
+**Rev 1: implemented in `8d7cdeb`; not accepted at the owner's re-check on
+2026-09-27 (below).** What rev 1 built and measured is kept as it was recorded:
 
 - The limit figure now has a frame: neutral while budget remains, red once it
   is used up, none while no limit is set. The border is always there and only
@@ -153,6 +153,50 @@ has not looked at it yet, so this records an implementation, not an acceptance.
   measures that palette fails.
 - `docs/screenshots/2-month.png` was regenerated with `npm run screenshots`.
   The other three screenshots came out byte-identical.
+
+**The owner's re-check, 2026-09-27: not accepted.** The frame was around the
+limit figure. The owner asked for a fully red box with white text around the
+*Over limit* status instead, not a frame around the limit. The original
+observation had also asked for white while budget remains and nothing without
+a limit.
+
+**Rev 2: implemented, awaiting the owner's re-check.** The owner has not looked
+at it yet, so this records an implementation, not an acceptance.
+
+- The frame is gone: the limit figure looks as it did before UAT-OBS-01.
+- The status line under the ring is now the box. Once the limit is used up —
+  reached or over — it is a solid red box with white bold text and rounded
+  corners, the red taken from the palette's danger family. While budget
+  remains it is a white outline with no fill. Without a limit there is no box,
+  because the line is hidden, as before.
+- The words and their meaning are unchanged: spending exactly the limit still
+  reads *Limit reached* and carries no over class (REQ-ML-05 R5), and colour
+  is still never the only carrier (REQ-ML-09 AC-09.3).
+- Measured in the browser. The status text is 13 px bold, normal-size text, so
+  WCAG 1.4.3 asks 4.5:1 of the white on the red; 1.4.11 asks 3:1 of the
+  outline against both ends of the month header's gradient.
+
+  | Palette | White text on the red | White outline on the header |
+  |---|---|---|
+  | Shipped (`theme.css`) | 5.44:1 | 11.90:1 · 15.25:1 |
+  | Light (`style.css` on its own) | 5.70:1 | 12.01:1 · 7.01:1 |
+
+- With the longest sentences the box can hold, *Within limit · €1,000,000.00
+  left* and *Over limit by €10,000,000.00*, it stays inside the header at 320,
+  375 and 393 px, its text is not clipped and nothing scrolls sideways. The
+  income, left and limit figures stay in the same place in all four states.
+- Checked by TC-E2E-076…080, rewritten for the box, and two new cases:
+  TC-E2E-084 (the limit figure is never framed and the figures above do not
+  move) and TC-E2E-085 (the box fits at 320, 375 and 393 px). Controls, each
+  in a temporary edit restored byte for byte: with the box never drawn,
+  TC-E2E-077…080 fail; with exact equality treated as budget left, only 078
+  fails; with a red that white text reaches under 4.5:1, only 079 fails in the
+  shipped palette and only 080 in the light one; with the frame back on the
+  limit figure, only 084 fails.
+- `docs/screenshots/2-month.png` was regenerated with `npm run screenshots` and
+  shows the over state. The other three came out byte-identical. Pictures of
+  the within and reached states at 375 px were made for the owner's re-check
+  and are not kept in the repository.
 
 **Sign-off** — completed by the owner, not by the agent above.
 

@@ -45,7 +45,8 @@ class MonthPage extends BasePage {
     // Reads "Within limit · €… left", "Limit reached" or "Over limit by €…",
     // so the state is in words and not only in colour (REQ-ML-09).
     this.limitStatus = page.getByTestId('limit-status');
-    // The box the UAT-OBS-01 frame is drawn on, and the header it sits on.
+    // The limit figure, which must never carry a frame (UAT-OBS-01), and the
+    // header that the status box and the figures sit on.
     this.limitFigure = page.getByTestId('limit-figure');
     this.head = page.getByTestId('month-head');
 

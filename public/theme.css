@@ -18,10 +18,12 @@
   --danger-bg: #3b2427;
   --ok: #9ce9ca;
   --ok-bg: #153d34;
-  /* The limit frame (UAT-OBS-01), in this palette's own colours: 6.17:1 and
-     7.06:1 against the lighter end of the month header's gradient. */
-  --limit-frame: var(--muted);
-  --limit-frame-over: var(--danger);
+  /* The limit status box (UAT-OBS-01, rev 2). --danger is a pale red made for
+     text on this dark palette, too light to carry white text, so the filled
+     box takes a deeper red of the same hue: white on it is 5.44:1. The
+     outline is 11.90:1 or more against the month header. */
+  --limit-used-up: #c0392b;
+  --limit-outline: #ffffff;
   --radius: 18px;
   --radius-sm: 12px;
   --shadow-sm: 0 8px 28px rgba(0, 0, 0, 0.16);
@@ -160,9 +162,10 @@ input[type="checkbox"] { accent-color: var(--accent); }
 .screen__head--month .figure dt { color: var(--muted); }
 .screen__head--month .figure dd { color: var(--text); font-size: clamp(17px, 4vw, 23px); overflow: visible; overflow-wrap: anywhere; }
 .screen__head--month .figure__edit { color: var(--text); border-bottom-color: var(--accent); }
-.screen__head--month .figure--over,
-.screen__head--month .limit-status.figure--over { color: var(--danger); }
+.screen__head--month .figure--over { color: var(--danger); }
 .screen__head--month .limit-status { color: var(--text); }
+/* After the line above: the filled box keeps white text in this palette too. */
+.screen__head--month .limit-status--used-up { color: #ffffff; }
 .screen__head--month .income-form { border-top-color: var(--line-strong); }
 .screen__head--month .income-form__hint,
 .screen__head--month .income-form .field__label { color: var(--muted); }

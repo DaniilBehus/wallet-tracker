@@ -19,12 +19,13 @@
   --ok:        #067647;
   --ok-bg:     #ecfdf3;
   --danger-bg: #fef3f2;
-  /* The limit frame (UAT-OBS-01). Both sit on the month header, which is
-     dark in either palette, and both clear 3:1 against the lighter end of
-     its gradient — 3.63:1 and 5.18:1 here (WCAG 1.4.11). theme.css
-     restates them in its own palette. */
-  --limit-frame:      #a7c0ba;
-  --limit-frame-over: #ffd4ca;
+  /* The limit status box (UAT-OBS-01, rev 2) sits on the month header, which
+     is dark in either palette. Used up: white bold text on this red, 5.70:1
+     once the palette below resolves it (WCAG 1.4.3 asks 4.5:1). Budget left:
+     a white outline and no fill, 7.01:1 or more against the header (1.4.11
+     asks 3:1). theme.css restates both in its own palette. */
+  --limit-used-up: var(--danger);
+  --limit-outline: #ffffff;
 
   --tap: 48px;                 /* minimum comfortable tap target */
   --nav-h: 60px;
@@ -328,25 +329,26 @@ button:focus-visible {
 }
 .figure--over { color: var(--danger); }
 
-/* The limit figure carries a frame: neutral while budget remains, red once
-   it is gone, none while no limit is set (UAT-OBS-01). The border is always
-   there and only changes colour, so nothing moves when the state does —
-   a frame that appears from nothing shifts the two figures above it. */
-.figure--limit {
-  margin: -7px -10px;
-  padding: 5px 8px;
-  border: 2px solid transparent;
-  border-radius: var(--radius);
-}
-.figure--limit.figure--framed { border-color: var(--limit-frame); }
-.figure--limit.figure--framed-over { border-color: var(--limit-frame-over); }
-
 .income-form {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-.limit-status { margin: 10px 0 0; font-size: 13px; font-weight: 700; }
+/* The limit state in words, in a box (UAT-OBS-01, rev 2): a white outline
+   while budget remains, solid red with white text once it is used up, and
+   none without a limit, when the line is hidden. Both boxes have the same
+   border and padding, so a change of state changes colours only. */
+.limit-status {
+  width: fit-content;
+  max-width: 100%;
+  margin: 10px 0 0;
+  padding: 5px 10px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
 .income-form__hint { margin: -4px 0 10px; font-size: 12px; color: var(--muted); }
 .income-form__actions { display: flex; gap: 8px; }
 .income-form__actions .btn { flex: 1; }
@@ -941,9 +943,13 @@ button:focus-visible {
 .screen__head--month .figure__edit { color: #fff; border-bottom-color: rgba(255, 255, 255, 0.45); }
 .screen__head--month .figure--over { color: #ffd4ca; }
 .screen__head--month .limit-status { color: rgba(255, 255, 255, 0.85); }
-/* After the line above, or the same specificity would leave "over limit"
-   white on the dark header — the one state that must stand out. */
-.screen__head--month .limit-status.figure--over { color: #ffd4ca; }
+/* After the line above, which has the same specificity. */
+.screen__head--month .limit-status--left { border-color: var(--limit-outline); }
+.screen__head--month .limit-status--used-up {
+  background: var(--limit-used-up);
+  border-color: var(--limit-used-up);
+  color: #ffffff;
+}
 .screen__head--month .income-form__hint { color: rgba(255, 255, 255, 0.7); }
 .screen__head--month .income-form { margin-top: 18px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.2); }
 .screen__head--month .income-form .field__label { color: rgba(255, 255, 255, 0.76); font-weight: 700; }
