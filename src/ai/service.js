@@ -64,9 +64,11 @@ function createDraftService({ db, getProvider, limits, clock, log, unavailableMe
     };
   }
 
-  async function createDraft({ userId, body, rawBytes, signal }) {
+  async function createDraft({ userId, body, rawBytes, signal, requestId: httpRequestId }) {
     const started = Date.now();
-    const requestId = crypto.randomUUID();
+    // The HTTP request's id when there is one (always a UUID, requestlog.js),
+    // so support finds the draft line by the reference the person was shown.
+    const requestId = httpRequestId || crypto.randomUUID();
     let outcome = 'error';
     let usage = null;
 

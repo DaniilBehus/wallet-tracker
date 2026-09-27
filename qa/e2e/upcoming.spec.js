@@ -141,4 +141,31 @@ test.describe('Upcoming', () => {
     ).toBeVisible();
     await expect(upcoming.payButton(subscription.id)).toBeVisible();
   });
+
+  test('a refused payment shows the reference of the request that failed', testCase('TC-E2E-082'), async ({ signedIn, api }) => {
+    const upcoming = new UpcomingPage(signedIn);
+    const loan = await api.addSchedule({
+      name: 'Reference check',
+      amount_cents: 2500,
+      day_of_month: 10,
+      starts_on: '2026-01-01',
+      total_count: 1,
+    });
+
+    await upcoming.goToUpcoming();
+    await expect(upcoming.payButton(loan.id)).toBeVisible();
+    // Closed behind the screen's back, so the press below is refused with 409.
+    await api.paySchedule(loan.id);
+
+    const refused = signedIn.waitForResponse((r) => r.url().endsWith(`/api/schedules/${loan.id}/pay`));
+    await upcoming.pay(loan.id);
+    const response = await refused;
+    expect(response.status()).toBe(409);
+    const requestId = response.headers()['x-request-id'];
+    expect(requestId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+
+    // The message is unchanged; the reference beside it is that request's id.
+    await expect(upcoming.toastError).toHaveText('This schedule is already closed.');
+    await expect(upcoming.toastErrorRef).toHaveText(requestId.slice(0, 8));
+  });
 });

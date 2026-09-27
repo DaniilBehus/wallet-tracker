@@ -561,9 +561,21 @@ button:focus-visible {
   font-weight: 600;
   text-align: center;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14);
+  /* A toast reports; it never stands between a finger and the button under
+     it. Only the reference below takes a tap, so it can be selected. */
+  pointer-events: none;
 }
 .toast--success { background: var(--ok-bg);     color: var(--ok);     border: 1px solid #a9e0c1; }
 .toast--error   { background: var(--danger-bg); color: var(--danger); border: 1px solid #f3b4ae; }
+/* The request's reference under an error message (docs/support): one tap
+   selects it whole, ready to paste into a message to whoever runs the app. */
+.toast__ref { display: block; margin-top: 4px; font-size: 12px; font-weight: 500; }
+.toast__ref code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  user-select: all;
+  -webkit-user-select: all;
+  pointer-events: auto;
+}
 
 @media (min-width: 560px) {
   .toast { left: 50%; right: auto; transform: translateX(-50%); min-width: 320px; }

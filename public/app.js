@@ -336,21 +336,25 @@
 
     if (!res.ok) {
       const code = (data && data.error && data.error.code) || 'UNKNOWN';
+      const requestId = res.headers.get('X-Request-Id');
       // An expired or revoked token: drop it and show the sign-in screen
       // rather than leaving the user on a screen that cannot load.
       if (res.status === 401 && state.token) {
         signOut(T.signedOut);
-        throw apiError(res.status, code);
+        throw apiError(res.status, code, undefined, requestId);
       }
-      throw apiError(res.status, code, data && data.error && data.error.message);
+      throw apiError(res.status, code, data && data.error && data.error.message, requestId);
     }
     return data;
   }
 
-  function apiError(status, code, serverMessage) {
+  // requestId is the server's X-Request-Id for the failed request; an error
+  // that never reached the server (OFFLINE) has none.
+  function apiError(status, code, serverMessage, requestId = null) {
     const err = new Error(serverMessage || code);
     err.status = status;
     err.code = code;
+    err.requestId = requestId;
     return err;
   }
 
@@ -373,17 +377,29 @@
 
   let toastTimer = null;
 
-  function showToast(node, text) {
+  function showToast(node, text, reference = null) {
+    const errorBox = $('#toast-error-box');
     $('#toast-success').hidden = true;
-    $('#toast-error').hidden = true;
+    errorBox.hidden = true;
     node.textContent = text;
-    node.hidden = false;
+
+    const box = node === $('#toast-error') ? errorBox : node;
+    if (box === errorBox) {
+      // Eight characters of the request id: enough to find the request in the
+      // log, short enough to read out or paste into a message.
+      $('#toast-ref').hidden = !reference;
+      $('#toast-ref-code').textContent = reference ? reference.slice(0, 8) : '';
+    }
+    box.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { node.hidden = true; }, 2600);
+    // A reference is there to be copied, which takes longer than reading.
+    toastTimer = setTimeout(() => { box.hidden = true; }, reference ? 8000 : 2600);
   }
 
   const toastOk = (text) => showToast($('#toast-success'), text);
-  const toastErr = (text) => showToast($('#toast-error'), text);
+  // `err`, when given, is what api() threw: its request id becomes the
+  // reference shown under the message. Messages about input never have one.
+  const toastErr = (text, err) => showToast($('#toast-error'), text, err ? err.requestId : null);
 
   // ==================================================================== AUTH
 
@@ -425,7 +441,7 @@
         $('#auth-password').value = '';
         await startApp();
       } catch (err) {
-        toastErr(messageFor(err, state.authMode));
+        toastErr(messageFor(err, state.authMode), err);
       }
     });
   }
@@ -555,7 +571,7 @@
         toastOk(T.saved(formatMoney(cents)));
         clearAmount();
       } catch (err) {
-        toastErr(messageFor(err));
+        toastErr(messageFor(err), err);
       }
     });
   }
@@ -573,7 +589,7 @@
         api(`/transactions?limit=${PAGE_SIZE}&offset=0`),
       ]);
     } catch (err) {
-      toastErr(messageFor(err));
+      toastErr(messageFor(err), err);
       return;
     }
 
@@ -607,7 +623,7 @@
         renderTransactions($('#tx-list'), state.month.items);
         renderLoadMore();
       } catch (err) {
-        toastErr(messageFor(err));
+        toastErr(messageFor(err), err);
       }
     });
   }
@@ -942,12 +958,12 @@
         // refreshing is more use than the generic message, and the screen must
         // not keep showing a row the server no longer has.
         if (err.status === 404) {
-          toastErr(T.expenseGone);
+          toastErr(T.expenseGone, err);
           closeTransactionEditor();
           await loadMonth();
           return;
         }
-        toastErr(messageFor(err));
+        toastErr(messageFor(err), err);
       }
     });
   }
@@ -960,7 +976,7 @@
         toastOk(T.deleted);
         await loadMonth();
       } catch (err) {
-        toastErr(messageFor(err));
+        toastErr(messageFor(err), err);
       }
     });
   }
@@ -1006,7 +1022,7 @@
         closeIncomeForm();
         await loadMonth();
       } catch (err) {
-        toastErr(messageFor(err));
+        toastErr(messageFor(err), err);
       }
     });
   }
@@ -1050,7 +1066,7 @@
         closeLimitForm();
         await loadMonth();
       } catch (err) {
-        toastErr(messageFor(err));
+        toastErr(messageFor(err), err);
       }
     });
   }
@@ -1063,7 +1079,7 @@
     try {
       schedules = await api('/schedules?active=1');
     } catch (err) {
-      toastErr(messageFor(err));
+      toastErr(messageFor(err), err);
       return;
     }
 
@@ -1176,7 +1192,7 @@
         }
         await loadUpcoming();
       } catch (err) {
-        toastErr(messageFor(err, 'pay'));
+        toastErr(messageFor(err, 'pay'), err);
       }
     }, T.paying);
   }
@@ -1189,7 +1205,7 @@
     try {
       schedules = await api('/schedules');
     } catch (err) {
-      toastErr(messageFor(err));
+      toastErr(messageFor(err), err);
       return;
     }
 
@@ -1262,7 +1278,7 @@
         $('#schedule-day-hint').textContent = '';
         await loadSchedules();
       } catch (err) {
-        toastErr(messageFor(err));
+        toastErr(messageFor(err), err);
       }
     });
   }
@@ -1324,7 +1340,7 @@
     } catch (err) {
       // A 401 has already sent the user back to sign-in; anything else leaves
       // the app usable with an empty category grid rather than a blank screen.
-      if (err.status !== 401) toastErr(messageFor(err));
+      if (err.status !== 401) toastErr(messageFor(err), err);
       state.categories = [];
     }
 

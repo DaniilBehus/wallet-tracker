@@ -14,6 +14,8 @@ class BasePage {
 
     this.toastSuccess = page.getByTestId('toast-success');
     this.toastError = page.getByTestId('toast-error');
+    // The failed request's reference under an error message (docs/support).
+    this.toastErrorRef = page.getByTestId('toast-error-ref');
 
     this.navAdd = page.getByTestId('nav-add');
     this.navMonth = page.getByTestId('nav-month');

@@ -57,6 +57,8 @@ router.post('/expense-draft', async (req, res) => {
     body: req.body,
     rawBytes: req.rawBodyBytes,
     signal: controller.signal,
+    // One id per request, in the header, the request log and the ai_draft line.
+    requestId: req.id,
   });
   res.status(200).json(draft);
 });

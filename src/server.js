@@ -7,11 +7,15 @@ const { db } = require('./db');
 const { register, login, requireAuth } = require('./auth');
 const { ApiError, badRequest, notFound } = require('./validate');
 const rateLimit = require('./ratelimit');
+const { requestContext, rememberMount, logUnhandled } = require('./requestlog');
 
 const PORT = Number(process.env.PORT) || 3000;
 const VERSION = '1.0.0';
 
 const app = express();
+// Before the body parser: a request refused for bad JSON still gets an id, so
+// even that 400 can be found in the log by the reference its caller was shown.
+app.use(requestContext);
 // `verify` records how many bytes the JSON body had, so a route with a tighter
 // limit than the global parser (the AI draft route, 8 KiB) can refuse a large
 // body without re-serialising it. The global limit itself is unchanged.
@@ -64,12 +68,14 @@ app.post('/api/auth/login', async (req, res) => {
 
 // ------------------------------------------------------------------ protected
 
-app.use('/api/categories', requireAuth, require('./routes/categories'));
-app.use('/api/transactions', requireAuth, require('./routes/transactions'));
-app.use('/api/schedules', requireAuth, require('./routes/schedules'));
-app.use('/api/summary', requireAuth, require('./routes/summary'));
-app.use('/api/settings', requireAuth, require('./routes/settings'));
-app.use('/api/ai', requireAuth, require('./routes/ai'));
+// rememberMount first on each: the request log names routes by their pattern,
+// and an error leaving a router takes the mount path with it (requestlog.js).
+app.use('/api/categories', rememberMount, requireAuth, require('./routes/categories'));
+app.use('/api/transactions', rememberMount, requireAuth, require('./routes/transactions'));
+app.use('/api/schedules', rememberMount, requireAuth, require('./routes/schedules'));
+app.use('/api/summary', rememberMount, requireAuth, require('./routes/summary'));
+app.use('/api/settings', rememberMount, requireAuth, require('./routes/settings'));
+app.use('/api/ai', rememberMount, requireAuth, require('./routes/ai'));
 
 // The app itself. Declared after the API so that no static file can ever
 // shadow an endpoint.
@@ -106,8 +112,9 @@ app.use((err, req, res, next) => {
   }
 
   // Anything reaching here is a bug in this app, so log it whole rather than
-  // swallowing it — the response stays deliberately vague.
-  console.error('UNHANDLED', err);
+  // swallowing it — the response stays deliberately vague, and the request id
+  // in its header is what connects the person who saw it to this line.
+  logUnhandled(req, err);
   res.status(500).json({
     error: { code: 'INTERNAL', message: 'Unexpected server error' },
   });

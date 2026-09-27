@@ -69,6 +69,10 @@ def server() -> Server:
             "JWT_SECRET": secret,
             "LOGIN_WINDOW_MS": "1000",
             "PYTHONUTF8": "1",
+            # The server's stdout is a pipe nobody reads during the session. With
+            # a line per request it would fill, and on Linux a full pipe blocks
+            # the server mid-suite. Request lines off; unhandled errors still log.
+            "WALLET_REQUEST_LOG": "off",
         }
         process = subprocess.Popen(
             ["node", str(ROOT / "src" / "server.js")],
