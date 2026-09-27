@@ -36,21 +36,12 @@ stored. No model-quality claim is implied.
 
 ## Reproduce this preview
 
-With the repository dependencies and Playwright Chromium installed, install only
-the temporary diagram tools, then export:
-
-```bash
-npm install --prefix output/analysis-tools --no-save --package-lock=false --ignore-scripts bpmn-js@18.30.1
-node scripts/render-analysis.js output/analysis-tools
-```
-
-The script is currently scoped to this one AI BPMN. It parses with bpmn-moddle,
-checks sequence/message boundaries and exclusive branches, imports with bpmn-js,
-round-trips XML and exports the SVG. Parser/import warnings or labels outside
-the SVG fail it. A visual-review PNG and validation JSON go to ignored
-`output/analysis-review/`. Inspect the PNG for line/label collisions too:
-bounding-box checks alone do not detect them. It does not execute the process
-or prove application test results.
+The [index](README.md#maintain-and-reproduce) gives the two commands; one run
+checks and exports every model. For this one it parses with bpmn-moddle, checks
+sequence and message boundaries and exclusive branches, imports with bpmn-js,
+round-trips the XML and exports the SVG. Inspect the review PNG for line and
+label collisions too: bounding-box checks alone do not detect them. It does not
+execute the process or prove application test results.
 
 ## Source and coverage
 
