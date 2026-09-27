@@ -3,6 +3,7 @@
 const { test, expect, eur, eurPattern, eurWithin } = require('./fixtures/wallet');
 const { testCase } = require('./case-link');
 const { MonthPage } = require('./pages/month.page');
+const { contrastRatio, parseRgb } = require('./support/contrast');
 
 /**
  * Screen 6.2. State is arranged through the API: a test about the month view
@@ -169,5 +170,145 @@ test.describe('Monthly spending limit', () => {
     await expect(month.toastError).toBeVisible();
     await expect(month.limit).toHaveText(eurPattern(20000));
     expect((await api.settings()).monthly_limit_cents).toBe(20000);
+  });
+});
+
+/** '#a7c0ba' or 'rgb(…)' → 'rgb(r, g, b)', so a token and a computed colour compare. */
+function asRgb(value) {
+  const v = String(value).trim();
+  if (!v.startsWith('#')) return v;
+  const byte = (i) => parseInt(v.slice(i, i + 2), 16);
+  return `rgb(${byte(1)}, ${byte(3)}, ${byte(5)})`;
+}
+
+/**
+ * What the frame looks like right now, and what the palette says it should be.
+ * The border is read as the browser resolved it — the appearance, not the class.
+ */
+function readFrame(month) {
+  return month.limitFigure.evaluate((el) => {
+    const root = getComputedStyle(document.documentElement);
+    return {
+      color: getComputedStyle(el).borderTopColor,
+      neutral: root.getPropertyValue('--limit-frame'),
+      over: root.getPropertyValue('--limit-frame-over'),
+    };
+  });
+}
+
+/**
+ * The frame against what it is drawn on (WCAG 1.4.11 asks 3:1 of a graphical
+ * object). The month header is painted with a gradient, so its
+ * backgroundColor is transparent and the walk-up in the BUG-001 check would
+ * land on the page behind it. The stops are read off background-image instead,
+ * and the frame must clear 3:1 against every one — the ends of the gradient are
+ * its darkest and lightest points here, because every channel of both palettes'
+ * header gradients moves toward the same end.
+ */
+async function expectFrameContrast(month, color) {
+  const image = await month.head.evaluate((el) => getComputedStyle(el).backgroundImage);
+  const stops = image.match(/rgba?\([^)]*\)/g) || [];
+  expect(stops.length, `the month header should be a gradient, got: ${image}`).toBeGreaterThanOrEqual(2);
+  for (const stop of stops) {
+    const ratio = contrastRatio(color, stop);
+    expect(ratio, `frame ${color} on ${stop} is ${ratio.toFixed(2)}:1, below 3:1`).toBeGreaterThanOrEqual(3);
+  }
+}
+
+/**
+ * UAT-OBS-01: the owner asked for a frame around the limit figure — red when
+ * the limit is used up, neutral while budget remains, none with no limit. The
+ * sentence under the figures still carries the state in words; these cases
+ * are about the frame, and the words are checked alongside where the frame
+ * deliberately says less than they do.
+ */
+test.describe('The limit frame (UAT-OBS-01)', () => {
+  test('no limit, no frame', testCase('TC-E2E-076'), async ({ signedIn, api }) => {
+    const month = new MonthPage(signedIn);
+    await api.setSettings({ monthly_income_cents: 150000, monthly_limit_cents: null });
+
+    await month.goToMonth();
+    await expect(month.limit).toHaveText('Set limit');
+
+    const { color } = await readFrame(month);
+    // The border is always there and only changes colour, so "no frame" is a
+    // border nobody can see: fully transparent.
+    expect(parseRgb(color).a, `the frame should be invisible, got ${color}`).toBe(0);
+  });
+
+  test('budget left: a neutral frame', testCase('TC-E2E-077'), async ({ signedIn, api }) => {
+    const month = new MonthPage(signedIn);
+    const [groceries] = await api.categories();
+    await api.setSettings({ monthly_income_cents: 150000, monthly_limit_cents: 20000 });
+    await api.addExpense({ amount_cents: 5000, category_id: groceries.id });
+
+    await month.goToMonth();
+    await expect(month.limitStatus).toContainText('Within limit');
+
+    const frame = await readFrame(month);
+    expect(frame.color).toBe(asRgb(frame.neutral));
+    expect(asRgb(frame.neutral), 'neutral and red must not be the same colour').not.toBe(asRgb(frame.over));
+    await expectFrameContrast(month, frame.color);
+  });
+
+  test('exactly at the limit: the red frame, while the words still say reached', testCase('TC-E2E-078'), async ({ signedIn, api }) => {
+    const month = new MonthPage(signedIn);
+    const [groceries] = await api.categories();
+    await api.setSettings({ monthly_income_cents: 150000, monthly_limit_cents: 10000 });
+    await api.addExpense({ amount_cents: 10000, category_id: groceries.id });
+
+    await month.goToMonth();
+
+    // Nothing is left, so the frame is red — but equality is "reached", not
+    // "over" (REQ-ML-05 R5), and the words and their class keep saying so.
+    await expect(month.limitStatus).toHaveText('Limit reached');
+    await expect(month.limitStatus).not.toHaveClass(/figure--over/);
+    const frame = await readFrame(month);
+    expect(frame.color).toBe(asRgb(frame.over));
+  });
+
+  test('over the limit: the red frame, readable on the header', testCase('TC-E2E-079'), async ({ signedIn, api }) => {
+    const month = new MonthPage(signedIn);
+    const [groceries] = await api.categories();
+    await api.setSettings({ monthly_income_cents: 150000, monthly_limit_cents: 10000 });
+    await api.addExpense({ amount_cents: 12500, category_id: groceries.id });
+
+    await month.goToMonth();
+    await expect(month.limitStatus).toContainText('Over limit');
+
+    const frame = await readFrame(month);
+    expect(frame.color).toBe(asRgb(frame.over));
+    await expectFrameContrast(month, frame.color);
+  });
+
+  test('the light palette clears 3:1 too', testCase('TC-E2E-080'), async ({ signedIn, api }) => {
+    // theme.css is the shipped dark palette; style.css carries a light one of
+    // its own underneath. Withholding theme.css is how that palette renders.
+    const month = new MonthPage(signedIn);
+    const gradient = () => month.head.evaluate((el) => getComputedStyle(el).backgroundImage);
+    const shipped = await gradient();
+    await signedIn.route('**/theme.css', (route) => route.abort());
+    await signedIn.reload();
+    // Without this the case could measure the shipped palette twice and pass.
+    expect(await gradient(), 'theme.css was not withheld').not.toBe(shipped);
+
+    const [groceries] = await api.categories();
+    await api.setSettings({ monthly_income_cents: 150000, monthly_limit_cents: 20000 });
+    await api.addExpense({ amount_cents: 5000, category_id: groceries.id });
+
+    await month.goToMonth();
+    await expect(month.limitStatus).toContainText('Within limit');
+    const neutral = await readFrame(month);
+    expect(neutral.color).toBe(asRgb(neutral.neutral));
+    await expectFrameContrast(month, neutral.color);
+
+    // Push the month over the limit and let the screen redraw.
+    await api.addExpense({ amount_cents: 20000, category_id: groceries.id });
+    await signedIn.reload();
+    await month.goToMonth();
+    await expect(month.limitStatus).toContainText('Over limit');
+    const over = await readFrame(month);
+    expect(over.color).toBe(asRgb(over.over));
+    await expectFrameContrast(month, over.color);
   });
 });
