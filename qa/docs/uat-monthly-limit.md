@@ -199,6 +199,10 @@ acceptance.
   the within and reached states at 375 px were made for the owner's re-check
   and are not kept in the repository.
 
+**The owner's re-check of rev 2, 2026-09-27: accepted.** The owner reviewed the
+over, reached and within states — the regenerated month screenshot and the two
+375 px pictures — and accepted the status box. UAT-OBS-01 is closed.
+
 **Sign-off** — completed by the owner, not by the agent above.
 
 | | |

@@ -61,7 +61,7 @@ then follow a [defect from reproduction to regression](qa/docs/defects/).**
 | Recorded results | [Monthly limit report](qa/docs/test-report-monthly-limit.md) · [GitHub CI](https://github.com/DaniilBehus/wallet-tracker/actions/workflows/ci.yml) |
 | AI boundaries | [AI case study](qa/docs/ai-case-study.md) · [evaluation limits](qa/docs/ai-evaluation.md) |
 
-GitHub Actions runs the secret scan, migration, API, Python, Playwright and offline AI checks.
+GitHub Actions runs the secret scan, migration, API, Python, Playwright, Selenium and offline AI checks.
 The self-check command enforces eight invariant and coverage gates.
 [Run the suites and inspect their setup →](docs/testing.md)
 

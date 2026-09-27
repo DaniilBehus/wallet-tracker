@@ -124,8 +124,8 @@ async function seed() {
     token,
     // A limit the month ends up past: €722.70 of expenses below plus this
     // month's €100.00 loan instalment make €822.70, so the picture shows the
-    // over-limit state — "Over limit by €22.70" and the red frame around the
-    // limit (UAT-OBS-01) — rather than an empty "Set limit" control.
+    // over-limit state — "Over limit by €22.70" in the solid red status box
+    // (UAT-OBS-01) — rather than an empty "Set limit" control.
     body: { monthly_income_cents: 150000, monthly_limit_cents: 80000 },
   });
 
