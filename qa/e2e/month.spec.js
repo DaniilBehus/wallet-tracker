@@ -94,6 +94,39 @@ test.describe('This month', () => {
     await expect(month.total).toHaveText(eurPattern(0));
     await expect(month.rows).toHaveCount(0);
   });
+
+  test('at 320 px the largest amount stays whole and clear of the name', testCase('TC-E2E-081'), async ({ signedIn, api }) => {
+    // Nothing may overflow on a 320 px screen (the layout contract in
+    // style.css), and the widest thing a row can hold is the amount ceiling.
+    await signedIn.setViewportSize({ width: 320, height: 568 });
+    const month = new MonthPage(signedIn);
+    const [groceries] = await api.categories();
+    const tx = await api.addExpense({ amount_cents: 100000000, category_id: groceries.id });
+
+    await month.goToMonth();
+    await expect(month.txAmount(tx.id)).toHaveText(eur(100000000));
+
+    // The painted text, not the element boxes: a name running past its own
+    // box leaves the boxes apart and still draws over the amount.
+    const inked = (locator) => locator.evaluate((node) => {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const { left, right, top, bottom } = range.getBoundingClientRect();
+      return { left, right, top, bottom };
+    });
+    const name = await inked(month.txName(tx.id));
+    const amount = await inked(month.txAmount(tx.id));
+    const apart = name.right <= amount.left || amount.right <= name.left ||
+      name.bottom <= amount.top || amount.bottom <= name.top;
+    expect(apart, `name ${JSON.stringify(name)} overlaps amount ${JSON.stringify(amount)}`).toBe(true);
+
+    // Whole: no part of the amount is clipped, and it stays inside its row.
+    const fit = await month.txAmount(tx.id).evaluate((node) => ({ scroll: node.scrollWidth, client: node.clientWidth }));
+    expect(fit.scroll, 'the amount is clipped').toBeLessThanOrEqual(fit.client);
+    const row = await month.row(tx.id).boundingBox();
+    expect(amount.left).toBeGreaterThanOrEqual(row.x);
+    expect(amount.right).toBeLessThanOrEqual(row.x + row.width);
+  });
 });
 /**
  * The monthly spending limit. Requirements, decision table, boundaries and the
