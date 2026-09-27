@@ -46,6 +46,9 @@ the API unless the case is about creating them.
 | TC-API-007 | Sign in | `POST /auth/login`, correct credentials | 200, `{token}` | §5 login | P1 | PASS |
 | TC-API-008 | Wrong password | Correct e-mail, wrong password | 401 `UNAUTHORIZED` | §5 login | P1 | PASS |
 | TC-API-009 | Unknown e-mail is indistinguishable | Login with an unregistered address | 401 with **the same message** as TC-API-008 — the form must not reveal which addresses exist | §5 login (401) | P1 | PASS |
+| TC-API-106 | The longest password bcrypt reads whole | Register with 72 ASCII characters | 201 and a token — the limit itself is accepted, not refused | **BUG-017**, D-045 | P2 | PASS |
+| TC-API-107 | One byte past the limit | Register with 73 ASCII characters | 400 `VALIDATION_FAILED`; no account is created, because a stored hash would ignore the 73rd byte | **BUG-017**, D-045 | P1 | PASS |
+| TC-API-108 | The limit counts bytes, not characters | Register with 37 × `é` — 37 characters, 74 bytes in UTF-8 | 400 `VALIDATION_FAILED`, although the password is half the character limit | **BUG-017**, D-045 | P1 | PASS |
 
 ## API · Token handling
 
@@ -247,6 +250,8 @@ under load, and the finding is the difference between them (R6).
 | TC-E2E-003 | Wrong password | Submit a wrong password | Error toast, still on sign-in, no session | §5 (401) | P1 | PASS |
 | TC-E2E-004 | Empty form | Submit with both fields blank | `Enter both an e-mail and a password`, nothing sent | §6 | P3 | PASS |
 | TC-E2E-005 | Stored session | Token in local storage, open `/` | The app opens directly | §6 | P2 | PASS |
+| TC-E2E-073 | An over-long password is refused in the browser | Register with 73 characters | The toast names the 72-byte limit and **no request is sent** | **BUG-017**, D-045 | P2 | PASS |
+| TC-E2E-074 | The browser counts bytes too | Register with 37 × `é` | Refused the same way, though the password is 37 characters — the client rule matches the server's | **BUG-017**, D-045 | P2 | PASS |
 
 ## End-to-end · Adding an expense · `qa/e2e/add-expense.spec.js`
 
@@ -377,12 +382,12 @@ fail when its defect is put back — see S05.
 
 | | Cases | Runs | Status |
 |---|---|---|---|
-| API — 171 requests, 621 assertions | 105 | 171 | all PASS |
+| API — 174 requests, 631 assertions | 108 | 174 | all PASS |
 | Database — the one in-place migration, node:test | 3 | 3 | all PASS |
 | Python — 6 documented scenarios, 13 pytest items | 6 | 13 | all PASS |
 | Load — 3 scenarios, thresholds enforced | 3 | 3 | all PASS |
-| End-to-end — 72 tests × 2 viewports | 72 | 144 | all PASS; local browser run requires a host that permits Chromium |
-| **Total** | **189** | **334** | **documented cases PASS; local browser execution environment noted above** |
+| End-to-end — 74 tests × 2 viewports | 74 | 148 | all PASS; local browser run requires a host that permits Chromium |
+| **Total** | **194** | **341** | **documented cases PASS; local browser execution environment noted above** |
 
 **The counts are checked against the suites, not typed from memory.** An earlier
 count claimed 138 cases while only 135 rows existed; three cases (TC-E2E-039…041)

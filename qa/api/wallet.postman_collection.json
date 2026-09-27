@@ -453,6 +453,137 @@
           ]
         },
         {
+          "name": "POST /auth/register 72-byte password → 201",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"pw72-{{runId}}@wallet.test\",\n  \"password\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "// Exactly the number of bytes bcrypt reads: the last allowed password.",
+                  "expectOk(201, 'token');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/register 73-byte password → 400",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"pw73-{{runId}}@wallet.test\",\n  \"password\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "// One byte past what bcrypt reads. Accepting it would store a hash",
+                  "// that a different password also opens (BUG-017, D-045).",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/register 37 characters, 74 bytes → 400",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"pwutf8-{{runId}}@wallet.test\",\n  \"password\": \"ééééééééééééééééééééééééééééééééééééé\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "// Well under 72 characters and still over the limit: the rule counts",
+                  "// UTF-8 bytes, and é is two of them.",
+                  "expectError(400, 'VALIDATION_FAILED');"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "POST /auth/login correct → 200",
           "request": {
             "auth": {

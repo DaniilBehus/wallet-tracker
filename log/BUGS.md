@@ -35,7 +35,7 @@ State: `OPEN` · `IN PROGRESS` · `CLOSED` · `WONTFIX` (needs a reason).
 | BUG-014 | Categories collapse to an 18 px strip on a short phone | High | CLOSED | S21 | S23 · uncommitted | R14 |
 | BUG-015 | Editing an uncategorised expense sends category zero | Medium | CLOSED | S21 | ORD-020 | R14 |
 | BUG-016 | Concurrent registrations of the same email return 500 | High | CLOSED | S21 | ORD-020 | R14 |
-| BUG-017 | Password suffixes after 72 bytes are silently ignored | High | OPEN | S21 | — | R14 |
+| BUG-017 | Password suffixes after 72 bytes are silently ignored | High | CLOSED | S21 | ORD-020 | R14 |
 | BUG-018 | A large loan loses an integer cent in remaining money | Critical | OPEN | S21 | — | R14 |
 | BUG-019 | Oversized JSON is reported as an internal server failure | Medium | CLOSED | S21 | S23 · uncommitted | R14 |
 | BUG-020 | Valid early-year dates produce malformed next dates | Medium | OPEN | S21 | — | R14 |
@@ -1241,7 +1241,7 @@ per run. Invariant: one 201 and one 409, in either order; any 5xx or a second
 `SQLITE_CONSTRAINT_UNIQUE` in the server log; with the fix, 0 violations.
 **→ Rule R14.**
 
-### BUG-017 · Password suffixes after 72 bytes are silently ignored · High · OPEN
+### BUG-017 · Password suffixes after 72 bytes are silently ignored · High · CLOSED
 
 | | |
 |---|---|
@@ -1255,9 +1255,29 @@ by `A`; register, then login with the same 72 bytes followed by `B`.
 password bypass: the first 72 bytes must be identical.
 **Root cause:** only a minimum character length is checked; bcrypt consumes
 at most 72 bytes, which differs from JavaScript character length for Unicode.
-**Fix:** not applied. Decide a byte-aware password policy or reviewed hashing
-migration, accounting for existing accounts; no silent scheme changes.
-**Regression:** ASCII collision confirmed; add boundary and multibyte cases.
+**Decision D-045 (ORD-020):** registration refuses a password over 72 UTF-8
+bytes with a 400 and a message that says so. Login and stored hashes are left
+exactly as they are. The alternative — re-hashing with a scheme that reads the
+whole password — would have to run on accounts whose plaintext nobody has, so
+it can only happen at the next sign-in, and until then the collision stays.
+Refusing at the door removes it for every account that can still be created,
+and no existing account can hold a longer password than the check now allows.
+Bytes, not characters: bcrypt counts bytes, so "é" costs two and an emoji four.
+**Fix:** applied in ORD-020. `src/auth.js` rejects `Buffer.byteLength(password,
+'utf8') > 72` in `register` with the ordinary `badRequest`, next to the existing
+minimum-length check; `login` and `bcrypt.compare` are untouched. `public/app.js`
+refuses the same thing before the request, counting with `TextEncoder` because
+`password.length` counts characters, and names the limit in the toast.
+**Regression:** TC-API-106 (72 ASCII bytes still accepted, 201), TC-API-107
+(73 bytes → 400 `VALIDATION_FAILED`) and TC-API-108 (37 × `é` — 37 characters,
+74 bytes → 400) in `qa/api/wallet.postman_collection.json`; TC-E2E-073 and
+TC-E2E-074 in `qa/e2e/auth.spec.js` for the browser side. Both browser cases
+also assert that **no** request is sent: the server's refusal contains the same
+words as the client's, so a text-only assertion would pass with no rule in the
+browser at all. Controls: with the server check disabled, 6 of 631 Newman
+assertions fail and the 72-byte case still passes; with the client check
+disabled, both browser cases fail. With both in place, Newman is 631 of 631 and
+the auth file is 14 of 14 across the two viewports.
 **→ Rule R14.**
 
 ### BUG-018 · A large loan loses an integer cent in remaining money · Critical · OPEN
