@@ -52,6 +52,7 @@ router.post('/', (req, res) => {
   const dayOfMonth = v.dayOfMonth(body.day_of_month);
   const startsOn = v.startsOn(body.starts_on);
   const totalCount = v.totalCount(body.total_count);
+  v.loanTotalCents(amountCents, totalCount);
 
   const info = db
     .prepare(
@@ -167,7 +168,8 @@ router.patch('/:id', (req, res) => {
   const set = (column, value) => { sets.push(`${column} = ?`); params.push(value); };
 
   if (given.includes('name')) set('name', v.name(body.name));
-  if (given.includes('amount_cents')) set('amount_cents', v.amountCents(body.amount_cents));
+  const newAmountCents = given.includes('amount_cents') ? v.amountCents(body.amount_cents) : undefined;
+  if (newAmountCents !== undefined) set('amount_cents', newAmountCents);
   if (given.includes('category_id')) set('category_id', v.ownedCategoryId(body.category_id, req.userId));
   if (given.includes('day_of_month')) set('day_of_month', v.dayOfMonth(body.day_of_month));
   if (given.includes('starts_on')) set('starts_on', v.startsOn(body.starts_on));
@@ -183,6 +185,15 @@ router.patch('/:id', (req, res) => {
     if (!before) throw v.notFound(`No schedule with id ${id}`);
 
     const totalCount = newTotalCount === undefined ? before.total_count : newTotalCount;
+
+    // The pair after this edit, not the pair that was sent: raising the amount
+    // of a long loan changes the product just as raising the count does
+    // (BUG-018, D-046). Bad input is refused before the state conflict below,
+    // which is the order every other route uses.
+    v.loanTotalCents(
+      newAmountCents === undefined ? before.amount_cents : newAmountCents,
+      totalCount
+    );
 
     if (totalCount !== null && totalCount < before.paid_count) {
       throw v.conflict(

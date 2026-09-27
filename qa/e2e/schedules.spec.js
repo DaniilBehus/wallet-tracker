@@ -120,6 +120,30 @@ test.describe('Schedules', () => {
     await expect(schedules.rows).toHaveCount(0);
   });
 
+  test('a loan of more instalments than the app supports is refused', testCase('TC-E2E-075'), async ({ signedIn }) => {
+    const schedules = new SchedulesPage(signedIn);
+
+    const sent = [];
+    signedIn.on('request', (request) => {
+      if (request.method() === 'POST' && request.url().includes('/api/schedules')) sent.push(request.url());
+    });
+
+    await schedules.goToSchedules();
+    await schedules.create({
+      name: 'A thousand years',
+      amount: '10.00',
+      day: 5,
+      startsOn: '2026-01-01',
+      totalCount: 1201,
+    });
+
+    await expect(schedules.toastError).toContainText('at most 1200 instalments');
+    await expect(schedules.rows).toHaveCount(0);
+    // The server refuses it too, in the same words as far as the number goes,
+    // so the case has to show the request was never made (BUG-018, D-046).
+    expect(sent).toHaveLength(0);
+  });
+
   test('a schedule created through the API is shown with its amount', testCase('TC-E2E-023'), async ({ signedIn, api }) => {
     const schedules = new SchedulesPage(signedIn);
     const created = await api.addSchedule({

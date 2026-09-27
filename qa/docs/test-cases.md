@@ -120,6 +120,11 @@ the API unless the case is about creating them.
 | TC-API-058 | Closed loan leaves the active list | `?active=1` | Its id is absent | §4.2 `active = 0` | P2 | PASS |
 | TC-API-059 | Pay another user's schedule | `PATCH` as user B | 404, not 403 | §4.3 (404 not 403) | P1 | PASS |
 | TC-API-060 | Pay a schedule that does not exist | `/schedules/99999999/pay` | 404 | §5 (404) | P2 | PASS |
+| TC-API-109 | The largest loan the app supports | 1200 instalments at the amount ceiling | 201; `remaining_cents` is exactly 99 999 999 × 1200 and still a safe integer | **BUG-018**, D-046 | P1 | PASS |
+| TC-API-110 | One instalment too many | `total_count` 1201 | 400 `VALIDATION_FAILED` | **BUG-018**, D-046 | P1 | PASS |
+| TC-API-111 | The loan from the defect report | 99 999 999 instalments of 99 999 999 cents | 400. Before the fix: 201, with `remaining_cents` one cent below the exact product | **BUG-018**, D-046 | P1 | PASS |
+| TC-API-112 | A number that is not a count | `total_count` 1e30 | 400. `Number.isInteger(1e30)` is true, which is why it used to be stored | **BUG-018**, D-046 | P2 | PASS |
+| TC-API-113 | The ceiling holds on edit | `PATCH` raising `total_count` to 1201 | 400 — create and edit apply the same rule to the pair | **BUG-018**, D-046 | P1 | PASS |
 
 ## API · Summary and contract edges
 
@@ -312,6 +317,7 @@ subtly wrong and hard to assert on; the numbers beside it are neither.
 | TC-E2E-021 | Malformed amount | `not a number` | `Amount must be a number, for example 15.00`, nothing created | §4.3 amount | P2 | PASS |
 | TC-E2E-022 | Day outside 1–31 | Day 32 | `Day of month must be between 1 and 31`, nothing created | §4.3 day | P2 | PASS |
 | TC-E2E-023 | A schedule created via API is displayed | Create with the API, open the screen | Name, amount and `Subscription` on its row | §5, §6.4 | P2 | PASS |
+| TC-E2E-075 | A loan longer than the app supports | Tick the loan box, ask for 1201 instalments | The toast names the 1200 ceiling, nothing is created and **no request is sent** | **BUG-018**, D-046 | P2 | PASS |
 
 ## End-to-end · Upcoming and payment · `qa/e2e/upcoming.spec.js`
 
@@ -382,12 +388,12 @@ fail when its defect is put back — see S05.
 
 | | Cases | Runs | Status |
 |---|---|---|---|
-| API — 174 requests, 631 assertions | 108 | 174 | all PASS |
+| API — 179 requests, 650 assertions | 113 | 179 | all PASS |
 | Database — the one in-place migration, node:test | 3 | 3 | all PASS |
 | Python — 6 documented scenarios, 13 pytest items | 6 | 13 | all PASS |
 | Load — 3 scenarios, thresholds enforced | 3 | 3 | all PASS |
-| End-to-end — 74 tests × 2 viewports | 74 | 148 | all PASS; local browser run requires a host that permits Chromium |
-| **Total** | **194** | **341** | **documented cases PASS; local browser execution environment noted above** |
+| End-to-end — 75 tests × 2 viewports | 75 | 150 | all PASS; local browser run requires a host that permits Chromium |
+| **Total** | **200** | **348** | **documented cases PASS; local browser execution environment noted above** |
 
 **The counts are checked against the suites, not typed from memory.** An earlier
 count claimed 138 cases while only 135 rows existed; three cases (TC-E2E-039…041)
