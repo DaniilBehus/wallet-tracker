@@ -11,6 +11,7 @@
     "test:db": "node --test qa/db/migration.test.js",
     "test:python": "node qa/python/run.js",
     "test:e2e": "playwright test",
+    "test:selenium": "node qa/selenium/run.js",
     "test": "npm run check && npm run test:db && npm run test:api && npm run test:python && npm run test:e2e && npm run test:race",
     "screenshots": "node scripts/screenshots.js",
     "test:load": "node qa/load/run.js",
