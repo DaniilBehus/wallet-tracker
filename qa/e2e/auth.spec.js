@@ -83,6 +83,16 @@ test.describe('Authentication', () => {
     await expect(auth.toastError).toHaveText('Enter both an e-mail and a password');
   });
 
+  test('an input error carries no reference, because no request was made', testCase('TC-E2E-083'), async ({ page }) => {
+    const auth = new AuthPage(page);
+
+    await page.goto('/');
+    await auth.submit.click();
+
+    await expect(auth.toastError).toHaveText('Enter both an e-mail and a password');
+    await expect(auth.toastErrorRef).toBeHidden();
+  });
+
   test('a session in local storage opens the app directly', testCase('TC-E2E-005'), async ({ signedIn }) => {
     const add = new AddPage(signedIn);
 

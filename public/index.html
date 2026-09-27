@@ -452,8 +452,15 @@
      attributes to be stable and never generated. -->
 <div class="toast toast--success" id="toast-success" data-testid="toast-success"
      role="status" aria-live="polite" hidden></div>
-<div class="toast toast--error" id="toast-error" data-testid="toast-error"
-     role="alert" aria-live="assertive" hidden></div>
+<!-- The error toast holds the message and, when the error came from the server,
+     the request's reference: the first characters of its X-Request-Id, which
+     is what support searches the log for (docs/support). The message keeps its
+     own element, so what it says can be checked without the reference. -->
+<div class="toast toast--error" id="toast-error-box" role="alert" aria-live="assertive" hidden>
+  <span id="toast-error" data-testid="toast-error"></span>
+  <span class="toast__ref" id="toast-ref" hidden>Reference: <code id="toast-ref-code"
+        data-testid="toast-error-ref"></code></span>
+</div>
 
 <!-- Before app.js: it registers itself, and app.js installs it (D-036). -->
 <script src="/ai-expense.js"></script>

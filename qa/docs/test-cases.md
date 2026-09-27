@@ -235,6 +235,21 @@ flows below.
 | TC-PY-005 | Expense lifecycle | Set income; create, partially edit, read summary, then delete an expense | Edited cents appear in summary and remaining amount; delete restores total to zero | §5 transactions and summary, D-029 | P1 | PASS |
 | TC-PY-006 | Loan state lifecycle | Create a two-instalment loan; pay twice; try a third payment | Active → finished with count 0; third payment is 409 | §4.2 | P1 | PASS |
 
+## Python · Request id and request log · `qa/python/test_request_log.py`
+
+These start a server of their own with the request log on and its output
+written to files, so every line it prints is read back (docs/support).
+
+| ID | Case | Steps | Expected | Traces to | Pri | Status |
+|---|---|---|---|---|---|---|
+| TC-PY-007 | Every response carries a request id | 200, 400 malformed JSON, 401, 404 and a 503 from the switched-off AI | Each has an `X-Request-Id` that is a lowercase UUID, all different; every error body is still exactly `{error:{code,message}}` | support pack, §5 | P1 | PASS |
+| TC-PY-008 | A caller's id is kept only when it is a UUID | Send a valid id, then too short, too long, upper-case, spaced, markup and JSON-breaking values | The valid one is echoed; each other is replaced by a fresh UUID and never appears in the log | support pack | P1 | PASS |
+| TC-PY-009 | One line per request, naming the route | Create, edit and list expenses, call without a token, call an unknown path | One line each with time, level, request id, method, route pattern, status, duration and user id; `/api/transactions/:id`, never the row id or a query | support pack | P1 | PASS |
+| TC-PY-010 | No credential or content in the log | Register, sign in, fail a sign-in, save a note, send an AI description | None of the e-mail, passwords, tokens, note or description appears; no `Bearer`, no Authorization header | support pack | P1 | PASS |
+| TC-PY-011 | An unhandled error keeps its request id | Hold the database write lock from another connection, then save an expense | 500 with the unchanged INTERNAL body; one `UNHANDLED` line with the same request id, `SQLITE_BUSY` and a stack | support pack, §5 | P1 | PASS |
+| TC-PY-012 | The AI draft line uses the same id | Send a draft while AI is switched off | The `ai_draft` line and the request line carry the response's request id | support pack | P2 | PASS |
+| TC-PY-013 | The quiet switch | Start a server with `WALLET_REQUEST_LOG=off` and send requests | Every response still has its id; no request lines are written | support pack | P2 | PASS |
+
 ## Load · `qa/load/`
 
 Measured, not asserted-by-feel: every run records `GET /api/health` idle **and**
@@ -257,6 +272,7 @@ under load, and the finding is the difference between them (R6).
 | TC-E2E-005 | Stored session | Token in local storage, open `/` | The app opens directly | §6 | P2 | PASS |
 | TC-E2E-073 | An over-long password is refused in the browser | Register with 73 characters | The toast names the 72-byte limit and **no request is sent** | **BUG-017**, D-045 | P2 | PASS |
 | TC-E2E-074 | The browser counts bytes too | Register with 37 × `é` | Refused the same way, though the password is 37 characters — the client rule matches the server's | **BUG-017**, D-045 | P2 | PASS |
+| TC-E2E-083 | An input error has no reference | Submit the empty sign-in form | The message shows; no reference, because no request was made | support pack | P3 | PASS |
 
 ## End-to-end · Adding an expense · `qa/e2e/add-expense.spec.js`
 
@@ -335,6 +351,7 @@ subtly wrong and hard to assert on; the numbers beside it are neither.
 | TC-E2E-027 | A closed loan leaves Upcoming | Close it, reload | Not listed | §4.2 `active = 0`, §6.3 | P2 | PASS |
 | TC-E2E-028 | Ordered by next charge | Two schedules, days 1 and 28 | Screen order matches the API's `next_due` order | §5 sorted, §6.3 | P2 | PASS |
 | TC-E2E-029 | The pay button says what it pays | Look it up by role and name | Found as `Pay Netflix` | §6.3, D-012 | P2 | PASS |
+| TC-E2E-082 | A refused payment shows its reference | Close a loan behind the screen's back, press Pay | The 409's `X-Request-Id` is read off the wire; the toast keeps its message and shows the id's first eight characters beside it | support pack | P1 | PASS |
 
 ## End-to-end · Double submission · `qa/e2e/double-submit.spec.js`
 
@@ -396,10 +413,10 @@ fail when its defect is put back — see S05.
 |---|---|---|---|
 | API — 179 requests, 650 assertions | 113 | 179 | all PASS |
 | Database — the one in-place migration, node:test | 3 | 3 | all PASS |
-| Python — 6 documented scenarios, 13 pytest items | 6 | 13 | all PASS |
+| Python — 13 documented scenarios, 20 pytest items | 13 | 20 | all PASS |
 | Load — 3 scenarios, thresholds enforced | 3 | 3 | all PASS |
-| End-to-end — 81 tests × 2 viewports | 81 | 162 | all PASS; local browser run requires a host that permits Chromium |
-| **Total** | **206** | **360** | **documented cases PASS; local browser execution environment noted above** |
+| End-to-end — 83 tests × 2 viewports | 83 | 166 | all PASS; local browser run requires a host that permits Chromium |
+| **Total** | **215** | **371** | **documented cases PASS; local browser execution environment noted above** |
 
 **The counts are checked against the suites, not typed from memory.** An earlier
 count claimed 138 cases while only 135 rows existed; three cases (TC-E2E-039…041)
