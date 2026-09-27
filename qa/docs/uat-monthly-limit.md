@@ -124,7 +124,7 @@ limit by €X* and the `figure--over` class, so REQ-ML-09 AC-09.3 — colour is
 never the only carrier — still holds. It is a presentation improvement, tracked
 separately from this pass, and it did not block acceptance.
 
-**Status: implemented in ORD-020, awaiting the owner's re-check.** The owner has
+**Status: implemented in `8d7cdeb` (ORD-020), awaiting the owner's re-check.** The owner has
 not looked at it yet, so this records an implementation, not an acceptance.
 
 - The limit figure now has a frame: neutral while budget remains, red once it

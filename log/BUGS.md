@@ -33,10 +33,10 @@ State: `OPEN` · `IN PROGRESS` · `CLOSED` · `WONTFIX` (needs a reason).
 | BUG-012 | Two processes writing one database answer 500 | High | CLOSED | S16 | fixed | R12 |
 | BUG-013 | The edit panel opened underneath the bottom navigation | Medium | CLOSED | S16 | fixed | R13 |
 | BUG-014 | Categories collapse to an 18 px strip on a short phone | High | CLOSED | S21 | S23 · uncommitted | R14 |
-| BUG-015 | Editing an uncategorised expense sends category zero | Medium | CLOSED | S21 | ORD-020 | R14 |
-| BUG-016 | Concurrent registrations of the same email return 500 | High | CLOSED | S21 | ORD-020 | R14 |
-| BUG-017 | Password suffixes after 72 bytes are silently ignored | High | CLOSED | S21 | ORD-020 | R14 |
-| BUG-018 | A large loan loses an integer cent in remaining money | Critical | CLOSED | S21 | ORD-020 | R14 |
+| BUG-015 | Editing an uncategorised expense sends category zero | Medium | CLOSED | S21 | ORD-020 · a399e79 | R14 |
+| BUG-016 | Concurrent registrations of the same email return 500 | High | CLOSED | S21 | ORD-020 · e291ea9 | R14 |
+| BUG-017 | Password suffixes after 72 bytes are silently ignored | High | CLOSED | S21 | ORD-020 · 53b310b | R14 |
+| BUG-018 | A large loan loses an integer cent in remaining money | Critical | CLOSED | S21 | ORD-020 · bd516ac | R14 |
 | BUG-019 | Oversized JSON is reported as an internal server failure | Medium | CLOSED | S21 | S23 · uncommitted | R14 |
 | BUG-020 | Valid early-year dates produce malformed next dates | Medium | OPEN | S21 | — | R14 |
 | BUG-021 | Schedules cannot be edited through the interface | High | OPEN | S21 | — | R14 |
@@ -1197,7 +1197,7 @@ open its Month row; change only Note; save.
 category is a workaround, but incorrectly forces a classification change.
 **Root cause:** the select contains no empty option; null is rendered as an
 empty value and then Number('') becomes 0, differing from original null.
-**Fix:** applied in ORD-020. The editor's category list now opens with an
+**Fix:** applied in ORD-020, commit `a399e79`. The editor's category list now opens with an
 explicit *Uncategorised* option (value `""`), the same one the AI review form
 already had, so "no category" is something the list can show and a person can
 choose. On save the value is read as `rawCategory === '' ? null : Number(...)`,
@@ -1226,7 +1226,7 @@ with the same new synthetic email and valid password; repeat with fresh emails.
 **Actual:** all 5 pairs return 201 + 500; server sees SQLITE_CONSTRAINT_UNIQUE.
 **Root cause:** both SELECT checks finish before async bcrypt.hash; the losing
 INSERT violates UNIQUE, which is not mapped to the application's conflict error.
-**Fix:** applied in ORD-020. The insert and the starter categories are now one
+**Fix:** applied in ORD-020, commit `e291ea9`. The insert and the starter categories are now one
 `db.transaction`, so an account can no longer exist without the rows it needs,
 and `SQLITE_CONSTRAINT_UNIQUE` from that write is translated into the same
 `conflict` the pre-read raises — a 409, not a 500. The pre-read stays as a fast
@@ -1263,7 +1263,7 @@ it can only happen at the next sign-in, and until then the collision stays.
 Refusing at the door removes it for every account that can still be created,
 and no existing account can hold a longer password than the check now allows.
 Bytes, not characters: bcrypt counts bytes, so "é" costs two and an emoji four.
-**Fix:** applied in ORD-020. `src/auth.js` rejects `Buffer.byteLength(password,
+**Fix:** applied in ORD-020, commit `53b310b`. `src/auth.js` rejects `Buffer.byteLength(password,
 'utf8') > 72` in `register` with the ordinary `badRequest`, next to the existing
 minimum-length check; `login` and `bcrypt.compare` are untouched. `public/app.js`
 refuses the same thing before the request, counting with `TextEncoder` because
@@ -1300,7 +1300,7 @@ of monthly instalments — and `amount_cents × total_count` must be a safe
 integer; anything else is a 400. Exact arithmetic (BigInt, or cents as strings)
 would change the JSON money contract every client and test depends on, for
 loans nobody takes; a bound keeps the contract and removes the wrong number.
-**Fix:** applied in ORD-020. `src/validate.js` gained `MAX_TOTAL_COUNT = 1200`
+**Fix:** applied in ORD-020, commit `bd516ac`. `src/validate.js` gained `MAX_TOTAL_COUNT = 1200`
 in `totalCount`, and `loanTotalCents(amount, count)`, which refuses a pair whose
 product is not a safe integer. `src/routes/schedules.js` calls it on create and,
 inside the edit transaction, on the pair the edit would leave behind — raising
