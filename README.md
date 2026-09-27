@@ -47,6 +47,8 @@ schedule model. Recreate these four screenshots with `npm run screenshots`.
 - **Review QA work:** [QA evidence](#qa-evidence) → [Monthly limit case study](qa/docs/analysis-monthly-limit.md)
 - **Read the code:** [Folder map](#architecture) → [Architecture notes](spec/architecture.md)
 
+For the analysis view, open the [process, use-case, sequence and database models](docs/analysis/).
+
 ## QA evidence
 
 **Start with [test design](qa/docs/test-design.md), browse the [test cases](qa/docs/test-cases.md),

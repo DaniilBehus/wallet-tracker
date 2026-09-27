@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_AI" targetNamespace="https://github.com/DaniilBehus/wallet-tracker/analysis">
+  <bpmn:collaboration id="Collaboration_AI">
+    <bpmn:participant id="Pool_Wallet" name="Wallet expense-entry workflow" processRef="Process_AI"/>
+    <bpmn:participant id="Pool_Provider" name="Extraction adapter — external in live; local fixtures in demo"/>
+    <bpmn:messageFlow id="Message_Extract" name="Extraction request" sourceRef="Draft" targetRef="Pool_Provider"/>
+    <bpmn:messageFlow id="Message_Answer" name="Answer / failure" sourceRef="Pool_Provider" targetRef="Draft"/>
+  </bpmn:collaboration>
+  <bpmn:process id="Process_AI" isExecutable="false">
+    <bpmn:startEvent id="Start" name="AI entry opened"><bpmn:outgoing>Flow01</bpmn:outgoing></bpmn:startEvent>
+    <bpmn:userTask id="Describe" name="Describe one paid EUR expense"><bpmn:incoming>Flow01</bpmn:incoming><bpmn:incoming>Flow_Retry</bpmn:incoming><bpmn:incoming>Flow_Edit</bpmn:incoming><bpmn:outgoing>Flow02</bpmn:outgoing></bpmn:userTask>
+    <bpmn:serviceTask id="Guards" name="Validate request, mode, consent, context and limits"><bpmn:incoming>Flow02</bpmn:incoming><bpmn:outgoing>Flow03</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Allowed" name="Dispatch allowed?" default="Flow_Rejected" gatewayDirection="Diverging"><bpmn:incoming>Flow03</bpmn:incoming><bpmn:outgoing>Flow_Allowed</bpmn:outgoing><bpmn:outgoing>Flow_Rejected</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Draft" name="Extract, validate output and normalise — no financial write"><bpmn:incoming>Flow_Allowed</bpmn:incoming><bpmn:outgoing>Flow04</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Outcome" name="Draft outcome?" default="Flow_Unusable" gatewayDirection="Diverging"><bpmn:incoming>Flow04</bpmn:incoming><bpmn:outgoing>Flow_Reviewable</bpmn:outgoing><bpmn:outgoing>Flow_Unusable</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:userTask id="Correct" name="Read issue; correct description or choose manual entry"><bpmn:incoming>Flow_Rejected</bpmn:incoming><bpmn:incoming>Flow_Unusable</bpmn:incoming><bpmn:outgoing>Flow05</bpmn:outgoing></bpmn:userTask>
+    <bpmn:exclusiveGateway id="Retry" name="Request again?" default="Flow_Stop" gatewayDirection="Diverging"><bpmn:incoming>Flow05</bpmn:incoming><bpmn:outgoing>Flow_Retry</bpmn:outgoing><bpmn:outgoing>Flow_Stop</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:endEvent id="Stop" name="AI flow ended without Save"><bpmn:incoming>Flow_Stop</bpmn:incoming></bpmn:endEvent>
+    <bpmn:userTask id="Review" name="Review / correct fields; resolve needs_input"><bpmn:incoming>Flow_Reviewable</bpmn:incoming><bpmn:incoming>Flow_Refused</bpmn:incoming><bpmn:outgoing>Flow06</bpmn:outgoing></bpmn:userTask>
+    <bpmn:exclusiveGateway id="Action" name="Person's choice" default="Flow_Cancel" gatewayDirection="Diverging"><bpmn:incoming>Flow06</bpmn:incoming><bpmn:outgoing>Flow_Edit</bpmn:outgoing><bpmn:outgoing>Flow_Save</bpmn:outgoing><bpmn:outgoing>Flow_Cancel</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:endEvent id="Cancel" name="Draft cancelled"><bpmn:incoming>Flow_Cancel</bpmn:incoming></bpmn:endEvent>
+    <bpmn:subProcess id="ExplicitSave" name="Explicit keyed save — retry / refusal handling"><bpmn:incoming>Flow_Save</bpmn:incoming><bpmn:outgoing>Flow07</bpmn:outgoing>
+      <bpmn:startEvent id="SaveStart"/>
+      <bpmn:userTask id="SaveClick" name="Press Save expense"/>
+      <bpmn:serviceTask id="KeyedWrite" name="POST /api/transactions with frozen key and payload"/>
+      <bpmn:exclusiveGateway id="SaveResult" name="Confirmed outcome?" default="SaveUncertain" gatewayDirection="Diverging"/>
+      <bpmn:endEvent id="SaveConfirmed" name="201 confirmed"/>
+      <bpmn:endEvent id="SaveRefused" name="Editable refusal; return to review"/>
+      <bpmn:endEvent id="SaveAuthEnded" name="401; sign out"/>
+      <bpmn:userTask id="SaveCheck" name="Check / retry this save or explicitly abandon"/>
+      <bpmn:exclusiveGateway id="SaveDecision" name="Retry same operation?" default="SaveAbandon" gatewayDirection="Diverging"/>
+      <bpmn:endEvent id="SaveAbandoned" name="Unconfirmed; verify Month"/>
+      <bpmn:sequenceFlow id="Save01" sourceRef="SaveStart" targetRef="SaveClick"/>
+      <bpmn:sequenceFlow id="Save02" sourceRef="SaveClick" targetRef="KeyedWrite"/>
+      <bpmn:sequenceFlow id="Save03" sourceRef="KeyedWrite" targetRef="SaveResult"/>
+      <bpmn:sequenceFlow id="SaveOk" name="Confirmed 201" sourceRef="SaveResult" targetRef="SaveConfirmed"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">confirmed_201</bpmn:conditionExpression></bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="SaveNo" name="Editable refusal" sourceRef="SaveResult" targetRef="SaveRefused"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">definite_non_auth_refusal</bpmn:conditionExpression></bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="SaveAuth" name="401" sourceRef="SaveResult" targetRef="SaveAuthEnded"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">unauthorized</bpmn:conditionExpression></bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="SaveUncertain" name="No reliable confirmation" sourceRef="SaveResult" targetRef="SaveCheck"/>
+      <bpmn:sequenceFlow id="Save04" sourceRef="SaveCheck" targetRef="SaveDecision"/>
+      <bpmn:sequenceFlow id="SaveAgain" name="Retry" sourceRef="SaveDecision" targetRef="KeyedWrite"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">retry</bpmn:conditionExpression></bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="SaveAbandon" name="Abandon" sourceRef="SaveDecision" targetRef="SaveAbandoned"/>
+</bpmn:subProcess>
+    <bpmn:exclusiveGateway id="AfterSave" name="Review needed?" default="Flow_Ended" gatewayDirection="Diverging"><bpmn:incoming>Flow07</bpmn:incoming><bpmn:outgoing>Flow_Refused</bpmn:outgoing><bpmn:outgoing>Flow_Ended</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:endEvent id="Ended" name="Save interaction ended"><bpmn:incoming>Flow_Ended</bpmn:incoming></bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow01" sourceRef="Start" targetRef="Describe"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow02" sourceRef="Describe" targetRef="Guards"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow03" sourceRef="Guards" targetRef="Allowed"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Allowed" sourceRef="Allowed" targetRef="Draft" name="Yes"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">dispatch_allowed</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Rejected" sourceRef="Allowed" targetRef="Correct" name="No"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow04" sourceRef="Draft" targetRef="Outcome"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Reviewable" sourceRef="Outcome" targetRef="Review" name="ready / needs_input"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">reviewable</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Unusable" sourceRef="Outcome" targetRef="Correct" name="error / unsupported"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow05" sourceRef="Correct" targetRef="Retry"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Retry" sourceRef="Retry" targetRef="Describe" name="Rewrite"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">rewrite</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Stop" sourceRef="Retry" targetRef="Stop" name="Manual / cancel"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow06" sourceRef="Review" targetRef="Action"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Edit" sourceRef="Action" targetRef="Describe" name="Edit description"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">edit_description</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Save" sourceRef="Action" targetRef="ExplicitSave" name="Save enabled; explicit action"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">explicit_save</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Cancel" sourceRef="Action" targetRef="Cancel" name="Cancel"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow07" sourceRef="ExplicitSave" targetRef="AfterSave"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Refused" sourceRef="AfterSave" targetRef="Review" name="Editable refusal"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">definite_non_auth_refusal</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Ended" sourceRef="AfterSave" targetRef="Ended" name="Confirmed / abandoned / sign-out"></bpmn:sequenceFlow>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_AI"><bpmndi:BPMNPlane id="Plane_AI" bpmnElement="Collaboration_AI">
+    <bpmndi:BPMNShape id="di_Pool_Wallet" bpmnElement="Pool_Wallet" isHorizontal="true"><dc:Bounds x="50" y="50" width="1560" height="660"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Pool_Provider" bpmnElement="Pool_Provider" isHorizontal="true"><dc:Bounds x="50" y="760" width="1560" height="80"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Start" bpmnElement="Start"><dc:Bounds x="105" y="162" width="36" height="36"/><bpmndi:BPMNLabel><dc:Bounds x="87" y="207" width="75" height="40"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Describe" bpmnElement="Describe"><dc:Bounds x="190" y="140" width="140" height="80"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Guards" bpmnElement="Guards"><dc:Bounds x="390" y="140" width="150" height="80"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Allowed" bpmnElement="Allowed" isMarkerVisible="true"><dc:Bounds x="590" y="155" width="50" height="50"/><bpmndi:BPMNLabel><dc:Bounds x="575" y="110" width="85" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Draft" bpmnElement="Draft"><dc:Bounds x="700" y="140" width="190" height="80"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Outcome" bpmnElement="Outcome" isMarkerVisible="true"><dc:Bounds x="955" y="155" width="50" height="50"/><bpmndi:BPMNLabel><dc:Bounds x="940" y="110" width="85" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Correct" bpmnElement="Correct"><dc:Bounds x="390" y="440" width="150" height="80"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Retry" bpmnElement="Retry" isMarkerVisible="true"><dc:Bounds x="590" y="455" width="50" height="50"/><bpmndi:BPMNLabel><dc:Bounds x="570" y="520" width="95" height="35"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Stop" bpmnElement="Stop"><dc:Bounds x="650" y="550" width="36" height="36"/><bpmndi:BPMNLabel><dc:Bounds x="635" y="595" width="95" height="50"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Review" bpmnElement="Review"><dc:Bounds x="1110" y="140" width="160" height="80"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Action" bpmnElement="Action" isMarkerVisible="true"><dc:Bounds x="1380" y="155" width="50" height="50"/><bpmndi:BPMNLabel><dc:Bounds x="1360" y="110" width="90" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Cancel" bpmnElement="Cancel"><dc:Bounds x="1490" y="162" width="36" height="36"/><bpmndi:BPMNLabel><dc:Bounds x="1470" y="207" width="80" height="40"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_ExplicitSave" bpmnElement="ExplicitSave" isExpanded="false"><dc:Bounds x="1320" y="425" width="175" height="90"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_AfterSave" bpmnElement="AfterSave" isMarkerVisible="true"><dc:Bounds x="1165" y="445" width="50" height="50"/><bpmndi:BPMNLabel><dc:Bounds x="1140" y="502" width="100" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Ended" bpmnElement="Ended"><dc:Bounds x="1050" y="602" width="36" height="36"/><bpmndi:BPMNLabel><dc:Bounds x="1020" y="647" width="100" height="40"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNEdge id="di_Flow01" bpmnElement="Flow01"><di:waypoint x="141" y="180"/><di:waypoint x="190" y="180"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Flow02" bpmnElement="Flow02"><di:waypoint x="330" y="180"/><di:waypoint x="390" y="180"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Flow03" bpmnElement="Flow03"><di:waypoint x="540" y="180"/><di:waypoint x="590" y="180"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Flow_Allowed" bpmnElement="Flow_Allowed"><di:waypoint x="640" y="180"/><di:waypoint x="700" y="180"/><bpmndi:BPMNLabel><dc:Bounds x="652" y="158" width="35" height="20"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Flow_Rejected" bpmnElement="Flow_Rejected"><di:waypoint x="615" y="205"/><di:waypoint x="615" y="365"/><di:waypoint x="465" y="365"/><di:waypoint x="465" y="440"/><bpmndi:BPMNLabel><dc:Bounds x="625" y="280" width="30" height="20"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Flow04" bpmnElement="Flow04"><di:waypoint x="890" y="180"/><di:waypoint x="955" y="180"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Flow_Reviewable" bpmnElement="Flow_Reviewable"><di:waypoint x="1005" y="180"/><di:waypoint x="1110" y="180"/><bpmndi:BPMNLabel><dc:Bounds x="1010" y="224" width="95" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Flow_Unusable" bpmnElement="Flow_Unusable"><di:waypoint x="980" y="205"/><di:waypoint x="980" y="400"/><di:waypoint x="520" y="400"/><di:waypoint x="520" y="440"/><bpmndi:BPMNLabel><dc:Bounds x="985" y="310" width="100" height="40"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Flow05" bpmnElement="Flow05"><di:waypoint x="540" y="480"/><di:waypoint x="590" y="480"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Flow_Retry" bpmnElement="Flow_Retry"><di:waypoint x="615" y="455"/><di:waypoint x="615" y="330"/><di:waypoint x="260" y="330"/><di:waypoint x="260" y="220"/><bpmndi:BPMNLabel><dc:Bounds x="350" y="307" width="65" height="20"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Flow_Stop" bpmnElement="Flow_Stop"><di:waypoint x="640" y="480"/><di:waypoint x="668" y="480"/><di:waypoint x="668" y="550"/><bpmndi:BPMNLabel><dc:Bounds x="650" y="438" width="80" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Flow06" bpmnElement="Flow06"><di:waypoint x="1270" y="180"/><di:waypoint x="1380" y="180"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Flow_Edit" bpmnElement="Flow_Edit"><di:waypoint x="1405" y="155"/><di:waypoint x="1405" y="80"/><di:waypoint x="260" y="80"/><di:waypoint x="260" y="140"/><bpmndi:BPMNLabel><dc:Bounds x="1000" y="58" width="120" height="20"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Flow_Save" bpmnElement="Flow_Save"><di:waypoint x="1405" y="205"/><di:waypoint x="1405" y="425"/><bpmndi:BPMNLabel><dc:Bounds x="1415" y="320" width="130" height="40"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Flow_Cancel" bpmnElement="Flow_Cancel"><di:waypoint x="1430" y="180"/><di:waypoint x="1490" y="180"/><bpmndi:BPMNLabel><dc:Bounds x="1435" y="158" width="50" height="20"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Flow07" bpmnElement="Flow07"><di:waypoint x="1320" y="470"/><di:waypoint x="1215" y="470"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Flow_Refused" bpmnElement="Flow_Refused"><di:waypoint x="1190" y="445"/><di:waypoint x="1190" y="220"/><bpmndi:BPMNLabel><dc:Bounds x="1200" y="335" width="100" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Flow_Ended" bpmnElement="Flow_Ended"><di:waypoint x="1165" y="470"/><di:waypoint x="1068" y="470"/><di:waypoint x="1068" y="602"/><bpmndi:BPMNLabel><dc:Bounds x="1090" y="560" width="150" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Message_Extract" bpmnElement="Message_Extract"><di:waypoint x="755" y="220"/><di:waypoint x="755" y="760"/><bpmndi:BPMNLabel><dc:Bounds x="650" y="660" width="100" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Message_Answer" bpmnElement="Message_Answer"><di:waypoint x="850" y="760"/><di:waypoint x="850" y="220"/><bpmndi:BPMNLabel><dc:Bounds x="860" y="660" width="90" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>
+</bpmn:definitions>
