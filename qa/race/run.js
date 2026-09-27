@@ -47,6 +47,17 @@
  *                        whether the protection is in the code or in the
  *                        runtime, and it is the reason this file exists at all.
  *
+ *   E · one e-mail,      Two registrations of the same fresh address, sent
+ *       registered twice together to the two processes.
+ *                        ALLOWED:  one 201 and one 409, in either order.
+ *                        FORBIDDEN: any 5xx — the UNIQUE index deciding is
+ *                                  correct, reporting its verdict as an
+ *                                  internal failure is not (BUG-016); and two
+ *                                  201s, which would be two accounts on one
+ *                                  address.
+ *
+ * D measures rather than asserts; it is described at its own definition.
+ *
  * No dependencies (spec §2). Node built-ins only.
  */
 
@@ -328,6 +339,43 @@ async function doubleSubmit(api) {
   return { outcomes, duplicated, violations: 0 };
 }
 
+// ---------------------------------------------------------------- scenario E
+/**
+ * Two registrations of one fresh e-mail address, in flight together.
+ *
+ * Unlike D this one has an expected answer, and BUG-016 is what happens when
+ * the code does not give it. Registration reads the users table, then hashes
+ * the password — and hashing is asynchronous, so both requests pass the read
+ * before either writes. Only the UNIQUE index decides, and until its error was
+ * translated the loser came back 500 with SQLITE_CONSTRAINT_UNIQUE in the log.
+ *
+ * The invariant: one 201 and one 409, in either order. A 500 is a violation,
+ * and so is a second 201 — that would mean two accounts on one address.
+ */
+async function registerTwice(apiA, apiB, label) {
+  const outcomes = new Map();
+  let violations = 0;
+
+  for (let i = 0; i < PAIRS; i++) {
+    const body = { email: `dup-${Date.now()}-${i}@example.com`, password: 'password123' };
+
+    const [first, second] = await Promise.all([
+      apiA('POST', '/auth/register', body),
+      apiB('POST', '/auth/register', body),
+    ]);
+
+    const pair = [first.status, second.status].sort((x, y) => x - y);
+    tally(outcomes, `${pair[0]} · ${pair[1]}`);
+
+    if (pair[0] !== 201 || pair[1] !== 409) {
+      violations++;
+      problems.push(`${label} pair ${i}: expected 201 and 409, got ${pair.join(' and ')}`);
+    }
+  }
+
+  return { outcomes, violations };
+}
+
 // --------------------------------------------------------------------- main
 async function main() {
   fs.mkdirSync(REPORT_DIR, { recursive: true });
@@ -386,6 +434,11 @@ async function main() {
     console.log('    (measured, not asserted — see the report)');
     console.log('');
 
+    console.log('E · two registrations of one e-mail — TWO processes, one database');
+    const e = await registerTwice(anon, client(PORTS[1], null), 'E');
+    printTally('outcomes', e.outcomes);
+    console.log(`    violations: ${e.violations}\n`);
+
     summary.pairs = PAIRS;
     summary.scenarios = {
       A: { outcomes: Object.fromEntries(a.outcomes), violations: a.violations },
@@ -394,6 +447,7 @@ async function main() {
       B3: { outcomes: Object.fromEntries(b3.outcomes), violations: b3.violations, forced: true },
       C: { outcomes: Object.fromEntries(c.outcomes), violations: c.violations },
       D: { outcomes: Object.fromEntries(d.outcomes), duplicated: d.duplicated, measuredOnly: true },
+      E: { outcomes: Object.fromEntries(e.outcomes), violations: e.violations },
     };
     fs.writeFileSync(
       path.join(REPORT_DIR, 'race-summary.json'),

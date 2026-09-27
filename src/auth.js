@@ -45,12 +45,35 @@ async function register(email, password) {
   }
 
   const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
-  const info = db
-    .prepare('INSERT INTO users (email, password_hash) VALUES (?, ?)')
-    .run(normalised, passwordHash);
 
-  const userId = Number(info.lastInsertRowid);
-  seedCategories(userId);
+  // The SELECT above is a courtesy, not a guard. bcrypt.hash is asynchronous,
+  // so two registrations of the same address both pass it long before either
+  // inserts, and the loser hit the UNIQUE index as SQLITE_CONSTRAINT_UNIQUE —
+  // an unmapped error, which the handler could only report as 500 (BUG-016).
+  // The index is the only check that actually holds under a race, so its
+  // verdict is translated here into the same 409 the pre-check gives.
+  //
+  // The insert and the starter categories are one transaction: an account
+  // whose creation was interrupted between the two would exist with no
+  // categories, and nothing would ever create them afterwards.
+  const createAccount = db.transaction((address, hash) => {
+    const info = db
+      .prepare('INSERT INTO users (email, password_hash) VALUES (?, ?)')
+      .run(address, hash);
+    const id = Number(info.lastInsertRowid);
+    seedCategories(id);
+    return id;
+  });
+
+  let userId;
+  try {
+    userId = createAccount(normalised, passwordHash);
+  } catch (err) {
+    if (err && err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      throw conflict('An account with this e-mail already exists');
+    }
+    throw err;
+  }
   return signToken(userId);
 }
 
