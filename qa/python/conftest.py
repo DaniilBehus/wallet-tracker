@@ -40,6 +40,8 @@ def _jwt_part(value: dict[str, object]) -> bytes:
 class Server:
     base_url: str
     secret: str
+    # The session database, for read-only checks (docs/support/sql-diagnostics.md).
+    db_path: Path
 
     def expired_token(self, user_id: int = 1) -> str:
         """Create a valid HS256 token whose only invalid property is its age."""
@@ -102,7 +104,7 @@ def server() -> Server:
             else:
                 pytest.fail(f"Express server did not become healthy: {last_error}")
 
-            yield Server(base_url=base_url, secret=secret)
+            yield Server(base_url=base_url, secret=secret, db_path=Path(temp_dir) / "wallet.db")
         finally:
             client.close()
             if process.poll() is None:
