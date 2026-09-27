@@ -8,7 +8,9 @@ Chrome is found, and matched with its driver, by Selenium Manager, so no driver
 is downloaded by hand or kept in the repository. It runs headless unless pytest
 is given --headed. The implicit wait is fixed at zero: every wait in this suite
 is an explicit WebDriverWait on a condition, and suite_rules.py refuses a run
-whose code sleeps, waits implicitly or locates by position.
+whose code sleeps, waits implicitly or locates by position. A test that fails
+leaves a screenshot, the page source and the console in qa/reports/selenium/
+(evidence.py).
 """
 
 from __future__ import annotations
@@ -20,6 +22,7 @@ from pathlib import Path
 import pytest
 from selenium import webdriver
 
+import evidence
 from pages.add_page import AddPage
 from suite_rules import violations
 from wallet_api import Account
@@ -58,6 +61,18 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     problems = violations(HERE)
     if problems:
         raise pytest.UsageError("qa/selenium breaks its own rules:\n  " + "\n  ".join(problems))
+    evidence.reset()
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo):
+    """A test that failed while it had a browser leaves its evidence (evidence.py)."""
+    report = yield
+    browser = getattr(item, "selenium_driver", None)
+    if report.failed and report.when in ("setup", "call") and browser is not None:
+        folder = evidence.save(browser, item.nodeid)
+        report.sections.append(("Selenium evidence", str(folder.relative_to(ROOT))))
+    return report
 
 
 @pytest.fixture
@@ -77,11 +92,14 @@ def driver(request: pytest.FixtureRequest):
             "profile.password_manager_leak_detection": False,
         },
     )
-    # The network events, so a test can read a response header (browser_logs.py).
-    options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
+    # The page's console, which a failed test saves (evidence.py), and the
+    # network events, so a test can read a response header (browser_logs.py).
+    options.set_capability("goog:loggingPrefs", {"browser": "ALL", "performance": "ALL"})
 
     browser = webdriver.Chrome(options=options)
     browser.implicitly_wait(0)
+    # Where the report hook finds the browser, even when a later fixture fails.
+    request.node.selenium_driver = browser
     yield browser
     browser.quit()
 
