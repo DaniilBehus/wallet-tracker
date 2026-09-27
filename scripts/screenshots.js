@@ -122,8 +122,10 @@ async function seed() {
   await api('/api/settings', {
     method: 'PUT',
     token,
-    // A limit a little above the month below, so the picture shows the state
-    // line rather than an empty "Set limit" control.
+    // A limit the month ends up past: €722.70 of expenses below plus this
+    // month's €100.00 loan instalment make €822.70, so the picture shows the
+    // over-limit state — "Over limit by €22.70" and the red frame around the
+    // limit (UAT-OBS-01) — rather than an empty "Set limit" control.
     body: { monthly_income_cents: 150000, monthly_limit_cents: 80000 },
   });
 
