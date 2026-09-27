@@ -427,12 +427,15 @@ TC-DB-001…003 came later, from a gap rather than from a requirement: the guard
 line of this feature no layer executed. Disabling that guard fails all three,
 which is evidence anyone can reproduce.
 
-API cases number 105 while Newman executes 171 requests. Two reasons, and
+API cases number 113 while Newman executes 179 requests. Two reasons, and
 neither is a case without a row: a case may take several requests to arrange
 the state it then asserts, and TC-API-068 is one request executed once per
 allowed attempt.
 
 Traceability: cases cite the [architecture notes](../../spec/architecture.md),
 the [monthly limit analysis](analysis-monthly-limit.md), a recorded decision or
-a `BUG-###`. Three cases trace to defects, and each of those three has been
-re-verified against the defect it guards.
+a `BUG-###`. Twenty cases trace to defects. The three regression cases have
+each been re-verified against the defect they guard. The fourteen written for
+BUG-015, BUG-017 and BUG-018 were run with their fix removed: the ones that
+reproduce a defect failed, and TC-API-106 and TC-API-109, which hold the
+accepted side of a new limit, passed as they should.

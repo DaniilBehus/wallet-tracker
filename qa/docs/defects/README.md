@@ -34,7 +34,7 @@ during the build of the frontend, before this layer existed — they are in
 `log/BUGS.md` where they belong. BUG-002 now has a permanent regression case
 here as TC-E2E-024, which is the part that matters.
 
-The API layer — 116 requests, 431 assertions, every boundary in spec §4.3, all
+The API layer — 179 requests, 650 assertions, every boundary in spec §4.3, all
 five token states, every cross-user path — has found no defect **in the
 application's request handling**. It found four in itself and in the pipeline
 around it (BUG-007, BUG-008, BUG-009, BUG-010), which is a different and less

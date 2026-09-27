@@ -6,10 +6,10 @@ Install the application dependencies with `npm ci` first. Use Node.js 22+, Pytho
 
 ```bash
 npm run check        # invariants: spec hash, no float money, testids, e2e discipline, coverage gates
-npm run test:api     # 171 requests, 621 assertions
+npm run test:api     # 179 requests, 650 assertions
 npm run test:db      # 3 migration cases against temporary databases
 npm run test:python  # 16 isolated Python/httpx API scenarios; writes JUnit XML
-npm run test:e2e     # 69 scenarios across a phone and a desktop viewport
+npm run test:e2e     # 81 scenarios across a phone and a desktop viewport
 npm run test:race    # two server processes, one database, concurrent writes
 npm test             # check, migration, Newman, pytest, Playwright and race checks
 npm run test:load    # k6; needs k6 installed separately
@@ -41,7 +41,7 @@ catalogue does not list fails before the test runs.
 |---|---|
 | [`qa/docs/test-design.md`](../qa/docs/test-design.md) | How a change becomes a set of cases — nine steps, each with an example from this app |
 | [`qa/docs/test-plan.md`](../qa/docs/test-plan.md) | Scope, entry and exit criteria, risks |
-| [`qa/docs/test-cases.md`](../qa/docs/test-cases.md) | 186 cases with ids, priorities, results and a trace to a requirement, spec clause or defect |
+| [`qa/docs/test-cases.md`](../qa/docs/test-cases.md) | 206 cases with ids, priorities, results and a trace to a requirement, spec clause or defect |
 | [`qa/db/`](../qa/db/) | Existing-database migration checks on disposable files |
 | [`qa/docs/defects/`](../qa/docs/defects/) | Full defect reports from the test layers |
 | [`qa/api/`](../qa/api/) | Postman collection; the environment holds two variables and no literals |
