@@ -735,7 +735,6 @@
   function renderLimit(summary) {
     const value = $('#limit-value');
     const status = $('#limit-status');
-    const figure = $('#limit-figure');
     const left = summary.limit_remaining_cents;
 
     value.textContent = summary.limit_cents === null
@@ -745,9 +744,8 @@
     if (summary.limit_status === 'not_set') {
       status.hidden = true;
       status.textContent = '';
-      status.classList.remove('figure--over');
-      // No limit, nothing to judge, no frame (UAT-OBS-01).
-      figure.classList.remove('figure--framed', 'figure--framed-over');
+      // No limit, nothing to judge, no box (UAT-OBS-01).
+      status.classList.remove('figure--over', 'limit-status--left', 'limit-status--used-up');
       return;
     }
 
@@ -758,14 +756,14 @@
     // Text first; the class is for anyone styling it, never the only signal.
     status.classList.toggle('figure--over', summary.limit_status === 'exceeded');
 
-    // The frame asks a coarser question than the sentence does: is there
+    // The box asks a coarser question than the sentence does: is there
     // budget left, yes or no. Spending exactly the limit is 'reached' in
-    // words — not over — and still leaves nothing, so it wears the red
-    // frame (UAT-OBS-01). The words keep the distinction the frame drops,
-    // which is why colour is never the only carrier (REQ-ML-09 AC-09.3).
+    // words — not over — and still leaves nothing, so it gets the red box
+    // (UAT-OBS-01). The words keep the distinction the box drops, which is
+    // why colour is never the only carrier (REQ-ML-09 AC-09.3).
     const budgetLeft = left > 0;
-    figure.classList.toggle('figure--framed', budgetLeft);
-    figure.classList.toggle('figure--framed-over', !budgetLeft);
+    status.classList.toggle('limit-status--left', budgetLeft);
+    status.classList.toggle('limit-status--used-up', !budgetLeft);
   }
 
   function renderCategoryBars(container, summary) {

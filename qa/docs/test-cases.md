@@ -342,11 +342,13 @@ subtly wrong and hard to assert on; the numbers beside it are neither.
 | TC-E2E-067 | Set the limit from the screen | Type 60.00 into the limit editor and save | The limit and the state update without a reload; the API agrees | REQ-ML-10 | P1 | PASS |
 | TC-E2E-068 | Clear the limit from the screen | Empty the field and save | The screen offers to set one again, the state line is gone, the API reports `null` | REQ-ML-10, A3 | P2 | PASS |
 | TC-E2E-069 | A figure that is not a number | Type "not a number" and save | Error toast; the shown and stored limits are unchanged | REQ-ML-10 | P2 | PASS |
-| TC-E2E-076 | No limit, no frame | No limit set, open Month | The frame around the limit figure is fully transparent | UAT-OBS-01 | P2 | PASS |
-| TC-E2E-077 | Budget left: a neutral frame | Limit €200.00, spend €50.00 | The frame is the neutral colour, differs from the red one, and clears 3:1 against both ends of the header gradient | UAT-OBS-01, WCAG 1.4.11 | P2 | PASS |
-| TC-E2E-078 | Exactly at the limit | Limit €100.00, spend €100.00 | The frame is red because nothing is left, while the words say *Limit reached* and carry no over class — equality is not overspending | UAT-OBS-01, REQ-ML-05 R5 | P1 | PASS |
-| TC-E2E-079 | Over the limit: a red frame | Limit €100.00, spend €125.00 | The frame is red and clears 3:1 against both ends of the header gradient | UAT-OBS-01, WCAG 1.4.11 | P1 | PASS |
-| TC-E2E-080 | The light palette | Withhold `theme.css` so `style.css`'s own palette renders; within, then over the limit | Neutral, then red, each at 3:1 or more against the header | UAT-OBS-01, WCAG 1.4.11 | P2 | PASS |
+| TC-E2E-076 | No limit, no box | No limit set, open Month | The status line is hidden and carries neither box class | UAT-OBS-01 | P2 | PASS |
+| TC-E2E-077 | Budget left: a white outline | Limit €200.00, spend €50.00 | No fill; a white outline, not the red, that clears 3:1 against both ends of the header gradient | UAT-OBS-01, WCAG 1.4.11 | P2 | PASS |
+| TC-E2E-078 | Exactly at the limit | Limit €100.00, spend €100.00 | The box is red with white text because nothing is left, while the words say *Limit reached* and carry no over class — equality is not overspending | UAT-OBS-01, REQ-ML-05 R5 | P1 | PASS |
+| TC-E2E-079 | Over the limit: white on solid red | Limit €100.00, spend €125.00 | A solid fill in the palette's red; white bold text at 4.5:1 or more on it; the over class | UAT-OBS-01, WCAG 1.4.3 | P1 | PASS |
+| TC-E2E-080 | The light palette | Withhold `theme.css` so `style.css`'s own palette renders; within, then over the limit | A white outline at 3:1 or more against the header, then white text at 4.5:1 or more on the red | UAT-OBS-01, WCAG 1.4.11, 1.4.3 | P2 | PASS |
+| TC-E2E-084 | The limit figure is never framed | One account taken from no limit through within, exactly at and over the limit | The limit figure has no border in any state, and the income, left and limit figures stay where they were | UAT-OBS-01 | P1 | PASS |
+| TC-E2E-085 | The box fits a phone | The largest limit untouched, then a zero limit with ten expenses at the amount ceiling; 320, 375 and 393 px | Each box stays inside the header, its text is not clipped and the page does not scroll sideways | UAT-OBS-01, layout contract | P2 | PASS |
 
 ## End-to-end · Schedules · `qa/e2e/schedules.spec.js`
 
@@ -435,8 +437,8 @@ fail when its defect is put back — see S05.
 | Database — the one in-place migration, node:test | 3 | 3 | all PASS |
 | Python — 17 documented scenarios, 24 pytest items | 17 | 24 | all PASS |
 | Load — 3 scenarios, thresholds enforced | 3 | 3 | all PASS |
-| End-to-end — 83 tests × 2 viewports | 83 | 166 | all PASS; local browser run requires a host that permits Chromium |
-| **Total** | **219** | **375** | **documented cases PASS; local browser execution environment noted above** |
+| End-to-end — 85 tests × 2 viewports | 85 | 170 | all PASS; local browser run requires a host that permits Chromium |
+| **Total** | **221** | **379** | **documented cases PASS; local browser execution environment noted above** |
 
 **The counts are checked against the suites, not typed from memory.** An earlier
 count claimed 138 cases while only 135 rows existed; three cases (TC-E2E-039…041)
