@@ -36,9 +36,13 @@ Test links identify coverage; they do not assert a new behavioural run here.
 
 ## Maintain and reproduce
 
-Each page lists authoritative sources and simplifications. No unresolved
-code/contract discrepancy was found in the modelled rules. A stale test comment
-is noted on the sequence page; it is not used as a requirement.
+Each page lists authoritative sources and simplifications. **Re-verified
+against the code at `4829b7d` on 2026-09-27.** The draft-and-save sequence
+needed changing: it did not parse in Mermaid, and it now tells an editable
+result from a refusal, shows the keyed save committing or rolling back, and
+carries the request id. The database model, both BPMN models and the use cases
+matched the code as drafted; one BPMN label was moved clear of a task. A stale
+test comment is noted on the sequence page; it is not used as a requirement.
 
 - Re-read the current contract, route, schema and tests before editing a model.
 - Preserve optional fields, zero versus `NULL`, failure outcomes and write boundaries.
