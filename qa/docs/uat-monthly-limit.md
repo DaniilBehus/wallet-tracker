@@ -124,6 +124,34 @@ limit by €X* and the `figure--over` class, so REQ-ML-09 AC-09.3 — colour is
 never the only carrier — still holds. It is a presentation improvement, tracked
 separately from this pass, and it did not block acceptance.
 
+**Status: implemented in ORD-020, awaiting the owner's re-check.** The owner has
+not looked at it yet, so this records an implementation, not an acceptance.
+
+- The limit figure now has a frame: neutral while budget remains, red once it
+  is used up, none while no limit is set. The border is always there and only
+  changes colour, so the figures above it do not move when the state changes.
+- **One point to check at the re-check.** The order defined "used up" as
+  nothing left, so spending *exactly* the limit also gets the red frame. The
+  words still say *Limit reached*, not over (REQ-ML-05 R5), and the status line
+  keeps its separate over class. The owner's words at UAT were "red when the
+  limit is exceeded", so this is the one place the implementation reads the
+  request more broadly than it was worded.
+- Frame contrast was measured in the browser against both ends of the month
+  header's gradient, the darkest and lightest points it sits on. WCAG 1.4.11
+  asks 3:1 of a graphical object.
+
+  | Palette | Neutral frame | Red frame |
+  |---|---|---|
+  | Shipped (`theme.css`) | 6.17:1 · 7.91:1 | 7.06:1 · 9.04:1 |
+  | Light (`style.css` on its own) | 6.23:1 · 3.63:1 | 8.88:1 · 5.18:1 |
+
+- Checked by TC-E2E-076…080. Controls: with the frame never drawn, four of the
+  five cases fail. With exact equality treated as budget left, only TC-E2E-078
+  fails. With a frame colour under 3:1 in either palette, only the case that
+  measures that palette fails.
+- `docs/screenshots/2-month.png` was regenerated with `npm run screenshots`.
+  The other three screenshots came out byte-identical.
+
 **Sign-off** — completed by the owner, not by the agent above.
 
 | | |

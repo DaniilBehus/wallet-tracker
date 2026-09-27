@@ -719,6 +719,7 @@
   function renderLimit(summary) {
     const value = $('#limit-value');
     const status = $('#limit-status');
+    const figure = $('#limit-figure');
     const left = summary.limit_remaining_cents;
 
     value.textContent = summary.limit_cents === null
@@ -729,6 +730,8 @@
       status.hidden = true;
       status.textContent = '';
       status.classList.remove('figure--over');
+      // No limit, nothing to judge, no frame (UAT-OBS-01).
+      figure.classList.remove('figure--framed', 'figure--framed-over');
       return;
     }
 
@@ -738,6 +741,15 @@
     else status.textContent = T.limitOver(formatMoney(Math.abs(left)));
     // Text first; the class is for anyone styling it, never the only signal.
     status.classList.toggle('figure--over', summary.limit_status === 'exceeded');
+
+    // The frame asks a coarser question than the sentence does: is there
+    // budget left, yes or no. Spending exactly the limit is 'reached' in
+    // words — not over — and still leaves nothing, so it wears the red
+    // frame (UAT-OBS-01). The words keep the distinction the frame drops,
+    // which is why colour is never the only carrier (REQ-ML-09 AC-09.3).
+    const budgetLeft = left > 0;
+    figure.classList.toggle('figure--framed', budgetLeft);
+    figure.classList.toggle('figure--framed-over', !budgetLeft);
   }
 
   function renderCategoryBars(container, summary) {

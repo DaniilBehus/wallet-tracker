@@ -97,7 +97,7 @@
 
   <!-- --------------------------------------------------- 6.2 This month -->
   <section id="screen-month" class="screen" aria-label="This month" hidden>
-    <header class="screen__head screen__head--month">
+    <header class="screen__head screen__head--month" data-testid="month-head">
       <div class="overview">
         <!-- Drawn by hand in SVG, no library (D-022). One arc per category,
              plus the unspent part of the income in grey. -->
@@ -125,7 +125,9 @@
             <dt id="remaining-label" data-testid="remaining-label">Left</dt>
             <dd><span id="month-remaining" data-testid="month-remaining">—</span></dd>
           </div>
-          <div class="figure">
+          <!-- The frame the owner asked for at UAT (UAT-OBS-01) is drawn on
+               this box, around both the label and the amount. -->
+          <div class="figure figure--limit" id="limit-figure" data-testid="limit-figure">
             <dt>Limit</dt>
             <dd>
               <button type="button" class="figure__edit" id="limit-edit"
