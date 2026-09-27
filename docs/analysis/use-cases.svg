@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1250" height="950" viewBox="0 0 1250 950" role="img" aria-labelledby="title desc">
+  <title id="title">Wallet Tracker — UML user goals</title>
+  <desc id="desc">A person is associated with eight goals inside the Wallet boundary. An optional extraction provider participates only in requesting and reviewing an AI draft. Lines are associations, not a sequence.</desc>
+  <style>
+    text { font-family: Arial, sans-serif; fill: #173b36; font-size: 19px; }
+    .boundary { fill: #f6fbf9; stroke: #2b514b; stroke-width: 2; }
+    .case { fill: #e7f7f2; stroke: #2b514b; stroke-width: 2; }
+    .line { fill: none; stroke: #42655e; stroke-width: 1.6; }
+    .actor { fill: none; stroke: #173b36; stroke-width: 2.5; }
+    .label { text-anchor: middle; }
+  </style>
+  <rect width="1250" height="950" fill="#ffffff"/>
+  <rect class="boundary" x="310" y="35" width="700" height="885"/>
+  <text x="660" y="68" class="label" font-weight="bold">Wallet Tracker</text>
+  <g class="line">
+    <path d="M145 430 L415 125"/><path d="M145 430 L415 225"/>
+    <path d="M145 430 L415 325"/><path d="M145 430 L415 425"/>
+    <path d="M145 430 L415 525"/><path d="M145 430 L415 625"/>
+    <path d="M145 430 L415 725"/><path d="M145 430 L415 825"/>
+    <path d="M905 825 L1135 805"/>
+  </g>
+  <g class="actor">
+    <circle cx="110" cy="380" r="22"/><path d="M110 402 V465 M75 430 H145 M110 465 L80 515 M110 465 L140 515"/>
+    <circle cx="1170" cy="755" r="22"/><path d="M1170 777 V840 M1135 805 H1205 M1170 840 L1140 890 M1170 840 L1200 890"/>
+  </g>
+  <text class="label" x="110" y="550">Person</text>
+  <text class="label" x="1160" y="690"><tspan x="1160">Extraction provider</tspan><tspan x="1160" dy="26">(optional)</tspan></text>
+  <g class="case">
+    <ellipse cx="660" cy="125" rx="245" ry="38"/><ellipse cx="660" cy="225" rx="245" ry="38"/>
+    <ellipse cx="660" cy="325" rx="245" ry="38"/><ellipse cx="660" cy="425" rx="245" ry="38"/>
+    <ellipse cx="660" cy="525" rx="245" ry="38"/><ellipse cx="660" cy="625" rx="245" ry="38"/>
+    <ellipse cx="660" cy="725" rx="245" ry="38"/><ellipse cx="660" cy="825" rx="245" ry="38"/>
+  </g>
+  <g class="label">
+    <text x="660" y="132">Register / sign in</text>
+    <text x="660" y="232">Record / edit / delete an expense</text>
+    <text x="660" y="332">Review a month's spending</text>
+    <text x="660" y="432">Set / clear the current spending limit</text>
+    <text x="660" y="532">Create a category</text>
+    <text x="660" y="632">Create / edit a recurring schedule</text>
+    <text x="660" y="732">Record an instalment as an expense</text>
+    <text x="660" y="832">Request / review an optional AI draft</text>
+  </g>
+</svg>

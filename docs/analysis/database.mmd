@@ -1,0 +1,63 @@
+erDiagram
+    users ||..o{ categories : owns
+    users ||..o{ schedules : owns
+    users ||..o{ transactions : owns
+    users ||--o| settings : has
+    users ||--o{ transaction_requests : scopes
+    categories |o..o{ schedules : category_id
+    categories |o..o{ transactions : category_id
+    schedules |o..o{ transactions : schedule_id
+    users {
+        INTEGER id PK "NOT NULL; autoincrement"
+        TEXT email UK "NOT NULL"
+        TEXT password_hash "NOT NULL"
+        TEXT created_at "NOT NULL; default now"
+    }
+    categories {
+        INTEGER id PK "NOT NULL; autoincrement"
+        INTEGER user_id FK "NOT NULL"
+        TEXT name "NOT NULL; unique with user_id"
+        TEXT icon "NULL allowed"
+    }
+    schedules {
+        INTEGER id PK "NOT NULL; autoincrement"
+        INTEGER user_id FK "NOT NULL"
+        TEXT name "NOT NULL"
+        INTEGER amount_cents "NOT NULL; greater than zero"
+        INTEGER category_id FK "NULL allowed"
+        INTEGER day_of_month "NOT NULL; 1 to 31"
+        TEXT starts_on "NOT NULL"
+        INTEGER total_count "NULL or greater than zero"
+        INTEGER paid_count "NOT NULL; default 0; nonnegative"
+        INTEGER active "NOT NULL; default 1"
+        TEXT created_at "NOT NULL; default now"
+    }
+    transactions {
+        INTEGER id PK "NOT NULL; autoincrement"
+        INTEGER user_id FK "NOT NULL"
+        INTEGER amount_cents "NOT NULL; greater than zero"
+        INTEGER category_id FK "NULL allowed"
+        TEXT spent_on "NOT NULL"
+        TEXT note "NULL allowed"
+        INTEGER schedule_id FK "NULL allowed"
+        TEXT created_at "NOT NULL; default now"
+    }
+    settings {
+        INTEGER user_id PK,FK "NOT NULL; at most one row per user"
+        INTEGER monthly_income_cents "NOT NULL; default 0; nonnegative"
+        INTEGER monthly_limit_cents "NULL or nonnegative"
+    }
+    transaction_requests {
+        INTEGER user_id PK,FK "NOT NULL; composite PK"
+        TEXT operation_key PK "NOT NULL; composite PK"
+        TEXT payload_hash "NOT NULL"
+        INTEGER transaction_id "NOT NULL; deliberately NO FK"
+        TEXT response_json "NOT NULL"
+        TEXT created_at "NOT NULL; default now"
+    }
+    ai_quota {
+        TEXT period PK "NOT NULL; composite PK"
+        TEXT scope PK "NOT NULL; constrained enum"
+        INTEGER user_id PK "NOT NULL; global sentinel 0; NO FK"
+        INTEGER count "NOT NULL; default 0; nonnegative"
+    }

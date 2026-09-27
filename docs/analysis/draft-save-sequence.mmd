@@ -1,0 +1,53 @@
+sequenceDiagram
+    actor Person
+    participant UI as Browser review
+    participant API as Authenticated API
+    participant Service as Draft service
+    participant Provider as Extraction adapter
+    participant DB as SQLite
+    Person->>UI: Describe one paid EUR expense; request draft
+    UI->>API: POST /api/ai/expense-draft
+    API->>Service: createDraft(userId, body, rawBytes, signal)
+    Service->>Service: Validate request, enabled mode, live consent
+    alt Rejected before dispatch
+        Service-->>API: ApiError (validation / unavailable / consent)
+        API-->>UI: Fixed error; no provider call or financial write
+    else Valid request
+        Service->>DB: Read owned categories; reserve quota after slot
+        Service->>Provider: extract(description, date, refs, schema)
+        alt Provider failure or invalid output
+            Provider-->>Service: Failure / timeout / unusable output
+            Service-->>API: Map to fixed 502 / 503 / 504
+            API-->>UI: Error; edit or manual entry
+        else Usable response (including refusal)
+            Provider-->>Service: Structured extraction or refusal
+            Service->>Service: Validate output; deterministic normalisation
+            Service-->>API: ready / needs_input / unsupported
+            API-->>UI: 200 editable draft; no transaction written
+        end
+        Note over Service,DB: Quota may be consumed on failure; no stored AI draft
+    end
+    opt A reviewable draft arrived in the current UI session
+        Person->>UI: Review / correct fields; explicitly Save expense
+        Note over Person,UI: Cancel / edit description invalidates the draft request<br/>Unsupported cannot be saved from that response
+        UI->>API: POST /api/transactions + Idempotency-Key
+        API->>API: Validate key and canonical payload shape
+        API->>DB: BEGIN IMMEDIATE; lookup (user_id, key)
+        alt New key; current category/date validation passes
+            API->>DB: Insert expense + request record atomically; COMMIT
+            API-->>UI: 201 created expense
+        else Same key and same canonical payload; expense exists
+            API-->>UI: Original 201 body + Idempotency-Replayed: true
+            Note over API,DB: No insert; an edited expense is not reverted
+        else Same key, different payload
+            API-->>UI: 409 IDEMPOTENCY_CONFLICT
+        else Same payload but expense deleted
+            API-->>UI: 409 IDEMPOTENCY_REPLAY_UNAVAILABLE
+        end
+        opt No reliable confirmation (lost response / 5xx / timeout)
+            UI-->>Person: Outcome uncertain; fields and payload frozen
+            Person->>UI: Check / retry this save
+            UI->>API: Same POST, same payload, same key
+            Note over API,DB: Re-enter keyed decision; never create a duplicate for this key
+        end
+    end

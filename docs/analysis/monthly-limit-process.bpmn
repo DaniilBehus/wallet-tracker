@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_Limit" targetNamespace="https://github.com/DaniilBehus/wallet-tracker/analysis">
+  <bpmn:collaboration id="Collaboration_Limit">
+    <bpmn:participant id="Pool_Person" name="Authenticated person / browser"/>
+    <bpmn:participant id="Pool_System" name="Wallet — one interaction and the displayed month" processRef="Process_Limit"/>
+    <bpmn:messageFlow id="LimitRequest" name="Settings update or expense" sourceRef="Pool_Person" targetRef="LimitStart"/>
+    <bpmn:messageFlow id="LimitReply" name="Month state" sourceRef="Display" targetRef="Pool_Person"/>
+    <bpmn:messageFlow id="LimitError" name="Validation error" sourceRef="Invalid" targetRef="Pool_Person"/>
+  </bpmn:collaboration>
+  <bpmn:process id="Process_Limit" isExecutable="false">
+    <bpmn:startEvent id="LimitStart" name="Action received"><bpmn:outgoing>Limit01</bpmn:outgoing><bpmn:messageEventDefinition id="StartMessage"/></bpmn:startEvent>
+    <bpmn:serviceTask id="Validate" name="Validate action input; settings requires income"><bpmn:incoming>Limit01</bpmn:incoming><bpmn:outgoing>Limit02</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Valid" name="Valid?" default="BadInput" gatewayDirection="Diverging"><bpmn:incoming>Limit02</bpmn:incoming><bpmn:outgoing>GoodInput</bpmn:outgoing><bpmn:outgoing>BadInput</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:sendTask id="Invalid" name="Return validation error; no write for this action"><bpmn:incoming>BadInput</bpmn:incoming><bpmn:outgoing>Limit03</bpmn:outgoing></bpmn:sendTask>
+    <bpmn:endEvent id="InvalidEnd" name="Action refused"><bpmn:incoming>Limit03</bpmn:incoming></bpmn:endEvent>
+    <bpmn:exclusiveGateway id="Operation" name="Action type" default="DoExpense" gatewayDirection="Diverging"><bpmn:incoming>GoodInput</bpmn:incoming><bpmn:outgoing>DoSet</bpmn:outgoing><bpmn:outgoing>DoClear</bpmn:outgoing><bpmn:outgoing>DoExpense</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="SetLimit" name="PUT /api/settings: number sets L (0…100000000); omitted L preserves it"><bpmn:incoming>DoSet</bpmn:incoming><bpmn:outgoing>Limit04</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:serviceTask id="ClearLimit" name="PUT /api/settings: store NULL (not zero)"><bpmn:incoming>DoClear</bpmn:incoming><bpmn:outgoing>Limit05</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:serviceTask id="Expense" name="POST /api/transactions: record expense; L never blocks it"><bpmn:incoming>DoExpense</bpmn:incoming><bpmn:outgoing>Limit06</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="JoinWrite" gatewayDirection="Converging"><bpmn:incoming>Limit04</bpmn:incoming><bpmn:incoming>Limit05</bpmn:incoming><bpmn:incoming>Limit06</bpmn:incoming><bpmn:outgoing>Limit07</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Summary" name="Request GET /api/summary; compute selected-month T and read current L"><bpmn:incoming>Limit07</bpmn:incoming><bpmn:outgoing>Limit08</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="State" name="Compare T with L" default="IsExceeded" gatewayDirection="Diverging"><bpmn:incoming>Limit08</bpmn:incoming><bpmn:outgoing>IsNull</bpmn:outgoing><bpmn:outgoing>IsWithin</bpmn:outgoing><bpmn:outgoing>IsReached</bpmn:outgoing><bpmn:outgoing>IsExceeded</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="NotSet" name="not_set; limit and remaining are NULL"><bpmn:incoming>IsNull</bpmn:incoming><bpmn:outgoing>Limit09</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:serviceTask id="Within" name="within; remaining = L − T"><bpmn:incoming>IsWithin</bpmn:incoming><bpmn:outgoing>Limit10</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:serviceTask id="Reached" name="reached; remaining = 0 (also L=0,T=0)"><bpmn:incoming>IsReached</bpmn:incoming><bpmn:outgoing>Limit11</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:serviceTask id="Exceeded" name="exceeded; remaining = L − T (negative)"><bpmn:incoming>IsExceeded</bpmn:incoming><bpmn:outgoing>Limit12</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="JoinState" gatewayDirection="Converging"><bpmn:incoming>Limit09</bpmn:incoming><bpmn:incoming>Limit10</bpmn:incoming><bpmn:incoming>Limit11</bpmn:incoming><bpmn:incoming>Limit12</bpmn:incoming><bpmn:outgoing>Limit13</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:sendTask id="Display" name="Return / display state in words; not_set offers Set a limit"><bpmn:incoming>Limit13</bpmn:incoming><bpmn:outgoing>Limit14</bpmn:outgoing></bpmn:sendTask>
+    <bpmn:endEvent id="LimitEnd" name="Month displayed"><bpmn:incoming>Limit14</bpmn:incoming></bpmn:endEvent>
+    <bpmn:sequenceFlow id="Limit01" sourceRef="LimitStart" targetRef="Validate"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Limit02" sourceRef="Validate" targetRef="Valid"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="GoodInput" sourceRef="Valid" targetRef="Operation" name="Yes"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">valid</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="BadInput" sourceRef="Valid" targetRef="Invalid" name="No"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Limit03" sourceRef="Invalid" targetRef="InvalidEnd"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="DoSet" sourceRef="Operation" targetRef="SetLimit" name="Settings: number / omitted"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">settings_request and (limit_number or limit_omitted)</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="DoClear" sourceRef="Operation" targetRef="ClearLimit" name="Settings: clear (NULL)"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">settings_request and limit_null</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="DoExpense" sourceRef="Operation" targetRef="Expense" name="Record expense"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Limit04" sourceRef="SetLimit" targetRef="JoinWrite"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Limit05" sourceRef="ClearLimit" targetRef="JoinWrite"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Limit06" sourceRef="Expense" targetRef="JoinWrite"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Limit07" sourceRef="JoinWrite" targetRef="Summary"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Limit08" sourceRef="Summary" targetRef="State"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="IsNull" sourceRef="State" targetRef="NotSet" name="L is NULL"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">L is NULL</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="IsWithin" sourceRef="State" targetRef="Within" name="L set; T &lt; L"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">L set and T &lt; L</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="IsReached" sourceRef="State" targetRef="Reached" name="L set; T = L"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">L set and T = L</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="IsExceeded" sourceRef="State" targetRef="Exceeded" name="L set; T &gt; L"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Limit09" sourceRef="NotSet" targetRef="JoinState"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Limit10" sourceRef="Within" targetRef="JoinState"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Limit11" sourceRef="Reached" targetRef="JoinState"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Limit12" sourceRef="Exceeded" targetRef="JoinState"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Limit13" sourceRef="JoinState" targetRef="Display"></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Limit14" sourceRef="Display" targetRef="LimitEnd"></bpmn:sequenceFlow>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_Limit"><bpmndi:BPMNPlane id="Plane_Limit" bpmnElement="Collaboration_Limit">
+    <bpmndi:BPMNShape id="di_Pool_Person" bpmnElement="Pool_Person" isHorizontal="true"><dc:Bounds x="50" y="40" width="1950" height="90"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Pool_System" bpmnElement="Pool_System" isHorizontal="true"><dc:Bounds x="50" y="195" width="1950" height="650"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_LimitStart" bpmnElement="LimitStart"><dc:Bounds x="115" y="292" width="36" height="36"/><bpmndi:BPMNLabel><dc:Bounds x="95" y="337" width="85" height="40"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Validate" bpmnElement="Validate"><dc:Bounds x="210" y="270" width="150" height="80"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Valid" bpmnElement="Valid" isMarkerVisible="true"><dc:Bounds x="410" y="285" width="50" height="50"/><bpmndi:BPMNLabel><dc:Bounds x="413" y="255" width="50" height="20"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Invalid" bpmnElement="Invalid"><dc:Bounds x="210" y="695" width="150" height="80"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_InvalidEnd" bpmnElement="InvalidEnd"><dc:Bounds x="415" y="717" width="36" height="36"/><bpmndi:BPMNLabel><dc:Bounds x="390" y="767" width="85" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Operation" bpmnElement="Operation" isMarkerVisible="true"><dc:Bounds x="515" y="285" width="50" height="50"/><bpmndi:BPMNLabel><dc:Bounds x="455" y="225" width="90" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_SetLimit" bpmnElement="SetLimit"><dc:Bounds x="655" y="225" width="185" height="100"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_ClearLimit" bpmnElement="ClearLimit"><dc:Bounds x="655" y="395" width="185" height="85"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Expense" bpmnElement="Expense"><dc:Bounds x="655" y="590" width="185" height="90"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_JoinWrite" bpmnElement="JoinWrite" isMarkerVisible="true"><dc:Bounds x="910" y="412" width="50" height="50"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Summary" bpmnElement="Summary"><dc:Bounds x="1010" y="392" width="180" height="90"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_State" bpmnElement="State" isMarkerVisible="true"><dc:Bounds x="1250" y="412" width="50" height="50"/><bpmndi:BPMNLabel><dc:Bounds x="1220" y="310" width="110" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_NotSet" bpmnElement="NotSet"><dc:Bounds x="1390" y="225" width="180" height="75"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Within" bpmnElement="Within"><dc:Bounds x="1390" y="385" width="180" height="75"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Reached" bpmnElement="Reached"><dc:Bounds x="1390" y="545" width="180" height="75"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Exceeded" bpmnElement="Exceeded"><dc:Bounds x="1390" y="705" width="180" height="75"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_JoinState" bpmnElement="JoinState" isMarkerVisible="true"><dc:Bounds x="1640" y="412" width="50" height="50"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_Display" bpmnElement="Display"><dc:Bounds x="1735" y="392" width="170" height="90"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="di_LimitEnd" bpmnElement="LimitEnd"><dc:Bounds x="1940" y="419" width="36" height="36"/><bpmndi:BPMNLabel><dc:Bounds x="1915" y="490" width="75" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNEdge id="di_Limit01" bpmnElement="Limit01"><di:waypoint x="151" y="310"/><di:waypoint x="210" y="310"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Limit02" bpmnElement="Limit02"><di:waypoint x="360" y="310"/><di:waypoint x="410" y="310"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_GoodInput" bpmnElement="GoodInput"><di:waypoint x="460" y="310"/><di:waypoint x="515" y="310"/><bpmndi:BPMNLabel><dc:Bounds x="470" y="287" width="35" height="20"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_BadInput" bpmnElement="BadInput"><di:waypoint x="435" y="335"/><di:waypoint x="435" y="650"/><di:waypoint x="285" y="650"/><di:waypoint x="285" y="695"/><bpmndi:BPMNLabel><dc:Bounds x="447" y="530" width="30" height="20"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Limit03" bpmnElement="Limit03"><di:waypoint x="360" y="735"/><di:waypoint x="415" y="735"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_DoSet" bpmnElement="DoSet"><di:waypoint x="565" y="310"/><di:waypoint x="605" y="310"/><di:waypoint x="605" y="275"/><di:waypoint x="655" y="275"/><bpmndi:BPMNLabel><dc:Bounds x="570" y="235" width="80" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_DoClear" bpmnElement="DoClear"><di:waypoint x="540" y="335"/><di:waypoint x="540" y="437"/><di:waypoint x="655" y="437"/><bpmndi:BPMNLabel><dc:Bounds x="562" y="407" width="80" height="35"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_DoExpense" bpmnElement="DoExpense"><di:waypoint x="525" y="325"/><di:waypoint x="500" y="370"/><di:waypoint x="500" y="635"/><di:waypoint x="655" y="635"/><bpmndi:BPMNLabel><dc:Bounds x="540" y="595" width="100" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Limit04" bpmnElement="Limit04"><di:waypoint x="840" y="275"/><di:waypoint x="935" y="275"/><di:waypoint x="935" y="412"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Limit05" bpmnElement="Limit05"><di:waypoint x="840" y="437"/><di:waypoint x="910" y="437"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Limit06" bpmnElement="Limit06"><di:waypoint x="840" y="635"/><di:waypoint x="935" y="635"/><di:waypoint x="935" y="462"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Limit07" bpmnElement="Limit07"><di:waypoint x="960" y="437"/><di:waypoint x="1010" y="437"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Limit08" bpmnElement="Limit08"><di:waypoint x="1190" y="437"/><di:waypoint x="1250" y="437"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_IsNull" bpmnElement="IsNull"><di:waypoint x="1263" y="425"/><di:waypoint x="1210" y="425"/><di:waypoint x="1210" y="262"/><di:waypoint x="1390" y="262"/><bpmndi:BPMNLabel><dc:Bounds x="1295" y="230" width="75" height="20"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_IsWithin" bpmnElement="IsWithin"><di:waypoint x="1300" y="437"/><di:waypoint x="1340" y="437"/><di:waypoint x="1340" y="422"/><di:waypoint x="1390" y="422"/><bpmndi:BPMNLabel><dc:Bounds x="1300" y="370" width="80" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_IsReached" bpmnElement="IsReached"><di:waypoint x="1275" y="462"/><di:waypoint x="1275" y="582"/><di:waypoint x="1390" y="582"/><bpmndi:BPMNLabel><dc:Bounds x="1300" y="550" width="80" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_IsExceeded" bpmnElement="IsExceeded"><di:waypoint x="1260" y="452"/><di:waypoint x="1230" y="505"/><di:waypoint x="1230" y="742"/><di:waypoint x="1390" y="742"/><bpmndi:BPMNLabel><dc:Bounds x="1290" y="710" width="85" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Limit09" bpmnElement="Limit09"><di:waypoint x="1570" y="262"/><di:waypoint x="1665" y="262"/><di:waypoint x="1665" y="412"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Limit10" bpmnElement="Limit10"><di:waypoint x="1570" y="422"/><di:waypoint x="1620" y="422"/><di:waypoint x="1640" y="437"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Limit11" bpmnElement="Limit11"><di:waypoint x="1570" y="582"/><di:waypoint x="1665" y="582"/><di:waypoint x="1665" y="462"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Limit12" bpmnElement="Limit12"><di:waypoint x="1570" y="742"/><di:waypoint x="1710" y="742"/><di:waypoint x="1710" y="437"/><di:waypoint x="1690" y="437"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Limit13" bpmnElement="Limit13"><di:waypoint x="1690" y="437"/><di:waypoint x="1735" y="437"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_Limit14" bpmnElement="Limit14"><di:waypoint x="1905" y="437"/><di:waypoint x="1940" y="437"/></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_LimitRequest" bpmnElement="LimitRequest"><di:waypoint x="133" y="130"/><di:waypoint x="133" y="292"/><bpmndi:BPMNLabel><dc:Bounds x="145" y="144" width="130" height="40"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_LimitReply" bpmnElement="LimitReply"><di:waypoint x="1820" y="392"/><di:waypoint x="1820" y="130"/><bpmndi:BPMNLabel><dc:Bounds x="1830" y="160" width="85" height="20"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="di_LimitError" bpmnElement="LimitError"><di:waypoint x="210" y="735"/><di:waypoint x="88" y="735"/><di:waypoint x="88" y="130"/><bpmndi:BPMNLabel><dc:Bounds x="95" y="580" width="90" height="36"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>
+</bpmn:definitions>
