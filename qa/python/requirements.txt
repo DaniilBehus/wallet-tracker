@@ -1,2 +1,4 @@
 pytest
 httpx
+# the browser suite in qa/selenium; pinned so a new Selenium release cannot change it unseen
+selenium==4.49.0
