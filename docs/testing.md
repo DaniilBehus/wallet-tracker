@@ -2,14 +2,15 @@
 
 [← Back to README](../README.md#qa-evidence) · [Next: test plan →](../qa/docs/test-plan.md)
 
-Install the application dependencies with `npm ci` first. Use Node.js 22+, Python 3.12+ for pytest, and Chromium for Playwright. Install the browser with `npx playwright install chromium` (`--with-deps chromium` on Linux when system dependencies are needed). Set up Python using the commands below before running `npm test`. k6 is a separate installation.
+Install the application dependencies with `npm ci` first. Use Node.js 22+, Python 3.12+ for pytest, Chromium for Playwright and Google Chrome for Selenium. Install the browser with `npx playwright install chromium` (`--with-deps chromium` on Linux when system dependencies are needed). Set up Python using the commands below before running `npm test`. k6 is a separate installation.
 
 ```bash
 npm run check        # invariants: spec hash, no float money, testids, e2e discipline, coverage gates
 npm run test:api     # 179 requests, 650 assertions
 npm run test:db      # 3 migration cases against temporary databases
-npm run test:python  # 16 isolated Python/httpx API scenarios; writes JUnit XML
-npm run test:e2e     # 81 scenarios across a phone and a desktop viewport
+npm run test:python  # 27 isolated Python/httpx API items; writes JUnit XML
+npm run test:e2e     # 85 scenarios across a phone and a desktop viewport
+npm run test:selenium # 10 Selenium runs of 8 cases in headless Chrome; -- --headed shows it
 npm run test:race    # two server processes, one database, concurrent writes
 npm test             # check, migration, Newman, pytest, Playwright and race checks
 npm run test:load    # k6; needs k6 installed separately
@@ -41,12 +42,13 @@ catalogue does not list fails before the test runs.
 |---|---|
 | [`qa/docs/test-design.md`](../qa/docs/test-design.md) | How a change becomes a set of cases — nine steps, each with an example from this app |
 | [`qa/docs/test-plan.md`](../qa/docs/test-plan.md) | Scope, entry and exit criteria, risks |
-| [`qa/docs/test-cases.md`](../qa/docs/test-cases.md) | 206 cases with ids, priorities, results and a trace to a requirement, spec clause or defect |
+| [`qa/docs/test-cases.md`](../qa/docs/test-cases.md) | 229 cases with ids, priorities, results and a trace to a requirement, spec clause or defect |
 | [`qa/db/`](../qa/db/) | Existing-database migration checks on disposable files |
 | [`qa/docs/defects/`](../qa/docs/defects/) | Full defect reports from the test layers |
 | [`qa/api/`](../qa/api/) | Postman collection; the environment holds two variables and no literals |
 | [`qa/python/`](../qa/python/) | pytest + httpx scenarios; a real Express child, temporary SQLite, health check and JUnit XML |
 | [`qa/e2e/`](../qa/e2e/) | Playwright specs and page objects |
+| [`qa/selenium/`](../qa/selenium/) | Selenium WebDriver + pytest checks with Page Objects, explicit waits and failure evidence |
 | [`qa/race/`](../qa/race/) | Concurrency checks against two real server processes |
 | [`qa/load/`](../qa/load/) | k6 scripts; each measures the same endpoint idle and under load |
 | [`qa/ai/`](../qa/ai/) | AI layer: fake providers, network guard, evaluator, demo runner, corpus and fixtures |
