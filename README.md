@@ -56,7 +56,7 @@ then follow a [defect from reproduction to regression](qa/docs/defects/).**
 |---|---|
 | Plan and case design | [Test plan](qa/docs/test-plan.md) · [Design method](qa/docs/test-design.md) · [Case catalogue](qa/docs/test-cases.md) |
 | API and database | [Postman collection](qa/api/wallet.postman_collection.json) · [pytest scenarios](qa/python/test_api.py) · [migration tests](qa/db/migration.test.js) |
-| Browser flows | [Playwright specs](qa/e2e/) · [page objects](qa/e2e/pages/) |
+| Browser flows | [Playwright specs](qa/e2e/) · [page objects](qa/e2e/pages/) · [Selenium + pytest checks](qa/selenium/) |
 | Concurrency and load | [Race runner](qa/race/run.js) · [k6 workloads](qa/load/) |
 | Recorded results | [Monthly limit report](qa/docs/test-report-monthly-limit.md) · [GitHub CI](https://github.com/DaniilBehus/wallet-tracker/actions/workflows/ci.yml) |
 | AI boundaries | [AI case study](qa/docs/ai-case-study.md) · [evaluation limits](qa/docs/ai-evaluation.md) |

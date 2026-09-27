@@ -70,7 +70,7 @@ gap is something somebody decided rather than something nobody thought of.
 Three gates in `scripts/check.js` watch its output — C6 routes, C7 testids,
 C8 statuses.
 
-Four layers, each answering a different question:
+Five layers, each answering a different question:
 
 | Layer | Question | Tool |
 |---|---|---|
@@ -78,6 +78,7 @@ Four layers, each answering a different question:
 | API | Does the contract hold? | Postman collection via newman |
 | Python API scenarios | Do invalid input classes, auth boundaries and a long stateful flow hold through an independent client? | pytest + httpx |
 | End-to-end | Can a person actually do the thing? | Playwright |
+| Selenium browser checks | Do eight key flows also hold through WebDriver, the other common way to drive a browser? | Selenium + pytest |
 
 **They are deliberately not a pyramid of the usual kind.** There are no unit
 tests, because spec §7 keeps the only real algorithm (`src/dates.js`) pure and
@@ -87,8 +88,9 @@ unit layer would re-test the same function through a shorter path.
 Test data is created by the tests, never seeded by hand: every API run makes its
 own two users from a run id, the pytest fixture starts the real Express process
 with a temporary SQLite file, port and JWT secret, and every end-to-end spec
-registers its own account through the API. Nothing shares state, so nothing
-depends on execution order and everything can run in parallel.
+registers its own account through the API, as does every Selenium test.
+Nothing shares state, so nothing depends on execution order and everything can
+run in parallel.
 
 ---
 
@@ -110,8 +112,9 @@ Testing starts only when all of these hold:
 A cycle is finished when **all** of these hold:
 
 1. Every Newman assertion passes — currently 650 across 179 requests.
-2. Every Python scenario passes and writes `qa/reports/python-junit.xml` — currently 16 pytest items.
-3. Every end-to-end test passes in both viewports — currently 81 scenarios × 2 viewports.
+2. Every Python scenario passes and writes `qa/reports/python-junit.xml` — currently 27 pytest items.
+3. Every end-to-end test passes in both viewports — currently 85 scenarios × 2 viewports.
+4. Every Selenium check passes and writes `qa/reports/selenium-junit.xml` — currently 10 pytest items.
 4. All three load scenarios stay inside their thresholds.
 3. `gitleaks` reports no findings.
 4. No defect of severity **Critical** or **High** is open. BUG-005 is open at
@@ -165,12 +168,14 @@ edited until it agrees with the code has stopped being a test suite.
 | `qa/api/wallet.postman_environment.json` | Two variables: `baseUrl`, `token` |
 | `qa/python/` | pytest/httpx scenarios and isolated-server fixture |
 | `qa/e2e/` | Playwright specs and page objects |
+| `qa/selenium/` | Selenium + pytest checks, Page Objects and the failure-evidence hook |
 | `qa/docs/test-design.md` | How a change becomes a set of cases |
 | `qa/docs/test-cases.md` | The case register with ids and results |
 | `qa/docs/defects/` | Defect reports found by this layer |
 | `qa/reports/api-report.html` | Newman HTML report (CI artifact) |
 | `qa/reports/python-junit.xml` | pytest JUnit report (CI artifact) |
 | `playwright-report/` | Playwright HTML report and traces (CI artifact) |
+| `qa/reports/selenium/` | Screenshot, page source and console of each failed Selenium test (CI artifact on failure) |
 | `log/BUGS.md` | The project-wide defect register — the single source of truth |
 
 ---
@@ -182,8 +187,9 @@ npm install
 
 npm run check      # invariants
 npm run test:api   # 179 requests, 650 assertions
-npm run test:python # 16 pytest items; Python 3.12+ and qa/python/requirements.txt
-npm run test:e2e   # 81 tests × 2 viewports
+npm run test:python # 27 pytest items; Python 3.12+ and qa/python/requirements.txt
+npm run test:e2e   # 85 tests × 2 viewports
+npm run test:selenium # 10 pytest items in headless Chrome; the same requirements
 npm run test:load  # k6; needs k6 installed separately
 ```
 
