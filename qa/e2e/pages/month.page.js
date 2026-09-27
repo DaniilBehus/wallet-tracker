@@ -62,6 +62,15 @@ class MonthPage extends BasePage {
     return this.page.getByTestId(`tx-delete-${transactionId}`);
   }
 
+  /** The row's main line — the note, or the category when there is none. */
+  txName(transactionId) {
+    return this.page.getByTestId(`tx-name-${transactionId}`);
+  }
+
+  txAmount(transactionId) {
+    return this.page.getByTestId(`tx-amount-${transactionId}`);
+  }
+
   /** The row's own body, which is the control that opens the editor. */
   editButton(transactionId) {
     return this.page.getByTestId(`tx-edit-${transactionId}`);

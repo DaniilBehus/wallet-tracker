@@ -300,6 +300,7 @@ subtly wrong and hard to assert on; the numbers beside it are neither.
 | TC-E2E-014 | Delete an expense | Tap the delete control on one row | Row gone, other row stays, total drops by exactly that amount | §5 DELETE, §6.2 | P1 | PASS |
 | TC-E2E-015 | Empty month | Open Month on a new account | `€0.00`, no rows, no bars | §6.2 | P2 | PASS |
 | TC-E2E-016 | Another user's expenses are invisible | Swap the session to a second account | `€0.00`, no rows | §4.3 ownership | P1 | PASS |
+| TC-E2E-081 | The largest amount on a 320 px screen | An expense at the amount ceiling, viewport 320 × 568, open Month | The painted name and amount do not intersect; the amount reads `€1,000,000.00`, is not clipped and stays inside its row | layout contract, 320 px | P2 | PASS |
 | TC-E2E-065 | The limit and what is left are on the screen | Limit €200.00, spend €50.00, open Month | The limit reads €200.00; the state line says *Within limit* and €150.00 | REQ-ML-09 | P1 | PASS |
 | TC-E2E-066 | Over the limit is words, not only colour | Limit €100.00, spend €125.00 | The state line says *Over limit* with €25.00 and carries the over class | REQ-ML-09, RISK-ML-6 | P1 | PASS |
 | TC-E2E-067 | Set the limit from the screen | Type 60.00 into the limit editor and save | The limit and the state update without a reload; the API agrees | REQ-ML-10 | P1 | PASS |
@@ -397,8 +398,8 @@ fail when its defect is put back — see S05.
 | Database — the one in-place migration, node:test | 3 | 3 | all PASS |
 | Python — 6 documented scenarios, 13 pytest items | 6 | 13 | all PASS |
 | Load — 3 scenarios, thresholds enforced | 3 | 3 | all PASS |
-| End-to-end — 80 tests × 2 viewports | 80 | 160 | all PASS; local browser run requires a host that permits Chromium |
-| **Total** | **205** | **358** | **documented cases PASS; local browser execution environment noted above** |
+| End-to-end — 81 tests × 2 viewports | 81 | 162 | all PASS; local browser run requires a host that permits Chromium |
+| **Total** | **206** | **360** | **documented cases PASS; local browser execution environment noted above** |
 
 **The counts are checked against the suites, not typed from memory.** An earlier
 count claimed 138 cases while only 135 rows existed; three cases (TC-E2E-039…041)

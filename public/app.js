@@ -834,8 +834,10 @@
     // The body is a button, not a div with a click handler: it is the control
     // that opens the editor (spec §6.2, D-029), and a control that cannot be
     // reached by keyboard or announced by a screen reader is not a control.
+    const nameLine = el('div', { className: 'tx__name', textContent: title });
+    attrs(nameLine, { 'data-testid': `tx-name-${tx.id}` });
     const body = el('button', { type: 'button', className: 'tx__body' }, [
-      el('div', { className: 'tx__name', textContent: title }),
+      nameLine,
       subtitle ? el('div', { className: 'tx__note', textContent: subtitle }) : null,
     ]);
     attrs(body, {
@@ -844,10 +846,13 @@
     });
     body.addEventListener('click', () => openTransactionEditor(tx));
 
+    const amount = el('span', { className: 'tx__amount', textContent: formatMoney(tx.amount_cents) });
+    attrs(amount, { 'data-testid': `tx-amount-${tx.id}` });
+
     const row = el('div', { className: 'tx' }, [
       el('span', { className: 'tx__icon', textContent: category ? (category.icon || '•') : '•' }),
       body,
-      el('span', { className: 'tx__amount', textContent: formatMoney(tx.amount_cents) }),
+      amount,
       del,
     ]);
     attrs(row, { 'data-testid': `tx-row-${tx.id}` });
