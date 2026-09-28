@@ -1,8 +1,16 @@
-# Implemented database — ER diagram
+# Database — current schema and planned category limit
 
 [← Back to README](../../README.md#start-here) · [Analysis index](README.md) · [Next: user goals →](use-cases.md)
 
 [SVG preview](database.svg) · [Editable Mermaid source](database.mmd)
+
+**Specification-stage addition, not implemented:** only
+`categories.monthly_limit_cents` is planned. All other columns and the eight
+foreign-key relationships describe the current schema. The new column must be
+nullable and enforce `CHECK (monthly_limit_cents IS NULL OR monthly_limit_cents >= 0)`
+in SQLite, not just in an API validator. Its `PLANNED` label does not claim that
+the current database already enforces that constraint. See
+[CL-D12 / REQ-CL-13](../../qa/docs/analysis-category-limits.md#req-cl-13--an-existing-database-keeps-working).
 
 <!-- diagram-source: database.mmd -->
 
@@ -27,6 +35,7 @@ erDiagram
         INTEGER user_id FK "NOT NULL"
         TEXT name "NOT NULL; unique with user_id"
         TEXT icon "NULL allowed"
+        INTEGER monthly_limit_cents "PLANNED; NULL or >= 0 CHECK"
     }
     schedules {
         INTEGER id PK "NOT NULL; autoincrement"
@@ -102,7 +111,8 @@ it. The user FK remains enforced. `ai_quota.user_id` also has **no FK**, because
 `0` represents the global counter. Therefore neither has a relationship line to
 the corresponding table. No AI description or draft table exists.
 
-The ERD includes all seven application tables and every declared column; SQLite's
+The ERD includes all seven application tables, every declared column and the one
+explicitly planned category-limit column; SQLite's
 internal autoincrement bookkeeping is omitted. Indexes are physical access paths,
 not relationships: `idx_tx_user_date (user_id, spent_on)` and
 `idx_sched_user (user_id, active)`. A fresh account may have no settings row;
@@ -116,6 +126,9 @@ identities, including where the schema does not spell out `NOT NULL`.
 
 ## Source and coverage
 
+- [Category-limit specification](../../qa/docs/analysis-category-limits.md):
+  additive migration, existing rows stay `NULL`, repeated boot is safe, database
+  CHECK required. Implementation and migration-test results are pending.
 - [Complete schema](../../src/schema.sql) and [boot / additive limit migration](../../src/db.js).
 - [Ownership and value validators](../../src/validate.js), [schedule writes and derived fields](../../src/routes/schedules.js),
   [keyed transaction writes](../../src/routes/transactions.js), [quota reservations](../../src/ai/limits.js).
