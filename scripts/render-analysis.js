@@ -36,6 +36,11 @@ const MODELS = {
     title: 'Monthly spending limit — BPMN 2.0',
     desc: 'Set, clear or preserve a limit; record an expense; compute four states without blocking saving.',
   },
+  'category-limit-process': {
+    kind: 'bpmn',
+    title: 'Planned category spending limits — BPMN 2.0',
+    desc: 'Specification, not implemented: ownership-safe set or clear, non-blocking expense saves, and four per-category states computed on read.',
+  },
   'draft-save-sequence': {
     kind: 'mermaid',
     title: 'Draft then explicit save — sequence',
@@ -43,8 +48,8 @@ const MODELS = {
   },
   database: {
     kind: 'mermaid',
-    title: 'Implemented database — ER diagram',
-    desc: 'Every table, column and declared foreign key in the SQLite schema.',
+    title: 'Database — current schema and planned category limit',
+    desc: 'Current tables and declared foreign keys, plus one explicitly planned category column with a database CHECK required by the specification.',
   },
   'use-cases': { kind: 'uml' },
 };

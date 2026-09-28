@@ -18,12 +18,15 @@ is exactly used, or it is over.**
 stand; the owner did not write them. The analysis was drafted with an AI agent
 (Claude) from those rules and the code as it was before the feature.
 
-**Frozen before code.** Sections 1–4 and 6, with the matching sections of the
+**Specification before code.** Sections 1–4 and 6, with the matching sections of the
 [architecture notes](../../spec/architecture.md) and the
 [analysis models](../../docs/analysis/README.md), are the specification the
-implementation has to meet. They were committed before any code was written.
-From then on they change only through a dated entry in [§7](#7-change-notes),
-with the reason. §5 is filled in from the implementation's recorded run.
+implementation has to meet. The analysis and architecture were committed on
+2026-09-27; the models were still incomplete then. The completed models and this
+clarification are frozen together in the separate specification commit on
+2026-09-28, before category-limit production code. Later changes require a dated
+entry in [§7](#7-change-notes), with the reason. §5 remains unfilled until the
+implementation's actual recorded run; the feature is not implemented yet.
 
 ## 1. Business goal, scope and assumptions
 
@@ -396,5 +399,14 @@ and result columns are empty.
 
 ## 7. Change notes
 
-None. Everything above was frozen on 2026-09-27, before implementation began. A
-later change to §§1–4 or §6 is recorded here, dated, with its reason.
+### 2026-09-28 — correct the specification-completion claim
+
+The earlier wording said the analysis, architecture and models were all frozen
+on 2026-09-27. In fact only the analysis and architecture had been committed;
+the category BPMN was an unfinished source, and the use-case diagram and ERD
+did not yet include the feature. The completion statement above now names the
+two dates accurately. The completed models distinguish planned category-limit
+behaviour from implemented behaviour. CL-D1…CL-D12 and all requirements,
+acceptance criteria and decision-table outcomes are unchanged. This is a
+documentation correction, not a business-rule change. Implementation, test
+results and owner UAT remain pending.

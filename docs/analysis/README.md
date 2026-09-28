@@ -1,10 +1,16 @@
-# Analysis models — current Wallet behaviour
+# Analysis models — current behaviour and planned category limits
 
 [← Back to README](../../README.md#start-here)
 
-These are **current-state models of a personal project**, not evidence of
+These are **models of a personal project**, not evidence of
 enterprise or banking analysis. The AI diagrams describe the application
 boundary; they do not claim live-model evaluation or measured model quality.
+
+**Read the status first.** The existing AI and overall-monthly-limit processes
+and sequence describe implemented behaviour. Category limits are a frozen
+specification, **not implemented yet**: the new BPMN is wholly planned, the UML
+marks its new goal as planned, and the ERD marks only its proposed category
+column as planned. Models are not evidence of executed tests or owner UAT.
 
 ## Choose a question
 
@@ -12,9 +18,10 @@ boundary; they do not claim live-model evaluation or measured model quality.
 |---|---|
 | What happens between describing an expense and saving it? | [AI expense entry — BPMN 2.0](ai-expense-process.md) |
 | Does a spending limit prevent an expense from being recorded? | [Monthly limit — BPMN 2.0](monthly-limit-process.md) |
+| How will a category limit be changed and judged? | [Planned category limits — BPMN 2.0](category-limit-process.md) |
 | What goals can a person accomplish in Wallet? | [UML use cases](use-cases.md) |
 | Which component writes, and what happens on a retry? | [Draft then explicit save — sequence](draft-save-sequence.md) |
-| Which relationships does SQLite actually enforce? | [Implemented database — ERD](database.md) |
+| Which relationships exist, and which column is planned? | [Database — current schema and planned addition](database.md) |
 
 BPMN solid arrows are sequence flows within a participant; dashed arrows are
 messages between participants. These are descriptive, non-executable BPMN 2.0
@@ -34,15 +41,26 @@ For AI, follow [AI-R01 / AI-R02 / AI-R16](../../spec/ai-expense-entry.md#2-rules
 and [keyed-save tests](../../qa/ai/tests/idempotency.test.js).
 Test links identify coverage; they do not assert a new behavioural run here.
 
+For category limits, the specification route is
+[CL-D1…12 / REQ-CL-01…13](../../qa/docs/analysis-category-limits.md)
+→ [planned process](category-limit-process.md)
+→ [planned column and database CHECK](database.md).
+[Traceability](../../qa/docs/analysis-category-limits.md#5-traceability) stays
+unfilled until the feature is implemented and tests actually run.
+
 ## Maintain and reproduce
 
-Each page lists authoritative sources and simplifications. **Re-verified
-against the code at `4829b7d` on 2026-09-27.** The draft-and-save sequence
+Each page lists authoritative sources and simplifications. **Existing behaviour
+was re-verified against the code at `4829b7d` on 2026-09-27.** The draft-and-save sequence
 needed changing: it did not parse in Mermaid, and it now tells an editable
 result from a refusal, shows the keyed save committing or rolling back, and
 carries the request id. The database model, both BPMN models and the use cases
 matched the code as drafted; one BPMN label was moved clear of a task. A stale
 test comment is noted on the sequence page; it is not used as a requirement.
+
+On 2026-09-28 the category models were completed against the accepted
+specification, before category-limit production code. Their planned status
+is explicit; the existing code has no category-limit PATCH, column or editor.
 
 - Re-read the current contract, route, schema and tests before editing a model.
 - Preserve optional fields, zero versus `NULL`, failure outcomes and write boundaries.
@@ -63,10 +81,10 @@ node scripts/render-analysis.js output/analysis-tools
 The script uses bpmn-js import (with the bpmn-moddle XML parser) and Mermaid's
 actual `parse` and `render` APIs. Import warnings, broken local links, mismatched
 Mermaid blocks, cropped text or a label that leaves its own box — a note, an
-actor, a task — fail the check. Four generated SVGs are refreshed; the UML SVG is
+actor, a task — fail the check. Five generated SVGs are refreshed; the UML SVG is
 checked but not regenerated. The previews are byte-stable: arrow markers are
 numbered instead of named at random, and Mermaid's line jitter has a fixed seed,
-so a second run changes nothing. Five review PNGs go to `output/analysis-review/`
+so a second run changes nothing. Six review PNGs go to `output/analysis-review/`
 and are not committed; look at them too, because a label crossing a line is not
 something a bounding-box check sees.
 

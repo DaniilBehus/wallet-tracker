@@ -18,6 +18,7 @@ erDiagram
         INTEGER user_id FK "NOT NULL"
         TEXT name "NOT NULL; unique with user_id"
         TEXT icon "NULL allowed"
+        INTEGER monthly_limit_cents "PLANNED; NULL or >= 0 CHECK"
     }
     schedules {
         INTEGER id PK "NOT NULL; autoincrement"
