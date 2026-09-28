@@ -25,8 +25,9 @@ implementation has to meet. The analysis and architecture were committed on
 2026-09-27; the models were still incomplete then. The completed models and this
 clarification are frozen together in the separate specification commit on
 2026-09-28, before category-limit production code. Later changes require a dated
-entry in [§7](#7-change-notes), with the reason. §5 remains unfilled until the
-implementation's actual recorded run; the feature is not implemented yet.
+entry in [§7](#7-change-notes), with the reason. §5 now records the actual local
+implementation run of 2026-09-28. Owner UAT and publication remain pending; the
+original specification-first freeze is preserved at `4d08651`.
 
 ## 1. Business goal, scope and assumptions
 
@@ -347,39 +348,47 @@ and `T`, so there is no stored state to fall out of step.
 ## 5. Traceability
 
 Requirement → test condition → case id → the automated test that runs it →
-result. Filled in from the implementation's recorded run (Stage B2), reported in
-`test-report-category-limits.md`; until then the layer is the plan and the case
-and result columns are empty.
+result. Results below are local automation on 2026-09-28, not owner UAT or
+GitHub CI. Sources: [API folder 13](../api/wallet.postman_collection.json),
+[Playwright](../e2e/category-limits.spec.js), [Selenium](../selenium/test_limit.py),
+[migration tests](../db/migration.test.js).
+The [actual report](test-report-category-limits.md) records totals, negative
+controls, byte restoration, skips and limitations.
 
 | Requirement | Test condition | Layer | Case | Result |
 |---|---|---|---|---|
-| REQ-CL-01 | A number is stored and returned; a second one replaces it | API | — | — |
-| REQ-CL-01, REQ-CL-02 | `0` is a real limit, and `null` clears it | API | — | — |
-| REQ-CL-03 | `{}` and an unknown field change nothing | API | — | — |
-| REQ-CL-04 | Negative, fractional, string, boolean, array and ceiling + 1 are refused | API | — | — |
-| REQ-CL-04 | The ceiling exactly is accepted | API | — | — |
-| REQ-CL-04 | A path id that is not a positive integer | API | — | — |
-| REQ-CL-05 | Another account's category answers `404` and stays unchanged | API | — | — |
-| REQ-CL-05 | No token → `401` | API | — | — |
-| REQ-CL-06, REQ-CL-07 | CR3–CR6: no limit, and within with and without spending | API | — | — |
-| REQ-CL-06 | CR7: exactly at the limit | API | — | — |
-| REQ-CL-06 | CR8: over the limit, remaining negative | API | — | — |
-| REQ-CL-06 | CR9–CR10: a zero limit | API | — | — |
-| REQ-CL-06 | Boundary: `L = 1` with `T = 0`, `1` and `2` | API | — | — |
-| REQ-CL-07 | Order and sum with zero rows | API | — | — |
-| REQ-CL-08 | CR12: a paid instalment counts | API | — | — |
-| REQ-CL-08 | CR13: an unpaid instalment does not | API | — | — |
-| REQ-CL-09 | CR1: Uncategorised is never judged | API | — | — |
-| REQ-CL-10 | An expense over a category limit is created | API | — | — |
-| REQ-CL-06, REQ-CL-10 | Limits above the overall limit accepted; the two judged apart; writes independent | API | — | — |
-| REQ-CL-11 | Within, reached and over on screen; no box without a limit | E2E | — | — |
-| REQ-CL-11 | A limited category with nothing spent is listed | E2E | — | — |
-| REQ-CL-11 | The row fits a 320 px screen | E2E | — | — |
-| REQ-CL-12 | Set and clear from the editor | E2E | — | — |
-| REQ-CL-12 | Zero, an invalid figure and Cancel | E2E | — | — |
-| REQ-CL-09 | The Uncategorised row has no editor | E2E | — | — |
-| REQ-CL-11, REQ-CL-12 | Set a limit and see its state, through a second browser stack | Selenium | — | — |
-| REQ-CL-13 | An old database gains the column with every row `NULL`; booting again is safe; the `CHECK` holds | DB | — | — |
+| REQ-CL-01 | A number is stored and returned; a second one replaces it | API | TC-API-115/116 | PASS |
+| REQ-CL-01, REQ-CL-02 | `0` is a real limit, and `null` clears it | API | TC-API-117/118/139 | PASS |
+| REQ-CL-03 | `{}` and an unknown field change nothing | API | TC-API-119 | PASS |
+| REQ-CL-04 | Negative, fractional, string, boolean, array and ceiling + 1 are refused | API | TC-API-120 | PASS |
+| REQ-CL-04 | The ceiling exactly is accepted | API | TC-API-121 | PASS |
+| REQ-CL-04 | A path id that is not a positive integer | API | TC-API-122 | PASS |
+| REQ-CL-04 | Malformed/non-object JSON and oversized body; no mutation | API | TC-API-140/141 | PASS |
+| REQ-CL-05 | Another account's category answers `404` and stays unchanged | API | TC-API-124 | PASS |
+| REQ-CL-05 | Category and summary reads isolated | API | TC-API-125 | PASS |
+| REQ-CL-05 | No token → `401` | API | TC-API-123 | PASS |
+| REQ-CL-06, REQ-CL-07 | CR2–CR6: hidden empty rows, no limit, within with/without spend | API | TC-API-114/116/118/127/131 | PASS |
+| REQ-CL-06 | CR7: exactly at the limit | API | TC-API-128 | PASS |
+| REQ-CL-06 | CR8: over the limit, remaining negative | API | TC-API-129 | PASS |
+| REQ-CL-06 | CR9–CR10: a zero limit | API | TC-API-117/130 | PASS |
+| REQ-CL-06 | Boundary: `L = 1` with `T = 0`, `1` and `2` | API | TC-API-126 | PASS |
+| REQ-CL-07 | Order and sum with zero rows | API | TC-API-131 | PASS |
+| REQ-CL-08 | CR12: a paid instalment counts | API | TC-API-133 | PASS |
+| REQ-CL-08 | CR13: an unpaid instalment does not | API | TC-API-132 | PASS |
+| REQ-CL-09 | CR1: Uncategorised is never judged | API | TC-API-134 | PASS |
+| REQ-CL-10 | An expense over a category limit is created | API | TC-API-136 | PASS |
+| REQ-CL-03, REQ-CL-06, REQ-CL-10 | Category limits over overall accepted; independent writes and CR15 income | API | TC-API-135 | PASS |
+| REQ-CL-06 | CR16: moving/deleting an expense recomputes the correct category | API | TC-API-137 | PASS |
+| REQ-CL-06 | CL-D5 / CR14: historical month uses current limit, current excludes old expense | API | TC-API-138 | PASS |
+| REQ-CL-11 | Within, reached and over on screen; no box without a limit | E2E | TC-E2E-087 | PASS ×2 |
+| REQ-CL-11 | A limited category with nothing spent is listed | E2E | TC-E2E-088 | PASS ×2 |
+| REQ-CL-11 | The row fits a 320 px screen | E2E | TC-E2E-091 | PASS ×2 |
+| REQ-CL-12 | Set, prefill and clear from the editor; unrelated values unchanged | E2E | TC-E2E-086 | PASS ×2 |
+| REQ-CL-12 | Zero, an invalid figure and Cancel | E2E | TC-E2E-088/089 | PASS ×2 |
+| REQ-CL-12 | Keyboard focus and simulated refused save | E2E | TC-E2E-092/093 | PASS ×2 |
+| REQ-CL-09 | The Uncategorised row has no editor | E2E | TC-E2E-090 | PASS ×2 |
+| REQ-CL-11, REQ-CL-12 | Set a limit and see its state, through a second browser stack | Selenium | TC-SEL-009 | PASS |
+| REQ-CL-13 | Old rows `NULL`; repeat boot preserves zero; fresh/upgraded `CHECK` holds | DB | TC-DB-004…006 | PASS |
 
 ## 6. Change-impact analysis
 
@@ -410,3 +419,15 @@ behaviour from implemented behaviour. CL-D1…CL-D12 and all requirements,
 acceptance criteria and decision-table outcomes are unchanged. This is a
 documentation correction, not a business-rule change. Implementation, test
 results and owner UAT remain pending.
+
+### 2026-09-28 — implementation and evidence status, no rule change
+
+Stage B2 added the category column, guarded migration, PATCH, expanded read
+contract, editor and server-state display. The recorded local regression and
+four negative controls are in [the report](test-report-category-limits.md).
+§5 is now populated from actual executions. Current model labels/previews
+say implemented locally, rather than falsely reporting missing code; the
+specification-before-code versions remain at `4d08651`. Sections 1–4 and 6,
+including CL-D1…12, all acceptance criteria and decision-table rules, remain
+unchanged. No business-rule amendment was needed. Owner UAT is unsigned;
+integration, publication and category-limit GitHub CI remain pending.

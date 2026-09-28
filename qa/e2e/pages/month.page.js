@@ -48,6 +48,12 @@ class MonthPage extends BasePage {
     // The limit figure, which must never carry a frame (UAT-OBS-01), and the
     // header that the status box and the figures sit on.
     this.limitFigure = page.getByTestId('limit-figure');
+    this.categoryLimitTitle = page.getByTestId('category-limit-title');
+    this.categoryLimitInput = page.getByTestId('category-limit-input');
+    this.categoryLimitSave = page.getByTestId('category-limit-save');
+    this.categoryLimitCancel = page.getByTestId('category-limit-cancel');
+    this.categoryLimitDialog = page.getByRole('dialog', { name: /^Category limit/ });
+    this.categoryLimitError = this.categoryLimitDialog.getByRole('alert');
     this.head = page.getByTestId('month-head');
 
     // Paging the month list (D-031).
@@ -92,6 +98,20 @@ class MonthPage extends BasePage {
 
   slice(categoryId) {
     return this.page.getByTestId(`donut-slice-${categoryId}`);
+  }
+
+  categoryLimitEdit(categoryId) {
+    return this.page.getByTestId(`category-limit-edit-${categoryId}`);
+  }
+
+  categoryLimitStatus(categoryId) {
+    return this.page.getByTestId(`category-limit-status-${categoryId}`);
+  }
+
+  async setCategoryLimit(categoryId, amount) {
+    await this.categoryLimitEdit(categoryId).click();
+    await this.categoryLimitInput.fill(amount);
+    await this.categoryLimitSave.click();
   }
 
   /** Open the limit editor, type a figure, save. An empty figure clears it. */

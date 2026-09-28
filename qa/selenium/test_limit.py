@@ -66,3 +66,22 @@ def test_clearing_the_limit_removes_the_box_and_offers_to_set_one(signed_in, acc
     month.wait_hidden(month.LIMIT_STATUS)
     assert month.limit_figure_border() == ["0px"] * 4
     assert account.settings()["monthly_limit_cents"] is None
+
+
+@case("TC-SEL-009")
+def test_category_editor_sets_reaches_and_clears_its_own_limit(signed_in, account):
+    """REQ-CL-11/12: a real second browser stack, API confirms cents and isolation."""
+    account.set_settings(150000, 40000)
+    account.add_expense(6000, "Groceries")
+    category_id = account.categories["Groceries"]
+    month = MonthPage(signed_in).open()
+    month.set_category_limit(category_id, "60.00")
+    month.wait_for_text(month.category_limit_status(category_id), "Limit reached")
+    stored = next(c for c in account.call("GET", "/api/categories") if c["id"] == category_id)
+    assert stored["monthly_limit_cents"] == 6000
+    assert account.settings()["monthly_limit_cents"] == 40000
+    month.set_category_limit(category_id, "")
+    month.wait_hidden(month.category_limit_status(category_id))
+    stored = next(c for c in account.call("GET", "/api/categories") if c["id"] == category_id)
+    assert stored["monthly_limit_cents"] is None
+    assert account.call("GET", "/api/summary")["total_cents"] == 6000

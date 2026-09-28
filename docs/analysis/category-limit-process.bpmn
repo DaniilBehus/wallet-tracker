@@ -2,7 +2,7 @@
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_CatLimit" targetNamespace="https://github.com/DaniilBehus/wallet-tracker/analysis">
   <bpmn:collaboration id="Collaboration_CatLimit">
     <bpmn:participant id="Pool_Person" name="Authenticated person / browser"/>
-    <bpmn:participant id="Pool_System" name="PLANNED Wallet category limits — specification, not implemented" processRef="Process_CatLimit"/>
+    <bpmn:participant id="Pool_System" name="Wallet category limits — implemented locally; owner UAT pending" processRef="Process_CatLimit"/>
     <bpmn:messageFlow id="CatRequest" name="Limit write or expense" sourceRef="Pool_Person" targetRef="CatStart"/>
     <bpmn:messageFlow id="CatReply" name="Breakdown with states" sourceRef="CatDisplay" targetRef="Pool_Person"/>
     <bpmn:messageFlow id="CatError" name="400 or 404" sourceRef="CatRefuse" targetRef="Pool_Person"/>

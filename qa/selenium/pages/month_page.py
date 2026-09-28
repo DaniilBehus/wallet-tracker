@@ -19,6 +19,22 @@ class MonthPage(BasePage):
     LIMIT_STATUS = testid("limit-status")
     # Must never be framed; the state lives in the status box.
     LIMIT_FIGURE = testid("limit-figure")
+    CATEGORY_LIMIT_INPUT = testid("category-limit-input")
+    CATEGORY_LIMIT_SAVE = testid("category-limit-save")
+
+    @staticmethod
+    def category_limit_edit(category_id: int) -> tuple[str, str]:
+        return testid(f"category-limit-edit-{category_id}")
+
+    @staticmethod
+    def category_limit_status(category_id: int) -> tuple[str, str]:
+        return testid(f"category-limit-status-{category_id}")
+
+    def set_category_limit(self, category_id: int, figure: str) -> None:
+        self.click(self.category_limit_edit(category_id))
+        self.type_into(self.CATEGORY_LIMIT_INPUT, figure)
+        self.click(self.CATEGORY_LIMIT_SAVE)
+        self.wait_hidden(self.CATEGORY_LIMIT_INPUT)
 
     EDIT_NOTE = testid("tx-edit-note")
     EDIT_SAVE = testid("tx-edit-save")

@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS categories (
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name    TEXT NOT NULL,
   icon    TEXT,                      -- an emoji, e.g. '🛒'
+  monthly_limit_cents INTEGER CHECK (monthly_limit_cents IS NULL OR monthly_limit_cents >= 0),
   UNIQUE (user_id, name)
 );
 

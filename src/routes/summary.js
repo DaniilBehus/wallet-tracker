@@ -27,18 +27,34 @@ router.get('/', (req, res) => {
   // LEFT JOIN, not JOIN: a transaction whose category was deleted still counts
   // towards the month total, so it must still appear in the breakdown rather
   // than making the parts stop summing to the whole.
-  const byCategory = db
+  const spentRows = db
     .prepare(
       `SELECT t.category_id AS category_id,
               c.name        AS name,
+              c.monthly_limit_cents,
               SUM(t.amount_cents) AS total_cents
        FROM transactions t
-       LEFT JOIN categories c ON c.id = t.category_id
+       LEFT JOIN categories c ON c.id = t.category_id AND c.user_id = t.user_id
        WHERE t.user_id = ? AND t.spent_on >= ? AND t.spent_on <= ?
        GROUP BY t.category_id
        ORDER BY total_cents DESC`
     )
     .all(...params);
+
+  // A planned budget is visible before its first expense (REQ-CL-07). Only
+  // persisted expenses count: paying a schedule writes one, planning it does not.
+  const spentIds = new Set(spentRows.map(row => row.category_id));
+  const zeroRows = db.prepare(
+    `SELECT id AS category_id, name, 0 AS total_cents, monthly_limit_cents
+     FROM categories WHERE user_id = ? AND monthly_limit_cents IS NOT NULL ORDER BY id`
+  ).all(req.userId).filter(row => !spentIds.has(row.category_id));
+  const byCategory = [...spentRows, ...zeroRows]
+    .sort((a, b) => b.total_cents - a.total_cents || a.category_id - b.category_id)
+    .map(({ monthly_limit_cents, ...row }) => ({
+      ...row,
+      // Uncategorised is absence of a budget line, never a zero-budget category.
+      ...limitState(row.category_id === null ? null : monthly_limit_cents, row.total_cents),
+    }));
 
   // Computed on read, never stored (spec §5, D-021). A stored balance is wrong
   // the moment the next expense is added — the same reason next_due is not

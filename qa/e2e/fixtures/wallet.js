@@ -96,6 +96,9 @@ const test = base.test.extend({
 
     await use({
       categories: async () => json(await request.get('/api/categories', { headers }), 200),
+      addCategory: async (data) => json(await request.post('/api/categories', { headers, data }), 201),
+      setCategoryLimit: async (id, cents, expected = 200) =>
+        json(await request.patch(`/api/categories/${id}`, { headers, data: { monthly_limit_cents: cents } }), expected),
       addExpense: async (data) =>
         json(await request.post('/api/transactions', { headers, data }), 201),
       editExpense: async (id, data, expected = 200) =>

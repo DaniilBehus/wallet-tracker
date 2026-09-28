@@ -86,6 +86,18 @@ whileLocked('settings.monthly_limit_cents', () => {
   }
 });
 
+// Category limits are an additive, nullable upgrade too (REQ-CL-13). Old rows
+// keep their identity and read "not set"; a repeated boot leaves values alone.
+whileLocked('categories.monthly_limit_cents', () => {
+  const columns = db.pragma('table_info(categories)').map((column) => column.name);
+  if (!columns.includes('monthly_limit_cents')) {
+    db.exec(
+      'ALTER TABLE categories ADD COLUMN monthly_limit_cents INTEGER'
+      + ' CHECK (monthly_limit_cents IS NULL OR monthly_limit_cents >= 0)'
+    );
+  }
+});
+
 // Categories are user-owned (spec §3), so the starter set is seeded per user at
 // registration rather than globally.
 //

@@ -251,3 +251,23 @@ input[type="checkbox"] { accent-color: var(--accent); }
 @media (max-width: 699px) and (max-height: 760px) {
   .screen__head--add .amount { font-size: 38px; }
 }
+.bar__control {
+  display: block; width: 100%; padding: 0; border: 0;
+  background: transparent; color: inherit; font: inherit; text-align: left;
+  cursor: pointer; border-radius: 8px;
+}
+.bar__control:focus-visible { outline: 2px solid var(--accent); outline-offset: 5px; }
+.bar__control .bar__head { flex-wrap: wrap; gap: 4px 10px; }
+.bar__control .bar__name { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.bar__control .bar__amount { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.bar .limit-status { display: inline-block; }
+.bar .limit-status--left { border-color: var(--limit-outline); background: transparent; color: var(--text); }
+.bar .limit-status--used-up { border-color: var(--limit-used-up); background: var(--limit-used-up); color: #ffffff; }
+.category-limit-dialog {
+  width: calc(100% - 32px); max-width: 420px; max-height: calc(100dvh - 32px);
+  padding: 0; border: 1px solid var(--line); border-radius: 22px;
+  background: var(--surface); color: var(--text); overflow-y: auto;
+}
+.category-limit-dialog::backdrop { background: rgba(2, 12, 12, 0.76); }
+.category-limit-dialog .sheet__title { overflow-wrap: anywhere; }
+.category-limit-error { margin: 0; color: var(--danger); overflow-wrap: anywhere; }

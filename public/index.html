@@ -322,6 +322,25 @@
   </div>
 
 <!-- ================================================== AI EXPENSE ENTRY ==== -->
+  <!-- A category budget is edited where it is judged. Native modal focus and
+       Escape handling match the existing AI review dialog. -->
+  <dialog id="category-limit-dialog" class="category-limit-dialog" aria-labelledby="category-limit-title">
+    <form id="category-limit-form" class="sheet__panel">
+      <h2 id="category-limit-title" class="sheet__title" data-testid="category-limit-title">Category limit</h2>
+      <label class="field">
+        <span class="field__label">Monthly category limit (€)</span>
+        <input id="category-limit-input" type="text" inputmode="decimal" autocomplete="off"
+               data-testid="category-limit-input" placeholder="200.00">
+      </label>
+      <p class="income-form__hint">Leave it empty to remove the limit. Zero is a real budget.</p>
+      <p id="category-limit-error" class="category-limit-error" role="alert" hidden></p>
+      <div class="sheet__actions">
+        <button type="submit" class="btn btn--primary" data-testid="category-limit-save">Save</button>
+        <button type="button" class="btn" id="category-limit-cancel" data-testid="category-limit-cancel">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
 <!-- A native modal dialog: focus moves in, stays in, Escape closes it and focus
      returns to the opener — the behaviour BUG-022's sheet lacks, without code.
      Nothing in here is saved until "Save expense" (AI-R01). -->

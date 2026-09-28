@@ -156,6 +156,9 @@ function runNewman() {
         // Every request runs even after one fails: a run that stops at the
         // first failure reports one problem per run.
         bail: false,
+        // Optional local focus for negative controls; the default/CI still runs
+        // the entire collection. Run the full suite again for final results.
+        folder: process.env.QA_FOLDER || undefined,
       },
       (err, summary) => {
         if (err) {
