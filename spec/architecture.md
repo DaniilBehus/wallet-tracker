@@ -19,7 +19,7 @@ contract is in [`ai-expense-entry.md`](ai-expense-entry.md).
 
 | Area | Choice | Rationale |
 |---|---|---|
-| Runtime | Node.js 20+ with Express | Small, direct HTTP application with no build step |
+| Runtime | Node.js 22+ with Express | Matches the existing package.json engine floor and SQLite dependency; no runtime upgrade introduced by the contract checks |
 | Storage | SQLite through `better-sqlite3` | A single local database file suits a single-user app |
 | Authentication | JWT with HS256 | Stateless bearer authentication; the signing secret is configured outside Git |
 | Password storage | bcrypt | Passwords are never stored as plain text |

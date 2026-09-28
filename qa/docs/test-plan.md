@@ -32,9 +32,9 @@ error here is not a cosmetic defect — it is a total that cannot be reconciled.
 
 | Area | Covered by |
 |---|---|
-| All **nineteen** API routes, including category-limit PATCH — status codes, response bodies, error contract | `qa/api/`, `qa/ai/` |
+| All explicit API operations, including category-limit PATCH and AI — status codes, response bodies, error contract | `qa/api/`, `qa/ai/`, [OpenAPI/contract layer](../../docs/api/README.md) |
 | Parameterized invalid-data classes and multi-step API state | `qa/python/` (D-032) |
-| Response schema of every response, success and error alike | `qa/api/` |
+| Selected documented status/media/header schema and empty204; observed versus unexercised paths explicit | `qa/contract/` strict non-mutating Ajv; [matrix](test-report-contract.md#observed-status-matrix) |
 | Authentication: registration, sign-in, the five token states | `qa/api/`, `qa/e2e/auth.spec.js` |
 | Cross-user isolation (spec §4.3) | `qa/api/`, `qa/e2e/month.spec.js` |
 | Validation boundaries (spec §4.3) | `qa/api/`, `qa/e2e/schedules.spec.js` |
@@ -71,20 +71,21 @@ gap is something somebody decided rather than something nobody thought of.
 Three gates in `scripts/check.js` watch its output — C6 routes, C7 testids,
 C8 statuses.
 
-Five layers, each answering a different question:
+The core layers, each answering a different question:
 
 | Layer | Question | Tool |
 |---|---|---|
 | Self-check gate | Are the project's own invariants intact? | `scripts/check.js` |
 | API | Does the contract hold? | Postman collection via newman |
+| OpenAPI and real-response contract | Does code/description drift, and does each operation's actual success/error response fit its selected schema without cleanup? | Swagger Parser + source inventory + Ajv, `qa/contract/` |
 | Python API scenarios | Do invalid input classes, auth boundaries and a long stateful flow hold through an independent client? | pytest + httpx |
 | End-to-end | Can a person actually do the thing? | Playwright |
 | Selenium browser checks | Do eight key flows also hold through WebDriver, the other common way to drive a browser? | Selenium + pytest |
 
-**They are deliberately not a pyramid of the usual kind.** There are no unit
-tests, because spec §7 keeps the only real algorithm (`src/dates.js`) pure and
-the API layer exercises all seven rows of its table from the outside. Adding a
-unit layer would re-test the same function through a shorter path.
+The core date algorithm is exercised from outside through the API table. The
+contract layer also tests its own scanner/validator controls: those prove the
+gates reject drift and corrupt captures, not that a production defect exists.
+The AI layer has its own separately registered unit/integration/evaluation tests.
 
 Test data is created by the tests, never seeded by hand: every API run makes its
 own two users from a run id, the pytest fixture starts the real Express process
@@ -105,6 +106,11 @@ Testing starts only when all of these hold:
 3. The build under test is a committed state of `main`, and CI is green on it.
 4. Any defect from the previous cycle marked `CLOSED` has a regression check
    named in its report.
+
+For a local pre-publication contract review, identify the base and dirty-file
+hashes and record the actual local commands instead of claiming a new green CI
+commit. The [contract report](test-report-contract.md) explicitly separates
+that stage from published CI and owner acceptance.
 
 ---
 
@@ -128,6 +134,12 @@ A cycle is finished when **all** of these hold:
 
 Point 6 is the one that is easy to skip and the one worth the most. A suite
 edited until it agrees with the code has stopped being a test suite.
+
+Contract-layer exit additionally requires `check:openapi` and `test:contract`
+PASS, observed2xx for every source-derived operation, a truthful status matrix,
+and passing capture/inventory negative controls with unchanged originals.
+The [280-case register](test-cases.md#totals) counts11named contract tests,
+not their244HTTPrequests. k6 results remain historical unless actually rerun.
 
 ---
 
@@ -156,7 +168,7 @@ edited until it agrees with the code has stopped being a test suite.
 | API layer | newman, run through `qa/api/run.js`, which waits for `/api/health` and mints the expired token |
 | Python API layer | Python 3.12+, pytest + httpx; `qa/python/conftest.py` starts and health-checks a real Node child on a dynamic loopback port, with temporary SQLite and a new secret |
 | End-to-end | Playwright, Chromium, two viewports: Pixel 5 (the primary — the app is phone-first) and desktop |
-| CI | GitHub Actions, `ubuntu-latest`, four chained jobs: gitleaks → newman → pytest → Playwright |
+| CI | GitHub Actions, `ubuntu-latest`: secret scan → API (self-check, OpenAPI, contract, migration, Newman) → Python → Playwright/Selenium; offline AI depends on API. New contract steps are local until published/run |
 | Database | A throwaway file per CI job. Never a database with real data in it |
 
 ---
@@ -168,6 +180,8 @@ edited until it agrees with the code has stopped being a test suite.
 | `qa/api/wallet.postman_collection.json` | The API collection |
 | `qa/api/wallet.postman_environment.json` | Two variables: `baseUrl`, `token` |
 | `qa/python/` | pytest/httpx scenarios and isolated-server fixture |
+| `spec/openapi.json`, `docs/api/README.md`, `qa/contract/` | Machine-readable contract, navigation/examples and executable real-response checks |
+| `qa/docs/test-report-contract.md` | Observed/unexercised status matrix, validator controls and local regression evidence |
 | `qa/e2e/` | Playwright specs and page objects |
 | `qa/selenium/` | Selenium + pytest checks, Page Objects and the failure-evidence hook |
 | `qa/docs/test-design.md` | How a change becomes a set of cases |
@@ -187,6 +201,9 @@ edited until it agrees with the code has stopped being a test suite.
 npm install
 
 npm run check      # invariants
+npm run check:openapi # source/schema inventory gate
+npm run test:contract # 11 named tests, 244 real HTTP checks
+npm run test:db     # 6 migration cases
 npm run test:api   # 271 requests, 939 assertions
 npm run test:python # 27 pytest items; Python 3.12+ and qa/python/requirements.txt
 npm run test:e2e   # 93 tests × 2 viewports
@@ -195,6 +212,7 @@ npm run test:load  # k6; needs k6 installed separately
 ```
 
 Nothing needs to be started first: each layer starts a server of its own, on
-its own port, with a throwaway database (D-017). `npm test` runs the first
-three in order and stops at the first failure; the load smoke is separate
-because its numbers depend on the machine.
+its own port, with a throwaway database. `npm test` runs check, migration,
+Newman, pytest, Playwright and race in order. Contract, AI, fixture evaluation
+and Selenium use the separate commands in [test setup](../../docs/testing.md).
+The load smoke is separate because its numbers depend on the machine.

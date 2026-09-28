@@ -447,9 +447,32 @@ fail when its defect is put back — see S05.
 
 ---
 
+## Contract checks · OpenAPI and real HTTP
+
+Automated by [qa/contract/contract.test.js](../contract/contract.test.js).
+Traces below use the [contract-check requirements](../../docs/api/README.md#requirements-for-the-contract-checks),
+which verify the existing API rather than add product functionality.
+Results and the observed/unexercised status matrix are in the
+[local contract report](test-report-contract.md). Eleven named tests are not
+244 test cases: the HTTP requests also arrange and verify shared test state.
+
+| ID | Requirement and check | Result |
+|---|---|---|
+| TC-CONTRACT-001 | REQ-CONTRACT-02/04: strict Ajv, formats, no mutation or inherited provider environment | Local PASS |
+| TC-CONTRACT-002 | REQ-CONTRACT-01/05: source/contract inventory; omitted/wrong-method and unsupported scanner controls | Local PASS |
+| TC-CONTRACT-003 | REQ-CONTRACT-03: health/request ID, registration, JSON errors and every protected operation's missing auth | Local PASS |
+| TC-CONTRACT-004 | REQ-CONTRACT-03: category trim/coercion, null/zero/bounds, strict PATCH and ownership | Local PASS |
+| TC-CONTRACT-005 | REQ-CONTRACT-03: settings and all four independent overall/category budget states | Local PASS |
+| TC-CONTRACT-006 | REQ-CONTRACT-03: expense/filter/edit, keyed replay/conflicts/snapshot and empty204 | Local PASS |
+| TC-CONTRACT-007 | REQ-CONTRACT-03: subscription/loan pay, finish/reopen, bounds and ownership | Local PASS |
+| TC-CONTRACT-008 | REQ-CONTRACT-03/04: AI off/demo, NFC/body/date boundaries, context/quota and no expense writes | Local PASS |
+| TC-CONTRACT-009 | REQ-CONTRACT-03: login success/denial/rate limit and Retry-After | Local PASS |
+| TC-CONTRACT-010 | REQ-CONTRACT-02/05: eight copied real-capture corruption controls, exact originals preserved | Local PASS |
+| TC-CONTRACT-011 | REQ-CONTRACT-04/06: observed2xx per source operation,401-only matrix control, truthful status sets and log privacy | Local PASS |
+
 ## Totals
 
-| | Cases | Runs | Status |
+| Layer | Cases | Runs | Status |
 |---|---|---|---|
 | API — 271 requests, 939 assertions | 141 | 271 | local PASS, 2026-09-28 |
 | Database — additive migrations, node:test | 6 | 6 | local PASS, 2026-09-28 |
@@ -457,7 +480,13 @@ fail when its defect is put back — see S05.
 | Selenium — 9 documented scenarios, 11 pytest items | 9 | 11 | local PASS, 2026-09-28 |
 | Load — 3 scenarios, thresholds enforced | 3 | 3 | historical PASS; not rerun in the category-limit regression |
 | End-to-end — 93 tests × 2 viewports | 93 | 186 | local PASS, 2026-09-28 |
-| **Total** | **269** | **504** | **501 current local executions + 3 historical load executions; not new GitHub CI** |
+| Contract — 11 named tests, 244 real HTTP checks | 11 | 11 | local PASS, 2026-09-28; no live AI or new CI claim |
+| **Total** | **280** | **515** | **512 current local executions + 3 historical load executions; not new GitHub CI** |
+
+Cases are unique active IDs in the first table cell, with bold markers removed
+and retired strikethrough rows excluded. E2E90 + REG3 form the93 browser cases.
+AI cases/evaluation and race pair iterations are separately registered and are
+not added to this core catalogue's execution total.
 
 **The counts are checked against the suites, not typed from memory.** An earlier
 count claimed 138 cases while only 135 rows existed; three cases (TC-E2E-039…041)

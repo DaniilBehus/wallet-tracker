@@ -6,6 +6,8 @@ Install the application dependencies with `npm ci` first. Use Node.js 22+, Pytho
 
 ```bash
 npm run check        # invariants: spec hash, no float money, testids, e2e discipline, coverage gates
+npm run check:openapi # schema/local refs and source-derived route/auth/response inventory
+npm run test:contract # 11 named tests, 244 real HTTP checks and validator controls
 npm run test:api     # 271 requests, 939 assertions
 npm run test:db      # 6 migration cases against temporary databases
 npm run test:python  # 27 isolated Python/httpx API items; writes JUnit XML
@@ -22,7 +24,8 @@ npm run test:ai:e2e  # 25 AI browser scenarios × phone and desktop, local fake 
 
 Nothing needs to be started first: each layer starts a server of its own, with
 an isolated database. The pytest fixture additionally allocates a loopback port
-and JWT secret per run. No suite contains a sleep.
+and JWT secret per run. UI scenarios use explicit or web-first waits instead
+of arbitrary browser sleeps; startup readiness uses bounded health polling.
 
 To prepare the Python layer locally (Python 3.12+):
 
@@ -42,7 +45,9 @@ catalogue does not list fails before the test runs.
 |---|---|
 | [`qa/docs/test-design.md`](../qa/docs/test-design.md) | How a change becomes a set of cases — nine steps, each with an example from this app |
 | [`qa/docs/test-plan.md`](../qa/docs/test-plan.md) | Scope, entry and exit criteria, risks |
-| [`qa/docs/test-cases.md`](../qa/docs/test-cases.md) | 269 cases with ids and a trace to a requirement, spec clause or defect; local category-limit evidence is separate from published CI |
+| [`qa/docs/test-cases.md`](../qa/docs/test-cases.md) | 280 cases with ids and a trace to a requirement, spec clause or defect; local evidence is separate from published CI |
+| [`docs/api/README.md`](api/README.md) | OpenAPI contract, synthetic examples and contract-check requirements |
+| [`qa/docs/test-report-contract.md`](../qa/docs/test-report-contract.md) | Local observed-status matrix, validator controls, regression results and limitations |
 | [`qa/db/`](../qa/db/) | Existing-database migration checks on disposable files |
 | [`qa/docs/defects/`](../qa/docs/defects/) | Full defect reports from the test layers |
 | [`qa/api/`](../qa/api/) | Postman collection; the environment holds two variables and no literals |
@@ -63,3 +68,16 @@ gates ask whether what exists is covered: every route has a request, every
 testid is addressed from a page object, every status the server can return is
 provoked by some case. Exceptions live in one file with a written reason each;
 an exception with an empty reason fails the build too.
+
+## Contract checks and the full regression
+
+`npm test` still excludes OpenAPI/contract, AI, fixture evaluation, Selenium and
+k6. Run their separate commands for complete local verification; k6 additionally
+requires its own installation. The new API CI steps run `check:openapi` and
+`test:contract`, but a local workflow edit is not proof of a new GitHub run.
+
+Contract tests start two real servers on loopback-only ephemeral ports, with
+temporary SQLite, random secrets and an allow-listed environment. AI is off or
+canned demo, guarded against external network connections. Captures stay in
+memory; stdout contains the operation/status matrix, not JWTs or raw bodies.
+See the [API guide](api/README.md) and [local report](../qa/docs/test-report-contract.md).

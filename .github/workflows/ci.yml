@@ -52,6 +52,14 @@ jobs:
       - name: Self-check gate
         run: npm run check
 
+      - name: OpenAPI schema and source inventory gate
+        run: npm run check:openapi
+
+      # Offline disposable servers; stdout is an aggregate operation/status
+      # matrix and validator controls, never captured bodies or bearer tokens.
+      - name: Real-response contract checks (offline and demo)
+        run: npm run test:contract
+
       # The in-place database upgrade, on temporary files it makes itself. No
       # server and no secret, so it runs before anything is started.
       - name: Database migration test

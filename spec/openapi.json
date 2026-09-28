@@ -1,0 +1,1093 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Wallet Tracker REST API",
+    "version": "1.0.0",
+    "description": "Contract for the explicit REST operations implemented by the current server: health, authentication, categories, transactions, schedules, summary, settings and AI drafts. Descriptions record implementation rules that JSON Schema cannot fully express. Document validation alone is not evidence of executed HTTP scenarios: check:openapi validates this contract and test:contract separately exercises disposable offline/demo servers, reporting observed and unexercised statuses. No full-project regression or GitHub CI result is implied by this document. OpenAPI 3.0.3 is selected for parser compatibility, not claimed to be the latest version. This describes a personal project, not a production service."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local application; PORT is configurable. No hosted demo is promised."
+    }
+  ],
+  "security": [{ "bearerAuth": [] }],
+  "tags": [
+    { "name": "Health" },
+    { "name": "Authentication" },
+    { "name": "Categories" },
+    { "name": "Summary" },
+    { "name": "Settings" },
+    { "name": "Transactions" },
+    { "name": "Schedules" },
+    { "name": "AI" }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "getHealth",
+        "tags": ["Health"],
+        "summary": "Probe the running process and database connection",
+        "description": "Public endpoint, no user data read. SELECT 1 is attempted. HTTP status and status field remain 200/ok even when the database probe reports db=error; this is not a user-data integrity check. The global JSON parser can reject malformed or oversized bodies before this handler.",
+        "security": [],
+        "parameters": [
+          { "$ref": "#/components/parameters/RequestId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Process responded; inspect the db field separately.",
+            "headers": {
+              "X-Request-Id": { "$ref": "#/components/headers/RequestId" }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Health" },
+                "example": { "status": "ok", "version": "1.0.0", "db": "ok" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "operationId": "registerAccount",
+        "tags": ["Authentication"],
+        "summary": "Create an account and return a bearer token",
+        "description": "Public endpoint. Email is trimmed, checked with the application's regex, then lowercased for storage and uniqueness. Password requires at least 8 JavaScript UTF-16 code units and at most 72 UTF-8 bytes, not 72 characters. Account and starter categories are created atomically. Existing normalized email returns 409, including a concurrent UNIQUE conflict. Extra JSON fields are ignored, not rejected. The token is signed with HS256 and expires after 30 days.",
+        "security": [],
+        "parameters": [
+          { "$ref": "#/components/parameters/RequestId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/TokenCreated" },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/categories": {
+      "get": {
+        "operationId": "listCategories",
+        "tags": ["Categories"],
+        "summary": "List categories owned by the authenticated account",
+        "description": "Returns all own categories ordered by id, including the current nullable monthly_limit_cents. No pagination or spending filter. Requires bearer authentication through the categories mount.",
+        "parameters": [{ "$ref": "#/components/parameters/RequestId" }],
+        "responses": {
+          "200": {
+            "description": "Own category list, possibly empty.",
+            "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Category" } } } }
+          },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "post": {
+        "operationId": "createCategory",
+        "tags": ["Categories"],
+        "summary": "Create an own category without a budget",
+        "description": "Name is trimmed and must have 1-60 JavaScript UTF-16 code units after trim. The trimmed name is unique per account, case-sensitive. Icon omission/null stores null; every other JSON value is converted with String(value), not refused for having a non-string type. Extra POST fields are ignored, including a submitted monthly_limit_cents; the new category has no limit. This is not the strict PATCH shape policy.",
+        "parameters": [{ "$ref": "#/components/parameters/RequestId" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CategoryCreateRequest" } } }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/CategoryCreated" },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/categories/{id}": {
+      "patch": {
+        "operationId": "patchCategoryLimit",
+        "tags": ["Categories"],
+        "summary": "Set or clear one category's current budget",
+        "description": "Only monthly_limit_cents can be changed. Body must be a nonempty JSON object; unknown keys and server-owned id/user_id/created_at are refused with 400. Integer cents 0-100000000 or null only. Zero is a real zero budget; null removes the limit. Omitting the sole field leaves no valid change and is refused, rather than clearing the existing value. Missing/foreign category answers the same ownership-scoped 404. A current limit applies to past queried months too, independently of the overall budget; it never blocks expense saving.",
+        "parameters": [
+          { "$ref": "#/components/parameters/RequestId" },
+          { "$ref": "#/components/parameters/Id" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CategoryLimitPatch" } } }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/CategoryAccepted" },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/summary": {
+      "get": {
+        "operationId": "getMonthSummary",
+        "tags": ["Summary"],
+        "summary": "Read own monthly spending and budget states",
+        "description": "Default is the server's current local month. Real expenses and paid instalments count; unpaid schedules and income do not add spending. Remaining balance is current monthly income minus that month's total, and may be negative. Overall and category limits are independent current values that also judge historical months. Server computes not_set for null, within for total<limit, reached for equality, exceeded for total>limit; limit_remaining_cents=limit-total may be negative. Limited categories appear even with zero spending; categories with neither spending nor a limit stay hidden. Uncategorised spending remains in totals with null category/name, null limit/remaining and not_set. Category rows are ordered by total descending then category id. Only the authenticated account's data is read.",
+        "parameters": [
+          { "$ref": "#/components/parameters/RequestId" },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "pattern": "^\\d{4}-(0[1-9]|1[0-2])$" },
+            "description": "Local YYYY-MM with month 01-12; omitted means server current month. No explicit year range beyond four digits. Unknown query parameters are ignored."
+          }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/MonthSummary" },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/settings": {
+      "get": {
+        "operationId": "getSettings",
+        "tags": ["Settings"],
+        "summary": "Read own current income and overall spending budget",
+        "description": "A fresh account, including an account with no settings row, reads monthly_income_cents=0 and monthly_limit_cents=null. These current settings apply to every queried month; no per-month history is stored.",
+        "parameters": [{ "$ref": "#/components/parameters/RequestId" }],
+        "responses": {
+          "200": { "$ref": "#/components/responses/SettingsAccepted" },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "put": {
+        "operationId": "putSettings",
+        "tags": ["Settings"],
+        "summary": "Save income and optionally set or clear the overall budget",
+        "description": "monthly_income_cents is required, a number of integer cents from 0 through 100000000; no string conversion. monthly_limit_cents is optional: omission preserves the existing limit (or null on a new row); explicit null clears it; zero is a real zero budget. Limits use the same inclusive ceiling. Unknown PUT fields are ignored, not refused like PATCH. Category limits are not changed or checked against the overall limit. Returns the saved current settings.",
+        "parameters": [{ "$ref": "#/components/parameters/RequestId" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SettingsWriteRequest" } } }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/SettingsAccepted" },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/transactions": {
+      "get": {
+        "operationId": "listTransactions",
+        "tags": ["Transactions"],
+        "summary": "List own expenses within an inclusive local-date range",
+        "description": "Defaults from/to independently to current server-local month's boundaries; real calendar dates required and from<=to. Sorted spent_on descending, then id descending. limit defaults50, accepts0-200 after Number conversion; offset defaults0, accepts nonnegative integers with no explicit ceiling. Empty limit/offset use defaults. Optional category_id uses ownership validation. Empty category_id maps null, but SQL category_id=null matches no rows; it is not an uncategorised filter. Unknown query keys ignored.",
+        "parameters": [
+          { "$ref": "#/components/parameters/RequestId" },
+          { "name": "from", "in": "query", "schema": { "$ref": "#/components/schemas/LocalDate" }, "description": "Inclusive start, omitted=current month start." },
+          { "name": "to", "in": "query", "schema": { "$ref": "#/components/schemas/LocalDate" }, "description": "Inclusive end, omitted=current month end." },
+          { "name": "category_id", "in": "query", "schema": { "type": "string" }, "description": "Number-converted owned positive integer ID; foreign/missing404, invalid400. Empty string mapsnull and matches no rows." },
+          { "name": "limit", "in": "query", "schema": { "type": "string", "default": "50" }, "description": "Number(value) must be integer0-200; empty string defaults50." },
+          { "name": "offset", "in": "query", "schema": { "type": "string", "default": "0" }, "description": "Number(value) must be nonnegative integer; empty string defaults0. No explicit upper ceiling." }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/TransactionList" },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "post": {
+        "operationId": "createTransaction",
+        "tags": ["Transactions"],
+        "summary": "Save an expense, optionally with an account-scoped operation key",
+        "description": "Positive integer cents only. category_id uses Number conversion and own-category lookup; note uses String(non-null JSON). Omitted/null unkeyed spent_on defaults to server-local today. New expenses must use a real date no later than tomorrow; no explicit lower-year bound. Extra POST fields ignored. Budgets never block saving. With Idempotency-Key, spent_on must be explicit/non-null; canonical [amount,category-or-null,date,note-or-null] identifies the payload, independent of JSON key order and ignored extras. New keyed saves recheck ownership/date bound atomically. Same-key/same-payload replay returns original201 snapshot even after an edit, with Idempotency-Replayed=true; replay does not recheck current date bounds/category ownership. Changed payload409 IDEMPOTENCY_CONFLICT. Deleted original leaves a409 IDEMPOTENCY_REPLAY_UNAVAILABLE tombstone. Without a key, a repeated request can create duplicates. Keys are account-scoped and retained for the account lifetime.",
+        "parameters": [
+          { "$ref": "#/components/parameters/RequestId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TransactionCreateRequest" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "New expense or original keyed snapshot. Header absent for a new save, present=true on replay.",
+            "headers": {
+              "X-Request-Id": { "$ref": "#/components/headers/RequestId" },
+              "Idempotency-Replayed": { "$ref": "#/components/headers/IdempotencyReplayed" }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Transaction" } } }
+          },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/KeyedConflict" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/transactions/{id}": {
+      "patch": {
+        "operationId": "patchTransaction",
+        "tags": ["Transactions"],
+        "summary": "Edit only supplied expense fields",
+        "description": "Strict nonempty JSON object: amount_cents,category_id,spent_on,note only. Unknown or server-owned id/user_id/schedule_id/created_at fields refused400. Omitted fields unchanged. Explicit spent_on=null refused400 (not today's default); valid edited date cannot exceed tomorrow. category_id=null/empty string clears, other values Number-converted and ownership checked. note=null clears; other JSON values String-converted. Valid missing/foreign expense or categoryID404.",
+        "parameters": [{ "$ref": "#/components/parameters/RequestId" }, { "$ref": "#/components/parameters/Id" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TransactionPatchRequest" } } }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/TransactionAccepted" },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteTransaction",
+        "tags": ["Transactions"],
+        "summary": "Delete an own expense",
+        "description": "Ownership-scoped delete. Valid missing/foreign ID404; invalid conversion400. Success204 is empty, not JSON. A keyed-save record is retained as a tombstone, so a later replay cannot silently recreate the expense. Request body is ignored by the handler; global JSON parser errors still apply.",
+        "parameters": [{ "$ref": "#/components/parameters/RequestId" }, { "$ref": "#/components/parameters/Id" }],
+        "responses": {
+          "204": {
+            "description": "Deleted; no response body and no JSON Content-Type.",
+            "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } }
+          },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/schedules": {
+      "get": {
+        "operationId": "listSchedules",
+        "tags": ["Schedules"],
+        "summary": "List own subscriptions and loans",
+        "description": "Only exact query active=1 selects active rows; every other value or omission returns both active and inactive rows without validation error. Sorted by computed next_due. next_due is based on the later of server-local today and starts_on; day31 clamps to the last existing day in a short month. Loan remaining counts/cents are computed, not stored; subscriptions returnnull for these fields. No schedule DELETE endpoint exists.",
+        "parameters": [
+          { "$ref": "#/components/parameters/RequestId" },
+          { "name": "active", "in": "query", "schema": { "type": "string" }, "description": "Exactly1 filters active only. All other values/omission return all own rows." }
+        ],
+        "responses": {
+          "200": {
+            "description": "Own schedules ordered by next_due, possibly empty.",
+            "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Schedule" } } } }
+          },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "post": {
+        "operationId": "createSchedule",
+        "tags": ["Schedules"],
+        "summary": "Create a subscription or finite loan",
+        "description": "Required trimmed name, positive integer amount_cents, day_of_month1-31 and real local starts_on. category_id omission/null/empty string means no category; otherwise Number-converted owned positive integer. total_count omission/null creates a subscription; integer1-1200 creates a loan. Amount times loan count must remain a safe integer. Unknown POST fields, including client counters/active, are ignored; initial paid_count=0,active=1. No past/future bound is imposed on starts_on beyond calendar validity.",
+        "parameters": [{ "$ref": "#/components/parameters/RequestId" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ScheduleCreateRequest" } } }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/ScheduleAccepted" },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/schedules/{id}": {
+      "patch": {
+        "operationId": "patchSchedule",
+        "tags": ["Schedules"],
+        "summary": "Edit only supplied subscription or loan fields",
+        "description": "Strict nonempty JSON object of name,amount_cents,category_id,day_of_month,starts_on,total_count only. Unknown/server-owned id/user_id/paid_count/active fields refused400. Omitted fields unchanged; explicit total_count=null converts to subscription; category_id=null/empty clears. Updated amount*count pair is validated using the stored counterpart for a partial edit. A new non-null total_count below already paid_count returns409 CONFLICT. Equal to paid_count finishes the loan; increasing above paid_count or clearing count makes it active again. Ownership-scoped404 for missing/foreign schedule/category. Derived values returned from the edited row.",
+        "parameters": [{ "$ref": "#/components/parameters/RequestId" }, { "$ref": "#/components/parameters/Id" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SchedulePatchRequest" } } }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/ScheduleAccepted" },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/schedules/{id}/pay": {
+      "patch": {
+        "operationId": "paySchedule",
+        "tags": ["Schedules"],
+        "summary": "Pay one instalment and create its expense atomically",
+        "description": "PATCH, not POST. Handler ignores request body. Global malformed/oversized JSON checks still apply. A valid missing/foreign schedule returns404; inactive schedule409. Immediate transaction writes one expense dated today with the schedule name/category/amount and advances paid_count; final loan payment sets inactive and finished=true. Subscription remaining_count isnull. No due-date check, no idempotency key support on this endpoint: an unkeyed repeat can pay another instalment if the schedule remains active; do not promise duplicate protection.",
+        "parameters": [{ "$ref": "#/components/parameters/RequestId" }, { "$ref": "#/components/parameters/Id" }],
+        "responses": {
+          "200": { "$ref": "#/components/responses/PaymentAccepted" },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/ai/capabilities": {
+      "get": {
+        "operationId": "getAiCapabilities",
+        "tags": ["AI"],
+        "summary": "Read configured AI draft availability",
+        "description": "Protected endpoint. No external provider request is made. Availability describes the resolved provider, not merely the requested environment mode: off or incomplete configuration returns enabled=false, mode=off and provider=null. The application supports guarded OpenAI live mode; Gemini is not an application provider. Demo needs the existing fixture launcher, not the mode flag alone. Reported languages are supported input languages, not measured quality results.",
+        "parameters": [{ "$ref": "#/components/parameters/RequestId" }],
+        "responses": {
+          "200": { "$ref": "#/components/responses/AiCapabilities" },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/ai/expense-draft": {
+      "post": {
+        "operationId": "createAiExpenseDraft",
+        "tags": ["AI"],
+        "summary": "Suggest an expense draft for human review, without saving an expense",
+        "description": "Protected endpoint. Precedence after global JSON parsing and authentication: exact request shape and raw-body/NFC text limits; reference_date within the server's local yesterday/today/tomorrow; provider availability; live-only external-processing consent; own category context; concurrency and quotas; at most one provider attempt; provider-contract validation and deterministic normalization. More than 100 own categories or more than 8000 combined UTF-8 category-name bytes returns422. Defaults are 20 global calls/day, 5 calls/user/day, 3 calls/user/minute, 2 in-flight calls/process and 1/user; configurable. Quota reservations persist in SQLite even after a failed provider attempt; concurrency is process-local, not multi-process protection. No transaction, schedule, setting or user record is created/changed, but quota counters can change. The response is the application's normalized draft, not raw provider output. ready, needs_input and unsupported all use200; a model refusal is unsupported, not502. Unsupported results have null draft fields and none provenance. ready requires resolved amount, date and category; info issues may remain. Review and ordinary POST /api/transactions are still required to save. Demo uses canned fixtures without external calls and does not measure LLM quality. Live consent/provider error paths are documented, not claimed exercised by offline tests. No real HTTP execution is claimed by this document slice.",
+        "parameters": [{ "$ref": "#/components/parameters/RequestId" }],
+        "requestBody": {
+          "required": true,
+          "description": "Strict JSON object. Raw body <=8192 bytes; larger bodies below the global100KiB ceiling answer400, not413. text is normalized to NFC before checking nonblank trim and <=500 Unicode code points; no raw-string maxLength is imposed in this schema. reference_date must be a valid four-digit local calendar date and within server yesterday/today/tomorrow. Optional locale defaults to auto and consent defaults to false; explicit null is invalid for either.",
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AiDraftRequest" } } }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/AiDraft" },
+          "400": { "$ref": "#/components/responses/AiInvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/AiConsentRequired" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "422": { "$ref": "#/components/responses/AiContextTooLarge" },
+          "429": { "$ref": "#/components/responses/AiRateLimited" },
+          "500": { "$ref": "#/components/responses/InternalError" },
+          "502": { "$ref": "#/components/responses/AiBadGateway" },
+          "503": { "$ref": "#/components/responses/AiUnavailable" },
+          "504": { "$ref": "#/components/responses/AiTimeout" }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "loginAccount",
+        "tags": ["Authentication"],
+        "summary": "Sign in and return a bearer token",
+        "description": "Public endpoint. Email is trimmed/lowercased for lookup. Missing, non-string or rejected credentials all answer 401 with the same message; login does not reapply registration's password length or email regex checks. Extra JSON fields are ignored. Before bcrypt, failed credentials are limited by email OR client IP: default 5 failures in a fixed 15-minute window, configurable locally. The next attempt after the limit returns 429 with Retry-After seconds. A successful login clears the tracked email and IP failures. Malformed JSON is rejected globally with 400, not counted as a failed credential. All 401 failures, including non-string credentials, are recorded.",
+        "security": [],
+        "parameters": [
+          { "$ref": "#/components/parameters/RequestId" }
+        ],
+        "requestBody": {
+          "required": false,
+          "description": "Credential fields may be omitted; missing or non-string credentials return 401 (or 429 if already blocked).",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/TokenAccepted" },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "HS256 JWT returned by registration/login. The application's Authorization header uses case-sensitive Bearer followed by a token. Missing, invalid or expired token returns 401. The three public operations explicitly override this root requirement with security=[]."
+      }
+    },
+    "schemas": {
+      "AiCapabilities": {
+        "type": "object", "additionalProperties": false,
+        "required": ["enabled", "mode", "provider", "max_input_chars", "languages", "requires_external_consent"],
+        "properties": {
+          "enabled": { "type": "boolean" },
+          "mode": { "type": "string", "enum": ["off", "demo", "live"] },
+          "provider": { "type": "string", "nullable": true, "enum": [null, "demo", "OpenAI"] },
+          "max_input_chars": { "type": "integer", "enum": [500] },
+          "languages": { "type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true, "items": { "type": "string", "enum": ["en", "uk", "sk"] }, "description": "Currently returned in order en, uk, sk." },
+          "requires_external_consent": { "type": "boolean" }
+        },
+        "description": "off implies disabled, null provider and no external consent; demo implies enabled, demo provider and no external consent; live implies enabled, OpenAI provider and required consent. These cross-field relationships require semantic checks.",
+        "example": { "enabled": false, "mode": "off", "provider": null, "max_input_chars": 500, "languages": ["en", "uk", "sk"], "requires_external_consent": false }
+      },
+      "AiDraftRequest": {
+        "type": "object", "additionalProperties": false, "required": ["text", "reference_date"],
+        "properties": {
+          "text": { "type": "string", "minLength": 1, "description": "Normalized to NFC, then nonblank after trim and at most500 Unicode code points. The normalized, not raw-string, bound is checked by implementation; no misleading raw maxLength here." },
+          "reference_date": { "$ref": "#/components/schemas/LocalDate" },
+          "locale": { "type": "string", "enum": ["en", "uk", "sk", "auto"], "default": "auto" },
+          "consent_to_external_processing": { "type": "boolean", "default": false }
+        },
+        "description": "Raw-body limit8192bytes and server-local relative reference_date rules require checks beyond schema. Defaults describe server behavior, not permission for a response validator to mutate values."
+      },
+      "AiDraftValues": {
+        "type": "object", "additionalProperties": false, "required": ["amount_cents", "category_id", "spent_on", "note"],
+        "properties": {
+          "amount_cents": { "type": "integer", "nullable": true, "minimum": 1, "maximum": 100000000 },
+          "category_id": { "type": "integer", "nullable": true, "minimum": 1, "description": "Resolved own category ID, not a provider reference." },
+          "spent_on": { "type": "string", "nullable": true, "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "When present, between1900-01-01 and the server's local tomorrow; relative bound is not expressed by JSON Schema." },
+          "note": { "type": "string", "nullable": true, "minLength": 1, "maxLength": 60, "description": "NFC-normalized, trimmed note; truncated to60Unicode code points with NOTE_TRUNCATED. Null means no note." }
+        }
+      },
+      "AiProvenance": {
+        "type": "object", "additionalProperties": false, "required": ["amount", "category", "date", "currency", "note"],
+        "properties": {
+          "amount": { "type": "string", "enum": ["source", "none"] },
+          "category": { "type": "string", "enum": ["suggested", "none"] },
+          "date": { "type": "string", "enum": ["source", "default", "none"] },
+          "currency": { "type": "string", "enum": ["source", "default", "none"] },
+          "note": { "type": "string", "enum": ["source", "none"] }
+        }
+      },
+      "AiIssue": {
+        "type": "object", "additionalProperties": false, "required": ["field", "code", "severity"],
+        "properties": {
+          "field": { "type": "string", "enum": ["amount", "date", "category", "currency", "note", "input"] },
+          "code": { "type": "string", "enum": ["AMOUNT_REQUIRED", "INVALID_AMOUNT", "AMOUNT_OUT_OF_RANGE", "AMBIGUOUS_AMOUNT", "APPROXIMATE_AMOUNT", "NUMERIC_AMOUNT_REQUIRED", "DATE_REQUIRED", "INVALID_DATE", "AMBIGUOUS_DATE", "UNSUPPORTED_DATE_FORMAT", "DATE_OUT_OF_RANGE", "DATE_DEFAULTED", "CATEGORY_REQUIRED", "CURRENCY_DEFAULTED", "UNSUPPORTED_CURRENCY", "AMBIGUOUS_CURRENCY", "NOTE_TRUNCATED", "MULTIPLE_EXPENSES", "UNSUPPORTED_INTENT", "INPUT_UNCLEAR", "MODEL_REFUSED", "DEMO_UNSUPPORTED"] },
+          "severity": { "type": "string", "enum": ["info", "needs_input", "unsupported"] }
+        },
+        "description": "No message field. field maps amount codes to amount, date codes to date, CATEGORY_REQUIRED to category, currency codes to currency, NOTE_TRUNCATED to note, and remaining codes to input. DATE_DEFAULTED, CURRENCY_DEFAULTED and NOTE_TRUNCATED are info; UNSUPPORTED_CURRENCY, MULTIPLE_EXPENSES, UNSUPPORTED_INTENT, MODEL_REFUSED and DEMO_UNSUPPORTED are unsupported; all other codes are needs_input. Code/field/severity consistency requires semantic checks."
+      },
+      "AiVersions": {
+        "type": "object", "additionalProperties": false, "required": ["schema", "prompt", "normalizer"],
+        "properties": {
+          "schema": { "type": "string", "enum": ["1"] },
+          "prompt": { "type": "string", "enum": ["1"] },
+          "normalizer": { "type": "string", "enum": ["2"] }
+        }
+      },
+      "AiDraft": {
+        "type": "object", "additionalProperties": false, "required": ["request_id", "mode", "status", "draft", "provenance", "issues", "versions"],
+        "properties": {
+          "request_id": { "type": "string", "format": "uuid", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", "description": "Same correlation ID as the X-Request-Id response header." },
+          "mode": { "type": "string", "enum": ["demo", "live"] },
+          "status": { "type": "string", "enum": ["ready", "needs_input", "unsupported"] },
+          "draft": { "$ref": "#/components/schemas/AiDraftValues" },
+          "provenance": { "$ref": "#/components/schemas/AiProvenance" },
+          "issues": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/components/schemas/AiIssue" } },
+          "versions": { "$ref": "#/components/schemas/AiVersions" }
+        },
+        "description": "No raw provider object, confidence score, currency field or saved transaction ID. ready has resolved amount/date/category and no needs_input issue; needs_input has an issue of that severity; unsupported has all-null draft and all-none provenance. Cross-field consistency is documented for semantic checks."
+      },
+      "AiError400": {
+        "type": "object", "additionalProperties": false, "required": ["error"],
+        "properties": { "error": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["VALIDATION_FAILED", "REFERENCE_DATE_MISMATCH"] }, "message": { "$ref": "#/components/schemas/ErrorMessage" } } } }
+      },
+      "AiError403": {
+        "type": "object", "additionalProperties": false, "required": ["error"],
+        "properties": { "error": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["AI_CONSENT_REQUIRED"] }, "message": { "$ref": "#/components/schemas/ErrorMessage" } } } }
+      },
+      "AiError422": {
+        "type": "object", "additionalProperties": false, "required": ["error"],
+        "properties": { "error": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["AI_CONTEXT_TOO_LARGE"] }, "message": { "$ref": "#/components/schemas/ErrorMessage" } } } }
+      },
+      "AiError429": {
+        "type": "object", "additionalProperties": false, "required": ["error"],
+        "properties": { "error": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["AI_RATE_LIMITED"] }, "message": { "$ref": "#/components/schemas/ErrorMessage" } } } }
+      },
+      "AiError502": {
+        "type": "object", "additionalProperties": false, "required": ["error"],
+        "properties": { "error": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["AI_PROVIDER_FAILED", "AI_INVALID_RESPONSE"] }, "message": { "$ref": "#/components/schemas/ErrorMessage" } } } }
+      },
+      "AiError503": {
+        "type": "object", "additionalProperties": false, "required": ["error"],
+        "properties": { "error": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["AI_UNAVAILABLE", "AI_PROVIDER_BUSY"] }, "message": { "$ref": "#/components/schemas/ErrorMessage" } } } }
+      },
+      "AiError504": {
+        "type": "object", "additionalProperties": false, "required": ["error"],
+        "properties": { "error": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["AI_TIMEOUT"] }, "message": { "$ref": "#/components/schemas/ErrorMessage" } } } }
+      },
+      "ErrorMessage": { "type": "string", "minLength": 1 },
+      "Error400": {
+        "type": "object", "additionalProperties": false, "required": ["error"],
+        "properties": { "error": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["VALIDATION_FAILED"] }, "message": { "$ref": "#/components/schemas/ErrorMessage" } } } }
+      },
+      "Error401": {
+        "type": "object", "additionalProperties": false, "required": ["error"],
+        "properties": { "error": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["UNAUTHORIZED"] }, "message": { "$ref": "#/components/schemas/ErrorMessage" } } } }
+      },
+      "Error404": {
+        "type": "object", "additionalProperties": false, "required": ["error"],
+        "properties": { "error": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["NOT_FOUND"] }, "message": { "$ref": "#/components/schemas/ErrorMessage" } } } }
+      },
+      "Error409": {
+        "type": "object", "additionalProperties": false, "required": ["error"],
+        "properties": { "error": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["CONFLICT"] }, "message": { "$ref": "#/components/schemas/ErrorMessage" } } } }
+      },
+      "KeyedError409": {
+        "type": "object", "additionalProperties": false, "required": ["error"],
+        "properties": { "error": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["IDEMPOTENCY_CONFLICT", "IDEMPOTENCY_REPLAY_UNAVAILABLE"] }, "message": { "$ref": "#/components/schemas/ErrorMessage" } } } }
+      },
+      "Error413": {
+        "type": "object", "additionalProperties": false, "required": ["error"],
+        "properties": { "error": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["PAYLOAD_TOO_LARGE"] }, "message": { "$ref": "#/components/schemas/ErrorMessage" } } } }
+      },
+      "LoginError429": {
+        "type": "object", "additionalProperties": false, "required": ["error"],
+        "properties": { "error": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["RATE_LIMITED"] }, "message": { "$ref": "#/components/schemas/ErrorMessage" } } } }
+      },
+      "Error500": {
+        "type": "object", "additionalProperties": false, "required": ["error"],
+        "properties": { "error": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["INTERNAL"] }, "message": { "$ref": "#/components/schemas/ErrorMessage" } } } }
+      },
+      "DayOfMonth": { "type": "integer", "minimum": 1, "maximum": 31 },
+      "TotalCount": {
+        "type": "integer", "nullable": true, "minimum": 1, "maximum": 1200,
+        "description": "Null or omission on create is a subscription. Integer1-1200 is a finite loan. PATCH omission preserves, null converts to subscription. Non-null count cannot be below already paid_count (409); a count equal to paid_count finishes."
+      },
+      "ScheduleCreateRequest": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["name", "amount_cents", "day_of_month", "starts_on"],
+        "properties": {
+          "name": { "$ref": "#/components/schemas/TrimmedName" },
+          "amount_cents": { "$ref": "#/components/schemas/AmountCents" },
+          "category_id": { "$ref": "#/components/schemas/CategoryIdInput" },
+          "day_of_month": { "$ref": "#/components/schemas/DayOfMonth" },
+          "starts_on": { "$ref": "#/components/schemas/LocalDate" },
+          "total_count": { "$ref": "#/components/schemas/TotalCount" }
+        },
+        "description": "POST ignores additional fields. Loan amount*count must be a safe integer; both bounds currently keep the product safe. No relative date bound on starts_on.",
+        "example": { "name": "Synthetic subscription", "amount_cents": 999, "day_of_month": 31, "starts_on": "2026-09-28", "total_count": null }
+      },
+      "SchedulePatchRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "name": { "$ref": "#/components/schemas/TrimmedName" },
+          "amount_cents": { "$ref": "#/components/schemas/AmountCents" },
+          "category_id": { "$ref": "#/components/schemas/CategoryIdInput" },
+          "day_of_month": { "$ref": "#/components/schemas/DayOfMonth" },
+          "starts_on": { "$ref": "#/components/schemas/LocalDate" },
+          "total_count": { "$ref": "#/components/schemas/TotalCount" }
+        },
+        "description": "Strict nonempty partial edit; only supplied fields change. amount*count validation uses the stored counterpart when omitted. Below-paid count409; equal finishes, increased/cleared count can reopen. Counters/active are server-owned."
+      },
+      "Schedule": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "amount_cents", "category_id", "day_of_month", "starts_on", "next_due", "total_count", "paid_count", "remaining_count", "remaining_cents", "active"],
+        "properties": {
+          "id": { "type": "integer", "minimum": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "amount_cents": { "$ref": "#/components/schemas/AmountCents" },
+          "category_id": { "type": "integer", "nullable": true, "minimum": 1 },
+          "day_of_month": { "$ref": "#/components/schemas/DayOfMonth" },
+          "starts_on": { "$ref": "#/components/schemas/LocalDate" },
+          "next_due": {
+            "type": "string", "pattern": "^\\d{4,}-\\d{2}-\\d{2}$",
+            "description": "Computed local calendar date, normally YYYY-MM-DD; day clamps in short months. The pure helper can extend the year when rolling past a four-digit starts_on year (for example10000), so this output is not falsely restricted to an RFC3339 date. Source-level edge noted, not a new HTTP observation."
+          },
+          "total_count": { "$ref": "#/components/schemas/TotalCount" },
+          "paid_count": { "type": "integer", "minimum": 0 },
+          "remaining_count": { "type": "integer", "nullable": true, "minimum": 0 },
+          "remaining_cents": { "type": "integer", "nullable": true, "minimum": 0 },
+          "active": { "type": "integer", "enum": [0, 1] }
+        },
+        "description": "Computed remaining fields are null for subscriptions. Active is the persisted SQLite0/1 value, not a JSON boolean. No schedule created_at field is returned."
+      },
+      "Payment": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["paid_count", "remaining_count", "finished", "transaction_id"],
+        "properties": {
+          "paid_count": { "type": "integer", "minimum": 1 },
+          "remaining_count": { "type": "integer", "nullable": true, "minimum": 0 },
+          "finished": { "type": "boolean" },
+          "transaction_id": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "LocalDate": {
+        "type": "string",
+        "format": "date",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+        "description": "Real local calendar date YYYY-MM-DD, no timezone conversion. Source validates month/day including leap years and imposes no additional year ceiling within four digits."
+      },
+      "AmountCents": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100000000,
+        "description": "Positive integer EUR cents, inclusive ceiling100000000. JSON numbers only; no numeric-string coercion."
+      },
+      "CategoryIdInput": {
+        "oneOf": [
+          { "type": "integer", "nullable": true, "minimum": 1 },
+          { "type": "string" },
+          { "type": "boolean", "enum": [true] },
+          { "type": "array", "items": {} }
+        ],
+        "description": "Omitted/null/empty string -> no category. Otherwise Number(value) must become a positive integer owned categoryID: foreign/missing404, invalidconversion400. Numeric strings, true (1), and numeric arrays such as [1] or nested single-element arrays can coerce. Array/string alternatives are broad because plain schema cannot express JavaScript Number conversion; this prose rule still applies. Objects, false, zero and invalid numeric conversions are not valid owned IDs."
+      },
+      "Transaction": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "amount_cents", "category_id", "spent_on", "note", "schedule_id", "created_at"],
+        "properties": {
+          "id": { "type": "integer", "minimum": 1 },
+          "amount_cents": { "$ref": "#/components/schemas/AmountCents" },
+          "category_id": { "type": "integer", "nullable": true, "minimum": 1 },
+          "spent_on": { "$ref": "#/components/schemas/LocalDate" },
+          "note": { "type": "string", "nullable": true },
+          "schedule_id": { "type": "integer", "nullable": true, "minimum": 1 },
+          "created_at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+            "description": "SQLite datetime('now') UTC timestamp with a space, not RFC3339/date-time. Do not parse stored local spent_on through timezone conversion."
+          }
+        }
+      },
+      "TransactionCreateRequest": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["amount_cents"],
+        "properties": {
+          "amount_cents": { "$ref": "#/components/schemas/AmountCents" },
+          "category_id": { "$ref": "#/components/schemas/CategoryIdInput" },
+          "spent_on": {
+            "type": "string", "nullable": true, "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "Unkeyed omission/null defaults to today. With Idempotency-Key, explicit non-null valid date required. New saves no later than server tomorrow; replay preserves original date. Header-dependent requirement and relative bound are prose rules, not supplied defaults."
+          },
+          "note": { "$ref": "#/components/schemas/StringifiedInput" }
+        },
+        "example": { "amount_cents": 1250, "category_id": "1", "spent_on": "2026-09-28", "note": "Synthetic lunch" }
+      },
+      "TransactionPatchRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "amount_cents": { "$ref": "#/components/schemas/AmountCents" },
+          "category_id": { "$ref": "#/components/schemas/CategoryIdInput" },
+          "spent_on": { "$ref": "#/components/schemas/LocalDate" },
+          "note": { "$ref": "#/components/schemas/StringifiedInput" }
+        },
+        "description": "Strict editable fields only; omission preserves, explicit null date invalid. Note null clears; other non-null JSON uses String(value). Edited date cannot exceed tomorrow."
+      },
+      "TransactionList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items", "total"],
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Transaction" } },
+          "total": { "type": "integer", "minimum": 0, "description": "Matching row count before limit/offset, not this page's length." }
+        }
+      },
+      "BudgetLimit": {
+        "type": "integer",
+        "nullable": true,
+        "minimum": 0,
+        "maximum": 100000000,
+        "description": "EUR cents. Null means no limit; zero is a real zero budget. Only integer numbers are accepted, not numeric strings. Current value, not a per-month history."
+      },
+      "IncomeCents": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100000000,
+        "description": "Nonnegative monthly income in EUR cents; zero is allowed."
+      },
+      "LimitStatus": {
+        "type": "string",
+        "enum": ["not_set", "within", "reached", "exceeded"],
+        "description": "Computed on read: null limit -> not_set; total<limit -> within; total=limit -> reached; total>limit -> exceeded. Income does not affect this judgement."
+      },
+      "LimitRemainingCents": {
+        "type": "integer",
+        "nullable": true,
+        "description": "Null when no limit; otherwise limit minus spending, including negative values when exceeded."
+      },
+      "TrimmedName": {
+        "type": "string",
+        "description": "Application trims this string and requires the result to have 1-60 JavaScript UTF-16 code units. Empty/all-whitespace refused. Surrounding whitespace does not count toward the bound, so no raw-input maxLength is imposed here. This post-trim rule requires executable boundary checks."
+      },
+      "StringifiedInput": {
+        "description": "For category icon or transaction note: omitted/null -> null on creation. Any non-null JSON value becomes String(value), including booleans, numbers, arrays and objects; no length ceiling is enforced. PATCH omission leaves the field unchanged; explicitnull clears. Schemas enumerate JSON types rather than inventing string-only input validation.",
+        "oneOf": [
+          { "type": "string", "nullable": true },
+          { "type": "number" },
+          { "type": "boolean" },
+          { "type": "array", "items": {} },
+          { "type": "object", "additionalProperties": true }
+        ]
+      },
+      "Category": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "icon", "monthly_limit_cents"],
+        "properties": {
+          "id": { "type": "integer", "minimum": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "icon": { "type": "string", "nullable": true },
+          "monthly_limit_cents": { "$ref": "#/components/schemas/BudgetLimit" }
+        },
+        "example": { "id": 1, "name": "Synthetic category", "icon": null, "monthly_limit_cents": 5000 }
+      },
+      "CategoryCreateRequest": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["name"],
+        "properties": {
+          "name": { "$ref": "#/components/schemas/TrimmedName" },
+          "icon": { "$ref": "#/components/schemas/StringifiedInput" }
+        },
+        "description": "POST ignores unknown fields; a posted monthly_limit_cents does not create a budget. Name and optional icon are the only values used."
+      },
+      "CategoryLimitPatch": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "required": ["monthly_limit_cents"],
+        "properties": {
+          "monthly_limit_cents": { "$ref": "#/components/schemas/BudgetLimit" }
+        },
+        "example": { "monthly_limit_cents": 0 },
+        "description": "Strict PATCH with only the nullable integer budget. Empty object or omission of the sole editable field is invalid; no other field changes."
+      },
+      "CategorySummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["category_id", "name", "total_cents", "limit_cents", "limit_status", "limit_remaining_cents"],
+        "properties": {
+          "category_id": { "type": "integer", "nullable": true, "minimum": 1 },
+          "name": { "type": "string", "nullable": true },
+          "total_cents": { "type": "integer", "minimum": 0 },
+          "limit_cents": { "$ref": "#/components/schemas/BudgetLimit" },
+          "limit_status": { "$ref": "#/components/schemas/LimitStatus" },
+          "limit_remaining_cents": { "$ref": "#/components/schemas/LimitRemainingCents" }
+        },
+        "description": "Owned expense grouping, or own limited category with zero spending. Uncategorised has null category/name and no budget. Sum may exceed a single-expense ceiling; no artificial aggregate ceiling is imposed."
+      },
+      "Summary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["month", "total_cents", "income_cents", "remaining_cents", "limit_cents", "limit_status", "limit_remaining_cents", "by_category"],
+        "properties": {
+          "month": { "type": "string", "pattern": "^\\d{4}-(0[1-9]|1[0-2])$" },
+          "total_cents": { "type": "integer", "minimum": 0 },
+          "income_cents": { "$ref": "#/components/schemas/IncomeCents" },
+          "remaining_cents": { "type": "integer", "description": "income_cents minus total_cents, may be negative." },
+          "limit_cents": { "$ref": "#/components/schemas/BudgetLimit" },
+          "limit_status": { "$ref": "#/components/schemas/LimitStatus" },
+          "limit_remaining_cents": { "$ref": "#/components/schemas/LimitRemainingCents" },
+          "by_category": { "type": "array", "items": { "$ref": "#/components/schemas/CategorySummary" } }
+        }
+      },
+      "Settings": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["monthly_income_cents", "monthly_limit_cents"],
+        "properties": {
+          "monthly_income_cents": { "$ref": "#/components/schemas/IncomeCents" },
+          "monthly_limit_cents": { "$ref": "#/components/schemas/BudgetLimit" }
+        },
+        "example": { "monthly_income_cents": 0, "monthly_limit_cents": null }
+      },
+      "SettingsWriteRequest": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["monthly_income_cents"],
+        "properties": {
+          "monthly_income_cents": { "$ref": "#/components/schemas/IncomeCents" },
+          "monthly_limit_cents": { "$ref": "#/components/schemas/BudgetLimit" }
+        },
+        "description": "PUT requires income and ignores extra fields. Omitted limit preserves the stored value, null removes it, zero sets a real limit. Numbers are not coerced from strings.",
+        "example": { "monthly_income_cents": 150000, "monthly_limit_cents": null }
+      },
+      "Health": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["status", "version", "db"],
+        "properties": {
+          "status": { "type": "string", "enum": ["ok"] },
+          "version": { "type": "string", "enum": ["1.0.0"] },
+          "db": { "type": "string", "enum": ["ok", "error"] }
+        }
+      },
+      "Token": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["token"],
+        "properties": {
+          "token": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$",
+            "description": "HS256 bearer JWT with a 30-day expiry. Captured tokens must not be published in reports or examples."
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "After trim(), must match /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/. Stored lowercased. No stricter email format validator or explicit length ceiling is applied. Schema/prose does not invent RFC email validation."
+          },
+          "password": {
+            "type": "string",
+            "description": "JavaScript string.length must be >=8 UTF-16 code units; Buffer.byteLength(password, 'utf8') must be <=72 bytes. JSON Schema character-length bounds do not express these rules, so they remain explicit prose and require executable boundary tests. Password is not trimmed."
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "email": { "type": "string", "description": "Trimmed/lowercased lookup. No registration email-pattern check on login." },
+          "password": { "type": "string", "description": "Compared with bcrypt. No registration length check on login." }
+        },
+        "description": "Normal credential input. Fields are optional so a missing-credential denial is not misdescribed as schema validation 400. Non-string values are also rejected with 401, not coerced. Extra fields are ignored."
+      }
+    },
+    "parameters": {
+      "Id": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "Application uses Number(raw) and requires a positive integer, not a digits-only string. Numeric representations such as 1e0 can coerce. Invalid conversion ->400; valid but missing/foreign owned category, transaction or schedule ID ->404."
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": false,
+        "schema": { "type": "string", "pattern": "^[A-Za-z0-9-]{8,64}$" },
+        "description": "Only expense POST supports it. Account-scoped lifetime operation key. Explicit non-null spent_on required. Same canonical payload replays201, changed payload409, deleted original409. No key means no deduplication guarantee."
+      },
+      "RequestId": {
+        "name": "X-Request-Id",
+        "in": "header",
+        "required": false,
+        "schema": { "type": "string" },
+        "description": "A lowercase UUID matching the response header pattern is echoed. Any other value, including uppercase or non-UUID text, is replaced by a generated UUID; it does not cause 400."
+      }
+    },
+    "headers": {
+      "IdempotencyReplayed": {
+        "description": "Present with value true only on a successful keyed expense replay; absent on a new save. Conditional presence must be tested by the runner, not treated as globally required.",
+        "schema": { "type": "string", "enum": ["true"] }
+      },
+      "RequestId": {
+        "description": "Always present. Caller lowercase UUID is echoed; otherwise a new UUID is generated. The x-required extension is for the later response validator, not an OpenAPI required keyword.",
+        "x-required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        }
+      },
+      "RetryAfter": {
+        "description": "Always present on login and AI 429 responses. Positive integer seconds until the blocking window expires, or1second for an AI concurrency slot; not an HTTP date.",
+        "x-required": true,
+        "schema": { "type": "string", "pattern": "^[1-9][0-9]*$" }
+      }
+    },
+    "responses": {
+      "AiCapabilities": {
+        "description": "Resolved availability without contacting an external provider.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AiCapabilities" } } }
+      },
+      "AiDraft": {
+        "description": "Normalized suggestion for review: ready, needs_input or unsupported. No expense was saved.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AiDraft" } } }
+      },
+      "AiInvalidRequest": {
+        "description": "VALIDATION_FAILED for malformed JSON, strict fields, bytes, NFC text or date validation; REFERENCE_DATE_MISMATCH for a valid device date outside server yesterday/today/tomorrow. Checked before provider availability.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AiError400" } } }
+      },
+      "AiConsentRequired": {
+        "description": "AI_CONSENT_REQUIRED: live mode without explicit consent. Documented live-only path, not an offline execution result.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AiError403" } } }
+      },
+      "AiContextTooLarge": {
+        "description": "AI_CONTEXT_TOO_LARGE: more than100own categories or more than8000combined UTF-8 category-name bytes. No provider attempt.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AiError422" } } }
+      },
+      "AiRateLimited": {
+        "description": "AI_RATE_LIMITED: concurrency or quota exhausted. Retry-After is positive integer seconds; slot refusal uses1. No new provider attempt.",
+        "headers": {
+          "X-Request-Id": { "$ref": "#/components/headers/RequestId" },
+          "Retry-After": { "$ref": "#/components/headers/RetryAfter" }
+        },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AiError429" } } }
+      },
+      "AiBadGateway": {
+        "description": "AI_PROVIDER_FAILED for upstream or unknown provider failure; AI_INVALID_RESPONSE for invalid provider contract or deterministic normalization violation. Documented provider-error paths, not evidence of real provider execution.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AiError502" } } }
+      },
+      "AiUnavailable": {
+        "description": "AI_UNAVAILABLE when no resolved provider exists (off or incomplete/blocked configuration); AI_PROVIDER_BUSY for a provider busy response. The latter is documented, not claimed exercised offline.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AiError503" } } }
+      },
+      "AiTimeout": {
+        "description": "AI_TIMEOUT: provider attempt exceeded its timeout or was aborted. Documented provider path, not claimed exercised by offline tests.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AiError504" } } }
+      },
+      "ScheduleAccepted": {
+        "description": "Created or edited own schedule with computed due date and remaining fields.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Schedule" } } }
+      },
+      "PaymentAccepted": {
+        "description": "One instalment paid atomically; generated expense ID and updated counters returned.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Payment" } } }
+      },
+      "TransactionList": {
+        "description": "Own filtered expense page and total matching count.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TransactionList" } } }
+      },
+      "TransactionAccepted": {
+        "description": "Edited own expense with persisted fields.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Transaction" } } }
+      },
+      "KeyedConflict": {
+        "description": "IDEMPOTENCY_CONFLICT for changed canonical payload or IDEMPOTENCY_REPLAY_UNAVAILABLE when the original expense was deleted.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/KeyedError409" } } }
+      },
+      "CategoryCreated": {
+        "description": "Own category created, monthly_limit_cents is null; no posted budget was applied.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Category" } } }
+      },
+      "CategoryAccepted": {
+        "description": "Own category returned with the updated current nullable budget.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Category" } } }
+      },
+      "MonthSummary": {
+        "description": "Authenticated account's monthly totals and read-time overall/category budget states.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Summary" } } }
+      },
+      "SettingsAccepted": {
+        "description": "Current own income and overall limit; no computed budget status field in this response.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Settings" } } }
+      },
+      "NotFound": {
+        "description": "NOT_FOUND: no requested category, transaction or schedule belongs to the account. Missing and foreign owned IDs both return404, not403.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error404" } } }
+      },
+      "TokenCreated": {
+        "description": "Account created; token returned.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Token" } } }
+      },
+      "TokenAccepted": {
+        "description": "Credentials accepted; token returned.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Token" } } }
+      },
+      "InvalidRequest": {
+        "description": "VALIDATION_FAILED: invalid values, date range, ID conversion or PATCH shape, or malformed JSON rejected before a handler. Login bad/missing credential fields instead use401. The global parser also applies before auth and GET handlers.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error400" } } }
+      },
+      "Unauthorized": {
+        "description": "UNAUTHORIZED: login uses the same E-mail or password is incorrect message for absent/non-string/rejected credentials. Protected mounts refuse absent/malformed bearer headers or invalid/expired tokens with their authentication message. No account-existence disclosure.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error401" } } }
+      },
+      "Conflict": {
+        "description": "CONFLICT: duplicate normalized account email or own case-sensitive category name; inactive schedule payment or total_count below already paid_count. Keyed expense conflicts use a separate status-specific schema.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error409" } } }
+      },
+      "PayloadTooLarge": {
+        "description": "PAYLOAD_TOO_LARGE: the global Express JSON parser's default 100 KiB body limit is exceeded.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error413" } } }
+      },
+      "RateLimited": {
+        "description": "RATE_LIMITED: too many failed login attempts. Retry-After specifies when to retry; limiter runs before credential validation.",
+        "headers": {
+          "X-Request-Id": { "$ref": "#/components/headers/RequestId" },
+          "Retry-After": { "$ref": "#/components/headers/RetryAfter" }
+        },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginError429" } } }
+      },
+      "InternalError": {
+        "description": "INTERNAL: Unexpected server error. Documented possible unhandled failure; not induced or observed by this document-validation slice.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error500" } } }
+      }
+    }
+  }
+}

@@ -7,6 +7,8 @@
   "scripts": {
     "start": "node --env-file-if-exists=.env src/server.js",
     "check": "node scripts/check.js",
+    "check:openapi": "node scripts/check-openapi.js",
+    "test:contract": "node --test qa/contract/contract.test.js",
     "test:api": "node --env-file-if-exists=.env qa/api/run.js",
     "test:db": "node --test qa/db/migration.test.js",
     "test:python": "node qa/python/run.js",
@@ -35,7 +37,10 @@
     "jsonwebtoken": "^9.0.3"
   },
   "devDependencies": {
+    "@apidevtools/swagger-parser": "12.1.0",
     "@playwright/test": "^1.62.1",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
     "newman": "^6.2.2",
     "newman-reporter-htmlextra": "^1.23.1"
   }
