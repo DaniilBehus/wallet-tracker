@@ -680,6 +680,7 @@
     // circle per category is far less code than computing arc paths by hand.
     let consumed = 0;
     summary.by_category.forEach((row, index) => {
+      if (row.total_cents === 0) return; // A zero-spend budget has no donut arc.
       const length = (row.total_cents / whole) * DONUT_CIRCUMFERENCE;
       const arc = svg('circle', {
         cx: 60, cy: 60, r: DONUT_RADIUS,
@@ -768,7 +769,6 @@
 
   function renderCategoryBars(container, summary) {
     container.textContent = '';
-    if (summary.total_cents === 0) return;
 
     summary.by_category.forEach((row, index) => {
       // category_id is nullable: a transaction can be saved without one, and
@@ -776,7 +776,7 @@
       // stable suffix, not a generated one, so the testid stays assertable.
       const key = row.category_id === null ? 'none' : row.category_id;
       const name = row.name || T.uncategorised;
-      const percent = Math.round((row.total_cents * 100) / summary.total_cents);
+      const percent = summary.total_cents === 0 ? 0 : Math.round((row.total_cents * 100) / summary.total_cents);
 
       const fill = el('div', { className: 'bar__fill' });
       fill.style.width = `${percent}%`;
@@ -784,13 +784,37 @@
       // views of one set of numbers should not be colour-coded differently.
       fill.style.background = SLICE_COLOURS[index % SLICE_COLOURS.length];
 
-      const bar = el('div', { className: 'bar', role: 'listitem' }, [
+      const content = [
         el('div', { className: 'bar__head' }, [
           el('span', { className: 'bar__name', textContent: name }),
-          el('span', { className: 'bar__amount', textContent: formatMoney(row.total_cents) }),
+          el('span', { className: 'bar__amount', textContent: row.limit_cents === null
+            ? formatMoney(row.total_cents)
+            : `${formatMoney(row.total_cents)} of ${formatMoney(row.limit_cents)}` }),
         ]),
         el('div', { className: 'bar__track' }, [fill]),
-      ]);
+      ];
+      if (row.limit_status !== 'not_set') {
+        const text = row.limit_status === 'within'
+          ? T.limitWithin(formatMoney(row.limit_remaining_cents))
+          : row.limit_status === 'reached' ? T.limitReached
+            : T.limitOver(formatMoney(Math.abs(row.limit_remaining_cents)));
+        content.push(attrs(el('span', {
+          className: `limit-status ${row.limit_status === 'within' ? 'limit-status--left' : 'limit-status--used-up'}`,
+          textContent: text,
+        }), { 'data-testid': `category-limit-status-${key}` }));
+      }
+      const bar = el('div', { className: 'bar', role: 'listitem' });
+      if (row.category_id !== null) {
+        const control = el('button', {
+          type: 'button', className: 'bar__control',
+        }, content);
+        attrs(control, { 'data-testid': `category-limit-edit-${key}`, 'aria-label': `Edit category limit: ${name}` });
+        control.addEventListener('click', () => openCategoryLimitEditor(row));
+        bar.append(control);
+      } else {
+        // Uncategorised is not a category, so it is never an editor control.
+        for (const child of content) bar.append(child);
+      }
       attrs(bar, {
         'data-testid': `category-bar-${key}`,
         'aria-label': `${name}: ${formatMoney(row.total_cents)}, ${percent}%`,
@@ -1069,8 +1093,52 @@
     });
   }
 
-  // ======================================================== 6.3 · UPCOMING
+  // Category budgets use the server's judgement; the browser never recomputes it.
+  let editingCategoryLimit = null;
 
+  function openCategoryLimitEditor(row) {
+    editingCategoryLimit = row.category_id;
+    $('#category-limit-error').hidden = true;
+    $('#category-limit-title').textContent = `Category limit · ${row.name}`;
+    $('#category-limit-input').value = row.limit_cents === null ? '' : centsToInput(row.limit_cents);
+    $('#category-limit-dialog').showModal();
+    $('#category-limit-input').focus();
+  }
+
+  async function submitCategoryLimit(event) {
+    event.preventDefault();
+    if (state.busy || editingCategoryLimit === null) return;
+    const raw = $('#category-limit-input').value.trim();
+    const cents = raw === '' ? null : parseAmountToCents(raw);
+    const showError = (message) => {
+      $('#category-limit-error').textContent = message;
+      $('#category-limit-error').hidden = false;
+    };
+    $('#category-limit-error').hidden = true;
+    if (raw !== '' && cents === null) return showError(T.limitInvalid);
+    if (cents !== null && cents > MAX_AMOUNT_CENTS) return showError(T.amountTooBig);
+    const id = editingCategoryLimit;
+    await withBusy($('[data-testid="category-limit-save"]'), async () => {
+      try {
+        const category = await api(`/categories/${id}`, {
+          method: 'PATCH', body: { monthly_limit_cents: cents },
+        });
+        state.categories = state.categories.map(c => c.id === id ? category : c);
+        state.categoryById.set(id, category);
+        $('#category-limit-dialog').close();
+        editingCategoryLimit = null;
+        toastOk(cents === null ? T.limitCleared : T.limitSaved);
+        await loadMonth();
+        // The refresh replaces the opener; restore focus to its new instance.
+        $(`[data-testid="category-limit-edit-${id}"]`)?.focus();
+      } catch (err) {
+        // The native modal is above page toasts: keep the error in its top layer.
+        showError(messageFor(err));
+      }
+    });
+  }
+
+  // ======================================================== 6.3 · UPCOMING
   async function loadUpcoming() {
     const container = $('#upcoming-list');
     let schedules;
@@ -1424,6 +1492,20 @@
     $('#limit-edit').addEventListener('click', openLimitForm);
     $('#limit-cancel').addEventListener('click', closeLimitForm);
     $('#limit-form').addEventListener('submit', submitLimit);
+    $('#category-limit-form').addEventListener('submit', submitCategoryLimit);
+    $('#category-limit-cancel').addEventListener('click', () => $('#category-limit-dialog').close());
+    $('#category-limit-dialog').addEventListener('close', () => { editingCategoryLimit = null; });
+    $('#category-limit-dialog').addEventListener('keydown', (event) => {
+      // Keep Tab in the editor rather than letting the last control move to browser chrome.
+      if (event.key !== 'Tab') return;
+      const controls = Array.from($('#category-limit-form').elements).filter(control => !control.disabled);
+      const first = controls[0], last = controls[controls.length - 1];
+      if ((event.shiftKey && document.activeElement === first) ||
+          (!event.shiftKey && document.activeElement === last)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      }
+    });
 
     $('#tx-load-more').addEventListener('click', loadMoreTransactions);
     $('#tx-edit-cancel').addEventListener('click', closeTransactionEditor);

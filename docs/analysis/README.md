@@ -1,4 +1,4 @@
-# Analysis models — current behaviour and planned category limits
+# Analysis models — Wallet behaviour and category limits
 
 [← Back to README](../../README.md#start-here)
 
@@ -7,10 +7,12 @@ enterprise or banking analysis. The AI diagrams describe the application
 boundary; they do not claim live-model evaluation or measured model quality.
 
 **Read the status first.** The existing AI and overall-monthly-limit processes
-and sequence describe implemented behaviour. Category limits are a frozen
-specification, **not implemented yet**: the new BPMN is wholly planned, the UML
-marks its new goal as planned, and the ERD marks only its proposed category
-column as planned. Models are not evidence of executed tests or owner UAT.
+and sequence describe implemented behaviour. Category limits were frozen before
+code at `4d08651` on 2026-09-28 and are now **implemented locally**.
+The [recorded test report](../../qa/docs/test-report-category-limits.md) separates
+automated evidence from [owner UAT](../../qa/docs/uat-category-limits.md), which
+remains unsigned. Integration, publication and CI for this feature are pending.
+Models alone are not evidence of executed tests or owner acceptance.
 
 ## Choose a question
 
@@ -18,10 +20,10 @@ column as planned. Models are not evidence of executed tests or owner UAT.
 |---|---|
 | What happens between describing an expense and saving it? | [AI expense entry — BPMN 2.0](ai-expense-process.md) |
 | Does a spending limit prevent an expense from being recorded? | [Monthly limit — BPMN 2.0](monthly-limit-process.md) |
-| How will a category limit be changed and judged? | [Planned category limits — BPMN 2.0](category-limit-process.md) |
+| How is a category limit changed and judged? | [Category limits — BPMN 2.0](category-limit-process.md) |
 | What goals can a person accomplish in Wallet? | [UML use cases](use-cases.md) |
 | Which component writes, and what happens on a retry? | [Draft then explicit save — sequence](draft-save-sequence.md) |
-| Which relationships exist, and which column is planned? | [Database — current schema and planned addition](database.md) |
+| Which relationships and constraints exist? | [Database — schema and category-limit column](database.md) |
 
 BPMN solid arrows are sequence flows within a participant; dashed arrows are
 messages between participants. These are descriptive, non-executable BPMN 2.0
@@ -41,12 +43,12 @@ For AI, follow [AI-R01 / AI-R02 / AI-R16](../../spec/ai-expense-entry.md#2-rules
 and [keyed-save tests](../../qa/ai/tests/idempotency.test.js).
 Test links identify coverage; they do not assert a new behavioural run here.
 
-For category limits, the specification route is
+For category limits, follow the specification and local proof:
 [CL-D1…12 / REQ-CL-01…13](../../qa/docs/analysis-category-limits.md)
-→ [planned process](category-limit-process.md)
-→ [planned column and database CHECK](database.md).
-[Traceability](../../qa/docs/analysis-category-limits.md#5-traceability) stays
-unfilled until the feature is implemented and tests actually run.
+→ [process](category-limit-process.md)
+→ [column and database CHECK](database.md)
+→ [traceability](../../qa/docs/analysis-category-limits.md#5-traceability)
+→ [recorded report](../../qa/docs/test-report-category-limits.md).
 
 ## Maintain and reproduce
 
@@ -59,8 +61,10 @@ matched the code as drafted; one BPMN label was moved clear of a task. A stale
 test comment is noted on the sequence page; it is not used as a requirement.
 
 On 2026-09-28 the category models were completed against the accepted
-specification, before category-limit production code. Their planned status
-is explicit; the existing code has no category-limit PATCH, column or editor.
+specification, before category-limit production code. The later implementation
+added the PATCH, column and editor. Current previews mark local implementation
+without claiming owner acceptance or publication; the dated freeze is retained
+in Git. The status change does not change CL-D1…12 or the acceptance rules.
 
 - Re-read the current contract, route, schema and tests before editing a model.
 - Preserve optional fields, zero versus `NULL`, failure outcomes and write boundaries.

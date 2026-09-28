@@ -42,4 +42,8 @@ const columns = db.pragma('table_info(settings)').map((c) => ({
 
 const rows = db.prepare('SELECT user_id, monthly_income_cents, monthly_limit_cents FROM settings ORDER BY user_id').all();
 
-process.stdout.write(JSON.stringify({ columns, rows, settings: readSettings(USER_ID) }));
+const categoryColumns = db.pragma('table_info(categories)').map(c => ({
+  name: c.name, type: c.type, notnull: c.notnull,
+}));
+const categories = db.prepare('SELECT * FROM categories ORDER BY id').all();
+process.stdout.write(JSON.stringify({ columns, rows, settings: readSettings(USER_ID), categoryColumns, categories }));

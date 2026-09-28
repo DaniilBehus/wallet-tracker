@@ -48,6 +48,7 @@ schedule model. Recreate these four screenshots with `npm run screenshots`.
 - **Read the code:** [Folder map](#architecture) → [Architecture notes](spec/architecture.md)
 
 For the analysis view, open the [process, use-case, sequence and database models](docs/analysis/).
+Category limits: [specification](qa/docs/analysis-category-limits.md) → [local test report](qa/docs/test-report-category-limits.md) → [unsigned owner UAT](qa/docs/uat-category-limits.md); publication pending.
 
 ## QA evidence
 

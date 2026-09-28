@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * The one migration this app performs: settings.monthly_limit_cents, added to a
+ * The additive limit migrations: settings and categories.monthly_limit_cents, added to a
  * database that was created before the monthly spending limit existed
  * (qa/docs/analysis-monthly-limit.md §6, RISK-ML-5).
  *
@@ -53,6 +53,13 @@ const OLD_SCHEMA = `
     user_id              INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     monthly_income_cents INTEGER NOT NULL DEFAULT 0 CHECK (monthly_income_cents >= 0)
   );
+  CREATE TABLE categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    icon TEXT,
+    UNIQUE (user_id, name)
+  );
 `;
 
 /** A throwaway database holding one account and one saved income, in the old shape. */
@@ -63,6 +70,7 @@ function oldDatabase(t) {
   db.exec(OLD_SCHEMA);
   db.prepare("INSERT INTO users (id, email, password_hash) VALUES (1, 'before@example.test', 'not-a-hash')").run();
   db.prepare('INSERT INTO settings (user_id, monthly_income_cents) VALUES (1, 150000)').run();
+  db.prepare('INSERT INTO categories (id, user_id, name, icon) VALUES (7, 1, ?, ?)').run('Old category', 'C');
   db.close();
 
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
@@ -136,4 +144,53 @@ test('TC-DB-003 · an upgraded database and a fresh one have the same settings t
 
   assert.deepStrictEqual(upgraded.columns, fresh.columns,
     'the upgrade path and the create path must end at the same table');
+});
+
+test('TC-DB-004 · category limits upgrade preserves old rows as NULL (REQ-CL-13)', (t) => {
+  caseId('TC-DB-004');
+  const file = oldDatabase(t);
+  const before = new Database(file);
+  assert.ok(!before.pragma('table_info(categories)').some(c => c.name === 'monthly_limit_cents'));
+  before.close();
+  const after = boot(file);
+  assert.ok(after.categoryColumns.some(c => c.name === 'monthly_limit_cents' && c.notnull === 0));
+  assert.deepStrictEqual(after.categories, [
+    { id: 7, user_id: 1, name: 'Old category', icon: 'C', monthly_limit_cents: null },
+  ]);
+});
+
+test('TC-DB-005 · repeated category upgrade preserves a stored zero limit (REQ-CL-13)', (t) => {
+  caseId('TC-DB-005');
+  const file = oldDatabase(t);
+  boot(file);
+  const db = new Database(file);
+  db.prepare('UPDATE categories SET monthly_limit_cents = 0 WHERE id = 7').run();
+  db.close();
+  const again = boot(file);
+  assert.strictEqual(again.categoryColumns.filter(c => c.name === 'monthly_limit_cents').length, 1);
+  assert.strictEqual(again.categories[0].monthly_limit_cents, 0);
+});
+
+test('TC-DB-006 · fresh and upgraded categories enforce the same CHECK (REQ-CL-13)', (t) => {
+  caseId('TC-DB-006');
+  const file = oldDatabase(t);
+  const upgraded = boot(file);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wallet-category-fresh-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const fresh = boot(path.join(dir, 'fresh.db'));
+  assert.deepStrictEqual(upgraded.categoryColumns, fresh.categoryColumns);
+  const freshDb = new Database(path.join(dir, 'fresh.db'));
+  try {
+    freshDb.prepare("INSERT INTO users (id, email, password_hash) VALUES (1, 'migration@example.test', 'synthetic')").run();
+    freshDb.prepare("INSERT INTO categories (id, user_id, name, icon) VALUES (7, 1, 'Fresh category', 'C')").run();
+    assert.throws(() => freshDb.prepare('UPDATE categories SET monthly_limit_cents = -1 WHERE id = 7').run(), /CHECK constraint failed/);
+  } finally { freshDb.close(); }
+  const db = new Database(file);
+  try {
+    assert.throws(() => db.prepare('UPDATE categories SET monthly_limit_cents = -1 WHERE id = 7').run(), /CHECK constraint failed/);
+    for (const value of [null, 0, 100000000]) {
+      db.prepare('UPDATE categories SET monthly_limit_cents = ? WHERE id = 7').run(value);
+      assert.strictEqual(db.prepare('SELECT monthly_limit_cents FROM categories WHERE id = 7').get().monthly_limit_cents, value);
+    }
+  } finally { db.close(); }
 });

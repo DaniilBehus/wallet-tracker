@@ -1,12 +1,13 @@
-# Category spending limits — planned BPMN 2.0 process
+# Category spending limits — BPMN 2.0 process
 
 [← Back to README](../../README.md#start-here) · [Analysis index](README.md) · [Next: database model →](database.md)
 
-**Planned behaviour, not implemented or tested yet.** This model is part of the
-frozen category-limit specification. Existing overall-limit behaviour is shown
+**Implemented locally; owner UAT and publication pending.** This model was frozen
+before code at `4d08651`; see the [local test report](../../qa/docs/test-report-category-limits.md).
+Existing overall-limit behaviour is shown
 separately in the [monthly limit model](monthly-limit-process.md).
 
-![Planned category-limit process: validate and scope a set or clear request, save expenses without budget blocking, then judge each month-breakdown row on read](category-limit-process.svg)
+![Category-limit process: scope set or clear requests, save expenses without blocking, judge month rows on read; local implementation, owner UAT pending](category-limit-process.svg)
 
 [Full-size SVG](category-limit-process.svg) · [Editable BPMN 2.0 source](category-limit-process.bpmn)
 
@@ -44,16 +45,17 @@ separately in the [monthly limit model](monthly-limit-process.md).
   notification, category rename/delete or automatic payment is introduced.
 - The per-row loop can be empty. Status and remaining are derived, never stored.
 
-## Specification and future proof
+## Specification and local proof
 
 - [CL-D1…CL-D12, requirements and decision table](../../qa/docs/analysis-category-limits.md).
 - [Architecture: target data model](../../spec/architecture.md#3-data-model-and-invariants),
   [API](../../spec/architecture.md#4-api-design) and
   [interface](../../spec/architecture.md#5-interface-and-interaction-design).
-- [Existing judgement function](../../src/settings.js): reuse `limitState`, not a
-  second browser-side comparison. This link is a reuse target, not completed
-  category-limit coverage.
-- [Planned traceability](../../qa/docs/analysis-category-limits.md#5-traceability):
-  case IDs and results remain empty until actual implementation and execution.
+- [Judgement function](../../src/settings.js): reused `limitState`, not a
+  second browser-side comparison; [category PATCH](../../src/routes/categories.js)
+  and [month aggregation](../../src/routes/summary.js).
+- [Traceability](../../qa/docs/analysis-category-limits.md#5-traceability) and
+  [actual results](../../qa/docs/test-report-category-limits.md) distinguish
+  local automation from owner acceptance and GitHub CI.
 
-No API, database, browser regression or owner UAT success is claimed here.
+No owner UAT or published category-limit CI success is claimed here.

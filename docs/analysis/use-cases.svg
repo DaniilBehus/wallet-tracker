@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1250" height="1050" viewBox="0 0 1250 1050" role="img" aria-labelledby="title desc">
   <title id="title">Wallet Tracker — UML user goals</title>
-  <desc id="desc">A person is associated with eight implemented goals and one dashed, planned category-limit goal inside the Wallet boundary. An optional extraction provider participates only in requesting and reviewing an AI draft. Lines are associations, not a sequence.</desc>
+  <desc id="desc">A person is associated with nine locally implemented goals inside Wallet. Category limits were specified before code; owner acceptance and publication remain pending. An optional extraction provider participates only in requesting and reviewing an AI draft. Lines are associations, not a sequence.</desc>
   <style>
     text { font-family: Arial, sans-serif; fill: #173b36; font-size: 19px; }
     .boundary { fill: #f6fbf9; stroke: #2b514b; stroke-width: 2; }
@@ -33,7 +33,7 @@
     <ellipse cx="660" cy="525" rx="245" ry="38"/><ellipse cx="660" cy="625" rx="245" ry="38"/>
     <ellipse cx="660" cy="725" rx="245" ry="38"/><ellipse cx="660" cy="825" rx="245" ry="38"/>
   </g>
-  <ellipse class="planned" cx="660" cy="925" rx="245" ry="38"/>
+  <ellipse class="case" cx="660" cy="925" rx="245" ry="38"/>
   <g class="label">
     <text x="660" y="132">Register / sign in</text>
     <text x="660" y="232">Record / edit / delete an expense</text>
@@ -43,6 +43,6 @@
     <text x="660" y="632">Create / edit a recurring schedule</text>
     <text x="660" y="732">Record an instalment as an expense</text>
     <text x="660" y="832">Request / review an optional AI draft</text>
-    <text x="660" y="932">Set / clear a category limit (planned)</text>
+    <text x="660" y="932">Set / clear a category limit</text>
   </g>
 </svg>

@@ -3,16 +3,16 @@
 [← Running the tests](../../docs/testing.md) · [The cases](../docs/test-cases.md#selenium--browser-checks--qaselenium)
 
 A small browser suite in Python: Selenium WebDriver, pytest and Page Objects,
-checking eight of Wallet's key flows in Chrome — ten runs, because one case runs
+checking nine of Wallet's key flows in Chrome — eleven runs, because one case runs
 once per limit state and one flow runs again at phone width.
 
 ## Why Selenium, next to Playwright
 
-Playwright ([`qa/e2e/`](../e2e/), 85 tests on two viewports) is the project's
+Playwright ([`qa/e2e/`](../e2e/), 93 tests on two viewports) is the project's
 end-to-end layer and stays so. This suite exists because many teams test the
 browser with Selenium and Python, and the project shows that way of working on
 the same app, done with the same care. It does not fill a gap Playwright left.
-The overlap is deliberate and kept small: eight flows the app cannot afford to
+The overlap is deliberate and kept small: nine flows the app cannot afford to
 lose, checked again through a different driver, so this stays a short suite
 rather than a second one to maintain.
 
@@ -26,7 +26,7 @@ qa/selenium/
   browser_logs.py  a response header, read from Chrome's network log
   evidence.py      the screenshot, page source and console of a failed test
   pages/           Page Objects: base, auth, add, month, upcoming — every locator lives here
-  test_*.py        the checks, TC-SEL-001 to 008
+  test_*.py        the checks, TC-SEL-001 to 009
   run.js           what npm run test:selenium starts
 ```
 

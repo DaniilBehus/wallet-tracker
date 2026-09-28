@@ -40,11 +40,12 @@
           "    // test is for. If the API grows a field, this fails and someone updates",
           "    // the schema deliberately.",
           "    const category = {",
-          "        type: 'object', required: ['id', 'name', 'icon'], additionalProperties: false,",
+          "        type: 'object', required: ['id', 'name', 'icon', 'monthly_limit_cents'], additionalProperties: false,",
           "        properties: {",
           "            id: { type: 'integer', minimum: 1 },",
           "            name: { type: 'string', minLength: 1, maxLength: 60 },",
-          "            icon: { type: ['string', 'null'] }",
+          "            icon: { type: ['string', 'null'] },",
+          "            monthly_limit_cents: { type: ['integer', 'null'], minimum: 0, maximum: 100000000 }",
           "        }",
           "    };",
           "",
@@ -151,11 +152,14 @@
           "                by_category: {",
           "                    type: 'array',",
           "                    items: {",
-          "                        type: 'object', required: ['category_id', 'name', 'total_cents'], additionalProperties: false,",
+          "                        type: 'object', required: ['category_id', 'name', 'total_cents', 'limit_cents', 'limit_status', 'limit_remaining_cents'], additionalProperties: false,",
           "                        properties: {",
           "                            category_id: { type: ['integer', 'null'] },",
           "                            name: { type: ['string', 'null'] },",
-          "                            total_cents: { type: 'integer' }",
+          "                            total_cents: { type: 'integer' },",
+          "                            limit_cents: { type: ['integer', 'null'], minimum: 0, maximum: 100000000 },",
+          "                            limit_status: { type: 'string', enum: ['not_set', 'within', 'reached', 'exceeded'] },",
+          "                            limit_remaining_cents: { type: ['integer', 'null'] }",
           "                        }",
           "                    }",
           "                }",
@@ -7322,6 +7326,3409 @@
                   "pm.test('the income survived every limit change', function () {",
                   "    pm.expect(pm.response.json().monthly_income_cents).to.eql(150000);",
                   "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "13 · Category spending limits",
+      "description": "REQ-CL-01..10. Frozen specification before implementation; synthetic accounts and data only.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{clToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Setup · fresh category-limit account",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"cl-{{runId}}@example.test\",\"password\":\"cl-pass-{{runId}}\"}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'token');",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set('clToken', j.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-114 · categories initially have NULL limits",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'categoryList');",
+                  "const j = pm.response.json();",
+                  "for (let i=0;i<4;i++) pm.collectionVariables.set('cl'+(i+1),j[i].id);",
+                  "const now=new Date(); pm.collectionVariables.set('clToday', [now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-'));",
+                  "pm.collectionVariables.set('clMissing', j.at(-1).id+9999999);",
+                  "pm.test(\"REQ-CL-01 / initial nullable field\", () => { pm.expect(j.every(c=>c.monthly_limit_cents===null)).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-114 · no-spend no-limit categories hidden",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"CR2 / CR3\", () => { pm.expect(j.by_category).to.eql([]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-115 · set 20000",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":20000}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'category');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-01 / category field\", () => { pm.expect(j.monthly_limit_cents).to.eql(20000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-115 · GET retains limit and category name",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'categoryList');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-01 stored value\", () => { pm.expect(j.find(c=>c.id===Number(pm.collectionVariables.get('cl1')))).to.include({name:'Groceries',monthly_limit_cents:20000}); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-116 · replace current limit",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":15000}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'category');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-01 / category field\", () => { pm.expect(j.monthly_limit_cents).to.eql(15000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-116 · cl1 state within",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl1'))); pm.expect(r).to.include({total_cents:0,limit_cents:15000,limit_status:'within',limit_remaining_cents:15000});  });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-117 · zero is real",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":0}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'category');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-01 / category field\", () => { pm.expect(j.monthly_limit_cents).to.eql(0); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-117 · cl1 state reached",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl1'))); pm.expect(r).to.include({total_cents:0,limit_cents:0,limit_status:'reached',limit_remaining_cents:0});  });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-117 · save even with zero budget",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount_cents\":1,\"category_id\":{{cl1}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'transaction');",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set('clOne', j.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-117 · cl1 state exceeded",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl1'))); pm.expect(r).to.include({total_cents:1,limit_cents:0,limit_status:'exceeded',limit_remaining_cents:-1});  });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-118 · explicit NULL clears",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":null}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'category');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-01 / category field\", () => { pm.expect(j.monthly_limit_cents).to.eql(null); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-118 · cl1 state not_set",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl1'))); pm.expect(r).to.include({total_cents:1,limit_cents:null,limit_status:'not_set',limit_remaining_cents:null});  });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-119 · arrange unchanged limit",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":9000}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'category');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-01 / category field\", () => { pm.expect(j.monthly_limit_cents).to.eql(9000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-119 · empty/unknown/server-owned PATCH refused",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-119 · empty/unknown/server-owned PATCH refused",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Not a rename\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-119 · empty/unknown/server-owned PATCH refused",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"icon\":\"X\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-119 · empty/unknown/server-owned PATCH refused",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\":123}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-119 · empty/unknown/server-owned PATCH refused",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"user_id\":123}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-119 · empty/unknown/server-owned PATCH refused",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"created_at\":\"2020-01-01\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-120 · invalid value refused",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":-1}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-120 · invalid value refused",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":12.5}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-120 · invalid value refused",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":\"12000\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-120 · invalid value refused",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":true}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-120 · invalid value refused",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":[]}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-120 · invalid value refused",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":{}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-120 · invalid value refused",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":100000001}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-120 · invalid writes leave stored value intact",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'categoryList');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-03 / 04 no change\", () => { pm.expect(j.find(c=>c.id===Number(pm.collectionVariables.get('cl1'))).monthly_limit_cents).to.eql(9000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-121 · accept exact ceiling",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":100000000}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'category');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-01 / category field\", () => { pm.expect(j.monthly_limit_cents).to.eql(100000000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-122 · invalid category id abc",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "abc"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":1}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-122 · invalid category id 0",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "0"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":1}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-122 · invalid category id -1",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/-1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "-1"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":1}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-122 · invalid category id 1.5",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/1.5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "1.5"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":1}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-122 · invalid category id null",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/null",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "null"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":1}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-122 · invalid category id none",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/none",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "none"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":1}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-122 · missing category has canonical 404",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{clMissing}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{clMissing}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":1}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(404, 'NOT_FOUND');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-05 missing resource\", () => { pm.expect(j.error.message).to.eql('No category with id '+pm.collectionVariables.get('clMissing')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-123 · no token cannot update",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":1}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(401, 'UNAUTHORIZED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Setup · second independent account",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"cl-other-{{runId}}@example.test\",\"password\":\"cl-other-pass-{{runId}}\"}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'token');",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set('clOtherToken', j.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-124 · foreign category refuses update",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":1}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clOtherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(404, 'NOT_FOUND');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-05 same not-found convention\", () => { pm.expect(j.error.message).to.eql('No category with id '+pm.collectionVariables.get('cl1')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-124 · foreign attempt did not change owner value",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'categoryList');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-05 owner preserved\", () => { pm.expect(j.find(c=>c.id===Number(pm.collectionVariables.get('cl1'))).monthly_limit_cents).to.eql(100000000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-125 · category reads isolated",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clOtherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'categoryList');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-05 no foreign category\", () => { pm.expect(j.every(c=>c.id!==Number(pm.collectionVariables.get('cl1')) && c.monthly_limit_cents===null)).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-125 · summary reads isolated",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clOtherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-05 no foreign spending/budget\", () => { pm.expect(j.by_category).to.eql([]); pm.expect(j.total_cents).to.eql(0); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-126 · one-cent budget with zero spend",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl2}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl2}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":1}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'category');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-01 / category field\", () => { pm.expect(j.monthly_limit_cents).to.eql(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-126 · cl2 state within",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl2'))); pm.expect(r).to.include({total_cents:0,limit_cents:1,limit_status:'within',limit_remaining_cents:1});  });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-126 · one cent hits one-cent budget",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount_cents\":1,\"category_id\":{{cl2}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'transaction');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-126 · cl2 state reached",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl2'))); pm.expect(r).to.include({total_cents:1,limit_cents:1,limit_status:'reached',limit_remaining_cents:0});  });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-126 · next cent exceeds one-cent budget",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount_cents\":1,\"category_id\":{{cl2}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'transaction');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-126 · cl2 state exceeded",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl2'))); pm.expect(r).to.include({total_cents:2,limit_cents:1,limit_status:'exceeded',limit_remaining_cents:-1});  });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-127 · within L=100 T=1",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":100}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'category');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-01 / category field\", () => { pm.expect(j.monthly_limit_cents).to.eql(100); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-127 · cl1 state within",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl1'))); pm.expect(r).to.include({total_cents:1,limit_cents:100,limit_status:'within',limit_remaining_cents:99});  });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-128 · reach exactly 100",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount_cents\":99,\"category_id\":{{cl1}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'transaction');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-128 · cl1 state reached",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl1'))); pm.expect(r).to.include({total_cents:100,limit_cents:100,limit_status:'reached',limit_remaining_cents:0});  });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-129 · cross by one cent",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount_cents\":1,\"category_id\":{{cl1}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'transaction');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-129 · cl1 state exceeded",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl1'))); pm.expect(r).to.include({total_cents:101,limit_cents:100,limit_status:'exceeded',limit_remaining_cents:-1});  });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-130 · zero with positive spending",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":0}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'category');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-01 / category field\", () => { pm.expect(j.monthly_limit_cents).to.eql(0); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-130 · cl1 state exceeded",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl1'))); pm.expect(r).to.include({total_cents:101,limit_cents:0,limit_status:'exceeded',limit_remaining_cents:-101});  });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-131 · zero-spend limited category listed",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl3}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl3}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":20000}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'category');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-01 / category field\", () => { pm.expect(j.monthly_limit_cents).to.eql(20000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-131 · ordering and parts sum to whole",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-07 ordering and total\", () => { pm.expect(j.by_category.map(r=>r.category_id)).to.eql(['cl1','cl2','cl3'].map(k=>Number(pm.collectionVariables.get(k)))); pm.expect(j.by_category.reduce((s,r)=>s+r.total_cents,0)).to.eql(j.total_cents); pm.expect(j.total_cents).to.eql(103); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-132 · create unpaid schedule",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Category limit fixture\",\"amount_cents\":1000,\"category_id\":{{cl3}},\"day_of_month\":1,\"starts_on\":\"{{clToday}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'schedule');",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set('clSchedule',j.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-132 · cl3 state within",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl3'))); pm.expect(r).to.include({total_cents:0,limit_cents:20000,limit_status:'within',limit_remaining_cents:20000}); pm.expect(j.total_cents).to.eql(103); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-133 · pay the category instalment",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules/{{clSchedule}}/pay",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schedules",
+                "{{clSchedule}}",
+                "pay"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'payResult');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-133 · cl3 state within",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl3'))); pm.expect(r).to.include({total_cents:1000,limit_cents:20000,limit_status:'within',limit_remaining_cents:19000}); pm.expect(j.total_cents).to.eql(1103); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-134 · uncategorised remains unjudged",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount_cents\":500,\"category_id\":null}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'transaction');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-134 · NULL row carries no category budget",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-09 / CR1\", () => { const r=j.by_category.find(r=>r.category_id===null); pm.expect(r).to.include({total_cents:500,limit_cents:null,limit_status:'not_set',limit_remaining_cents:null}); pm.expect(j.total_cents).to.eql(1603); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-135 · arrange overall income and limit",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_income_cents\":150000,\"monthly_limit_cents\":40000}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-135 · first independent 30000",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":30000}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'category');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-01 / category field\", () => { pm.expect(j.monthly_limit_cents).to.eql(30000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-135 · second independent 30000 (sum over overall)",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl2}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl2}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":30000}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'category');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-01 / category field\", () => { pm.expect(j.monthly_limit_cents).to.eql(30000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-135 · overall and category budgets stand apart",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-10 independent judgement\", () => { pm.expect(j).to.include({total_cents:1603,income_cents:150000,remaining_cents:148397,limit_cents:40000,limit_status:'within',limit_remaining_cents:38397}); pm.expect(j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl1'))).limit_cents).to.eql(30000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-135 · income-only save preserves budgets",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_income_cents\":180000}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'settings');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-10 overall preserved\", () => { pm.expect(j.monthly_limit_cents).to.eql(40000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-135 · creating a category has no side effects",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Category-limit new category\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'category');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-03 new category no budget\", () => { pm.expect(j.monthly_limit_cents).to.eql(null); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-135 · cl1 state within",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl1'))); pm.expect(r).to.include({total_cents:101,limit_cents:30000,limit_status:'within',limit_remaining_cents:29899}); pm.expect(j.income_cents).to.eql(180000); pm.expect(j.limit_cents).to.eql(40000); pm.expect(j.total_cents).to.eql(1603); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-136 · valid save above category/overall budget",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount_cents\":100000,\"category_id\":{{cl1}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'transaction');",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set('clHuge', j.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-136 · cl1 state exceeded",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl1'))); pm.expect(r).to.include({total_cents:100101,limit_cents:30000,limit_status:'exceeded',limit_remaining_cents:-70101});  });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-137 · edit moves the expense to its current category",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/{{clHuge}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "{{clHuge}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"category_id\":{{cl2}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'transaction');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-137 · cl1 state within",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl1'))); pm.expect(r).to.include({total_cents:101,limit_cents:30000,limit_status:'within',limit_remaining_cents:29899});  });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-137 · cl2 state exceeded",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl2'))); pm.expect(r).to.include({total_cents:100002,limit_cents:30000,limit_status:'exceeded',limit_remaining_cents:-70002});  });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-137 · delete recomputes category state",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/{{clHuge}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "{{clHuge}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectStatus(204); expectNoBody();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-137 · cl2 state within",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl2'))); pm.expect(r).to.include({total_cents:2,limit_cents:30000,limit_status:'within',limit_remaining_cents:29998});  });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-138 · another month expense",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount_cents\":77,\"category_id\":{{cl3}},\"spent_on\":\"2020-01-02\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(201, 'transaction');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-138 · cl3 state within",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl3'))); pm.expect(r).to.include({total_cents:1000,limit_cents:20000,limit_status:'within',limit_remaining_cents:19000}); pm.expect(j.total_cents).to.eql(1603); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-138 · past month uses the current category budget",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary?month=2020-01",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "2020-01"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"CL-D5 / CR14\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl3'))); pm.expect(j.total_cents).to.eql(77); pm.expect(r).to.include({total_cents:77,limit_cents:20000,limit_status:'within',limit_remaining_cents:19923}); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-139 · set empty category then clear",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl4}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl4}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":1200}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'category');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-01 / category field\", () => { pm.expect(j.monthly_limit_cents).to.eql(1200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-139 · cl4 state within",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl4'))); pm.expect(r).to.include({total_cents:0,limit_cents:1200,limit_status:'within',limit_remaining_cents:1200});  });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-139 · clear zero-spend category",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl4}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl4}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":null}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'category');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-01 / category field\", () => { pm.expect(j.monthly_limit_cents).to.eql(null); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-139 · cleared zero category disappears",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-02 / CR3\", () => { pm.expect(j.by_category.some(r=>r.category_id===Number(pm.collectionVariables.get('cl4')))).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-139 · clear category with spending",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl3}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl3}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":null}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'category');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-01 / category field\", () => { pm.expect(j.monthly_limit_cents).to.eql(null); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-139 · cl3 state not_set",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'summary');",
+                  "const j = pm.response.json();",
+                  "pm.test(\"REQ-CL-06 / decision table\", () => { const r=j.by_category.find(r=>r.category_id===Number(pm.collectionVariables.get('cl3'))); pm.expect(r).to.include({total_cents:1000,limit_cents:null,limit_status:'not_set',limit_remaining_cents:null});  });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-140 · malformed/non-object body {",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-140 · malformed/non-object body []",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[]"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-140 · malformed/non-object body null",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "null"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(400, 'VALIDATION_FAILED');",
+                  "const j = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-141 · oversized category body is 413",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monthly_limit_cents\":1,\"padding\":\"{{clOversize}}\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{cl1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{cl1}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('clOversize', 'x'.repeat(102400));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectError(413, 'PAYLOAD_TOO_LARGE');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-API-141 · refused bodies changed no category",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get('helpers'));",
+                  "expectOk(200, 'categoryList');",
+                  "pm.test('REQ-CL-04 no change after malformed/oversized bodies',()=>{pm.expect(pm.response.json().find(c=>c.id===Number(pm.collectionVariables.get('cl1'))).monthly_limit_cents).to.eql(30000);});"
                 ]
               }
             }

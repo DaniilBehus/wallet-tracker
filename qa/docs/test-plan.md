@@ -32,7 +32,7 @@ error here is not a cosmetic defect — it is a total that cannot be reconciled.
 
 | Area | Covered by |
 |---|---|
-| All **sixteen** API routes — status codes, response bodies, error contract | `qa/api/` |
+| All **nineteen** API routes, including category-limit PATCH — status codes, response bodies, error contract | `qa/api/`, `qa/ai/` |
 | Parameterized invalid-data classes and multi-step API state | `qa/python/` (D-032) |
 | Response schema of every response, success and error alike | `qa/api/` |
 | Authentication: registration, sign-in, the five token states | `qa/api/`, `qa/e2e/auth.spec.js` |
@@ -44,6 +44,7 @@ error here is not a cosmetic defect — it is a total that cannot be reconciled.
 | Money formatting at the edge (`€12.50`) | `qa/e2e/` |
 | Accessible names on interactive elements (D-012) | `qa/e2e/` |
 | Monthly income, and what remains of it (D-021) | `qa/api/`, `qa/e2e/income.spec.js` |
+| Category limits: independent budgets, ownership, migration, server judgement and editor | [REQ-CL-01…13](analysis-category-limits.md), API / DB / Playwright / Selenium |
 | The donut: one arc per category, none when nothing is spent (D-022) | `qa/e2e/income.spec.js` |
 | Behaviour under concurrent load, and head-of-line blocking | `qa/load/` |
 | Secrets never reaching the repository | `gitleaks`, in CI |
@@ -52,7 +53,7 @@ error here is not a cosmetic defect — it is a total that cannot be reconciled.
 
 | Not tested | Why |
 |---|---|
-| What remains in spec §9 | Not built: budgets, limits and warnings, multiple currencies, CSV/PDF export, offline sync, theme switching, password reset, Docker, notifications. The interface now uses a fixed dark palette; there is no light/dark toggle. Charts and income left that list in S10 — D-022 and D-021 — and are in scope above |
+| What remains in spec §9 | Not built: per-month budget history, warnings/blocking, multiple currencies, CSV/PDF export, offline sync, theme switching, password reset, Docker, notifications. Overall and category limits are in scope; category evidence is local until publication. The interface uses a fixed dark palette with no light/dark toggle |
 | ~~Load and performance~~ | **Now in scope** (S07). This line used to read "a single-user personal application over a local SQLite file, there is no concurrency model to stress". That reasoning was wrong in an instructive way: the concurrency model worth stressing was never SQLite's, it was Node's single thread. `qa/load/` found BUG-004 on the first run |
 | Security beyond authorisation and secret scanning | No penetration testing, no dependency CVE scanning. Named here so its absence is a decision, not an oversight |
 | Cross-browser | Chromium only, in two viewports. The application uses no API that varies between engines, and one browser that is actually run beats four that are aspirational |
@@ -111,10 +112,10 @@ Testing starts only when all of these hold:
 
 A cycle is finished when **all** of these hold:
 
-1. Every Newman assertion passes — currently 650 across 179 requests.
+1. Every Newman assertion passes — currently 939 across 271 requests.
 2. Every Python scenario passes and writes `qa/reports/python-junit.xml` — currently 27 pytest items.
-3. Every end-to-end test passes in both viewports — currently 85 scenarios × 2 viewports.
-4. Every Selenium check passes and writes `qa/reports/selenium-junit.xml` — currently 10 pytest items.
+3. Every end-to-end test passes in both viewports — currently 93 scenarios × 2 viewports.
+4. Every Selenium check passes and writes `qa/reports/selenium-junit.xml` — currently 11 pytest items.
 4. All three load scenarios stay inside their thresholds.
 3. `gitleaks` reports no findings.
 4. No defect of severity **Critical** or **High** is open. BUG-005 is open at
@@ -186,10 +187,10 @@ edited until it agrees with the code has stopped being a test suite.
 npm install
 
 npm run check      # invariants
-npm run test:api   # 179 requests, 650 assertions
+npm run test:api   # 271 requests, 939 assertions
 npm run test:python # 27 pytest items; Python 3.12+ and qa/python/requirements.txt
-npm run test:e2e   # 85 tests × 2 viewports
-npm run test:selenium # 10 pytest items in headless Chrome; the same requirements
+npm run test:e2e   # 93 tests × 2 viewports
+npm run test:selenium # 11 pytest items in headless Chrome; the same requirements
 npm run test:load  # k6; needs k6 installed separately
 ```
 

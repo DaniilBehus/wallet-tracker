@@ -451,13 +451,13 @@ fail when its defect is put back — see S05.
 
 | | Cases | Runs | Status |
 |---|---|---|---|
-| API — 179 requests, 650 assertions | 113 | 179 | all PASS |
-| Database — the one in-place migration, node:test | 3 | 3 | all PASS |
-| Python — 17 documented scenarios, 24 pytest items | 17 | 24 | all PASS |
-| Selenium — 8 documented scenarios, 10 pytest items | 8 | 10 | all PASS |
-| Load — 3 scenarios, thresholds enforced | 3 | 3 | all PASS |
-| End-to-end — 85 tests × 2 viewports | 85 | 170 | all PASS; local browser run requires a host that permits Chromium |
-| **Total** | **229** | **389** | **documented cases PASS; local browser execution environment noted above** |
+| API — 271 requests, 939 assertions | 141 | 271 | local PASS, 2026-09-28 |
+| Database — additive migrations, node:test | 6 | 6 | local PASS, 2026-09-28 |
+| Python — 17 documented scenarios, 27 pytest items | 17 | 27 | local PASS, 2026-09-28 |
+| Selenium — 9 documented scenarios, 11 pytest items | 9 | 11 | local PASS, 2026-09-28 |
+| Load — 3 scenarios, thresholds enforced | 3 | 3 | historical PASS; not rerun in the category-limit regression |
+| End-to-end — 93 tests × 2 viewports | 93 | 186 | local PASS, 2026-09-28 |
+| **Total** | **269** | **504** | **501 current local executions + 3 historical load executions; not new GitHub CI** |
 
 **The counts are checked against the suites, not typed from memory.** An earlier
 count claimed 138 cases while only 135 rows existed; three cases (TC-E2E-039…041)
@@ -485,7 +485,7 @@ TC-DB-001…003 came later, from a gap rather than from a requirement: the guard
 line of this feature no layer executed. Disabling that guard fails all three,
 which is evidence anyone can reproduce.
 
-API cases number 113 while Newman executes 179 requests. Two reasons, and
+API cases number 141 while Newman executes 271 requests. Two reasons, and
 neither is a case without a row: a case may take several requests to arrange
 the state it then asserts, and TC-API-068 is one request executed once per
 allowed attempt.
@@ -497,3 +497,78 @@ each been re-verified against the defect they guard. The fourteen written for
 BUG-015, BUG-017 and BUG-018 were run with their fix removed: the ones that
 reproduce a defect failed, and TC-API-106 and TC-API-109, which hold the
 accepted side of a new limit, passed as they should.
+## Category-limit database migration
+
+Automated by [migration.test.js](../db/migration.test.js). Priority P1; all three
+PASS locally on 2026-09-28, alongside the original three migration cases.
+
+| Case | Requirement | Expected result |
+|---|---|---|
+| TC-DB-004 | REQ-CL-13 | Old category rows retain id, owner, name and icon; new nullable limit is NULL |
+| TC-DB-005 | REQ-CL-13 | Repeated boot adds no duplicate column and preserves a stored zero |
+| TC-DB-006 | REQ-CL-13 | Fresh/upgraded columns match; negative raw SQL write rejected by CHECK |
+
+## Category-limit browser checks
+
+Automated by [category-limits.spec.js](../e2e/category-limits.spec.js).
+All eight PASS locally on 2026-09-28 in both viewports. Priority P1 for money and
+Uncategorised, P2 for layout/keyboard/error presentation. The frozen
+[analysis](analysis-category-limits.md) defines the expected behaviour.
+
+| Case | Traces to | Expected |
+|---|---|---|
+| TC-E2E-086 | REQ-CL-01/02/10/12 | Editor converts 60.00 to 6000; prefill, clear, unrelated settings preserved |
+| TC-E2E-087 | REQ-CL-11; CR4/6/7/8 | Words, white outline, red fill and text contrast >=4.5; no box without limit |
+| TC-E2E-088 | REQ-CL-02/07/12; CR3/5/9 | Zero-spend budget visible; zero real; clear hides; no empty donut slice/NaN |
+| TC-E2E-089 | REQ-CL-04/12 | Invalid inputs and Cancel send nothing and preserve value |
+| TC-E2E-090 | REQ-CL-09; CR1 | Uncategorised contributes spending but offers no limit/editor |
+| TC-E2E-091 | REQ-CL-11/12 | 320px long names, maximum amounts, boxes and editor fit |
+| TC-E2E-092 | REQ-CL-12 | Input focus, keyboard containment, Escape restores opener |
+| TC-E2E-093 | REQ-CL-12 | Refused save stays open, value unchanged, no success toast |
+
+## Category-limit Selenium check
+
+Automated by [test_limit.py](../selenium/test_limit.py); priority P1, PASS locally
+on 2026-09-28, with all eleven Selenium executions green.
+
+| Case | Traces to | Expected |
+|---|---|---|
+| TC-SEL-009 | REQ-CL-11/12 | Set 60.00, see reached, clear; stored cents and independent overall limit confirmed |
+
+## Category-limit API contract and decisions
+
+Automated by folder 13 in [the Postman collection](../api/wallet.postman_collection.json).
+The full local run completed 271 requests / 939 assertions with no failures before browser integration.
+The final combined run repeated those same counts without failures, 2026-09-28.
+Priority P1 for money/ownership; P2 for malformed input and body/path boundaries.
+
+| Case | Traces to | Expected |
+|---|---|---|
+| TC-API-114 | REQ-CL-06/07; CR2/3 | New categories have NULL; empty no-budget rows hidden |
+| TC-API-115 | REQ-CL-01 | Set 20000; GET returns limit and original name |
+| TC-API-116 | REQ-CL-01; CR5 | Replace current value; zero-spend within |
+| TC-API-117 | REQ-CL-01/10; CR9/10 | Zero is real, reached at zero and exceeded after valid save |
+| TC-API-118 | REQ-CL-02; CR4 | Explicit NULL clears and positive-spend row is not_set |
+| TC-API-119 | REQ-CL-03 | Empty, unknown and server-owned fields refused; no mutation |
+| TC-API-120 | REQ-CL-04 | Wrong types, negative, fractional and ceiling+1 refused |
+| TC-API-121 | REQ-CL-04 | Exact 100000000 ceiling accepted |
+| TC-API-122 | REQ-CL-04/05 | Bad path ids 400; missing category canonical 404 |
+| TC-API-123 | REQ-CL-05 | Missing auth 401 |
+| TC-API-124 | REQ-CL-05 | Foreign id same 404; owner value unchanged |
+| TC-API-125 | REQ-CL-05 | GET categories and summary isolated by owner |
+| TC-API-126 | REQ-CL-06; CR5/7/8 | L=1 with T=0/1/2 yields within/reached/exceeded |
+| TC-API-127 | REQ-CL-06; CR6/11 | L=100, T=1 yields within and 99 left |
+| TC-API-128 | REQ-CL-06; CR7 | Equality reached, zero left |
+| TC-API-129 | REQ-CL-06; CR8 | One cent over, negative remaining |
+| TC-API-130 | REQ-CL-06; CR10 | L=0 with positive spending is exceeded |
+| TC-API-131 | REQ-CL-07; CR5 | Limited zero rows present, sorted after spending; sum holds |
+| TC-API-132 | REQ-CL-08; CR13 | Unpaid schedule excluded |
+| TC-API-133 | REQ-CL-08; CR12 | Paid instalment included |
+| TC-API-134 | REQ-CL-09; CR1 | NULL category always not_set; contributes overall total |
+| TC-API-135 | REQ-CL-03/06/08/10; CR15 | Category sum over overall accepted; settings/writes independent |
+| TC-API-136 | REQ-CL-10 | Expense over both limits still saves with 201 |
+| TC-API-137 | REQ-CL-06; CR16 | Edit moves category spend; delete recomputes state |
+| TC-API-138 | REQ-CL-06; CR14 | Other month excluded; historical summary uses current limit |
+| TC-API-139 | REQ-CL-02/07; CR3/4 | Clear hides zero row, keeps positive row not_set |
+| TC-API-140 | REQ-CL-04 | Malformed and non-object JSON 400, not 500 |
+| TC-API-141 | REQ-CL-04 | Oversized body 413; refused bodies preserve value |
