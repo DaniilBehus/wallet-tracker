@@ -67,7 +67,7 @@
     </header>
 
     <div class="categories" id="category-grid" role="group" aria-label="Categories">
-      <!-- category-tile-{id} buttons, rendered by app.js -->
+      <!-- category-tile-{id} buttons and an optional synthetic import action, rendered by app.js -->
     </div>
 
     <label class="note">
@@ -340,6 +340,23 @@
       </div>
     </form>
   </dialog>
+
+<!-- This deliberately uses a fixed synthetic record and a separate preview
+     request. The displayed record is not saved until Confirm is pressed. -->
+<dialog id="import-dialog" class="category-limit-dialog" data-testid="import-dialog"
+        aria-labelledby="import-title">
+  <div class="sheet__panel">
+    <h2 id="import-title" class="sheet__title">Synthetic expense import</h2>
+    <p class="import-copy">One fictitious expense for testing the import flow. No bank or external service is contacted.</p>
+    <p id="import-review" class="import-review" data-testid="import-review" role="status">Preview before saving.</p>
+    <p id="import-error" class="category-limit-error" data-testid="import-error" role="alert" hidden></p>
+    <div class="sheet__actions import-actions">
+      <button type="button" class="btn" id="import-preview" data-testid="import-preview">Preview</button>
+      <button type="button" class="btn btn--primary" id="import-confirm" data-testid="import-confirm" disabled>Confirm import</button>
+      <button type="button" class="btn" id="import-cancel" data-testid="import-cancel">Cancel</button>
+    </div>
+  </div>
+</dialog>
 
 <!-- A native modal dialog: focus moves in, stays in, Escape closes it and focus
      returns to the opener — the behaviour BUG-022's sheet lacks, without code.

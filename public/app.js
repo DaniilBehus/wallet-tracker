@@ -42,6 +42,15 @@
     amountTooBig: 'That amount is too large',
     noCategories: 'No categories',
     notePlaceholder: 'what was it for?',
+    importOpen: 'Preview synthetic import',
+    importBefore: 'Preview before saving.',
+    importReview: (name, amount, date, state) =>
+      `${name} · ${amount} · ${date} · ${state === 'new' ? 'new' : 'already imported'}. Nothing saved by preview.`,
+    importUncertain: 'Import not confirmed. Check or retry this same record.',
+    importSaved: 'Synthetic expense imported',
+    importReplayed: 'Already imported · no duplicate',
+    importNeedsCategory: 'The synthetic demo needs a Groceries category.',
+    importStorageFailed: 'This browser cannot keep a safe retry. Synthetic import is unavailable.',
 
     // income (D-021)
     income: 'Income',
@@ -313,7 +322,7 @@
 
   // ===================================================================== API
 
-  async function api(path, { method = 'GET', body } = {}) {
+  async function api(path, { method = 'GET', body, signal } = {}) {
     const headers = {};
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     if (state.token) headers.Authorization = `Bearer ${state.token}`;
@@ -323,6 +332,7 @@
       res = await fetch('/api' + path, {
         method,
         headers,
+        signal,
         body: body === undefined ? undefined : JSON.stringify(body),
       });
     } catch (networkError) {
@@ -448,6 +458,8 @@
 
   function signOut(message) {
     state.sessionEpoch += 1;
+    if ($('#import-dialog').open) $('#import-dialog').close();
+    importBatch = null;
     for (const feature of features) if (feature.onSessionEnd) feature.onSessionEnd();
     localStorage.removeItem(TOKEN_KEY);
     state.token = null;
@@ -546,6 +558,118 @@
       });
       tile.addEventListener('click', () => selectCategory(category.id));
       grid.append(tile);
+    }
+    const importButton = el('button', {
+      type: 'button', className: 'import-open', textContent: T.importOpen,
+    });
+    attrs(importButton, { 'data-testid': 'import-open' });
+    importButton.addEventListener('click', openImport);
+    grid.append(importButton);
+  }
+
+  let importBatch = null;
+  let importSaving = false;
+
+  function importPendingKey() {
+    // JWT sub is used only to separate local draft keys. Server auth still
+    // verifies the token on every request; this is not a security decision.
+    try {
+      const payload = JSON.parse(atob(state.token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      if (/^[1-9]\d*$/.test(String(payload.sub))) return `wallet_synthetic_import_pending_${payload.sub}`;
+    } catch (_) { /* invalid local token; the next API request signs out */ }
+    return null;
+  }
+
+  function pendingImport(key) {
+    if (!key) return null;
+    try {
+      const batch = JSON.parse(localStorage.getItem(key));
+      const record = batch && batch.records && batch.records[0];
+      if (batch.source === 'synthetic-demo-v1' && batch.records.length === 1 &&
+          typeof record.external_id === 'string' && /^demo-[0-9a-f-]{36}$/.test(record.external_id) &&
+          record.amount_cents === 3500 && record.note === 'Synthetic demo expense' &&
+          typeof record.spent_on === 'string' && record.category_name === 'Groceries') return batch;
+    } catch (_) { /* malformed local draft is not sent to the API */ }
+    return null;
+  }
+
+  function openImport() {
+    const category = state.categories.find(item => item.name === 'Groceries');
+    if (!category) { toastErr(T.importNeedsCategory); return; }
+    const pendingKey = importPendingKey();
+    importBatch = pendingImport(pendingKey);
+    if (!importBatch) {
+      importBatch = { source: 'synthetic-demo-v1', records: [{
+        external_id: `demo-${crypto.randomUUID()}`,
+        amount_cents: 3500, spent_on: todayIso(),
+        category_name: 'Groceries', note: 'Synthetic demo expense',
+      }] };
+      try {
+        if (!pendingKey) throw new Error('No account-scoped draft key');
+        localStorage.setItem(pendingKey, JSON.stringify(importBatch));
+      } catch (_) {
+        importBatch = null;
+        toastErr(T.importStorageFailed);
+        return;
+      }
+    }
+    $('#import-review').textContent = T.importBefore;
+    $('#import-error').hidden = true;
+    $('#import-confirm').disabled = true;
+    $('#import-preview').disabled = false;
+    $('#import-dialog').showModal();
+  }
+
+  async function previewImport() {
+    if (!importBatch) return;
+    const epoch = state.sessionEpoch;
+    const button = $('#import-preview');
+    button.disabled = true;
+    $('#import-error').hidden = true;
+    try {
+      const result = await api('/imports/preview', { method: 'POST', body: importBatch,
+        signal: AbortSignal.timeout(10000) });
+      if (epoch !== state.sessionEpoch || !$('#import-dialog').open) return;
+      const record = result.records[0];
+      $('#import-review').textContent = T.importReview(record.category_name,
+        formatMoney(record.amount_cents), record.spent_on, record.state);
+      $('#import-confirm').disabled = false;
+    } catch (err) {
+      if (epoch !== state.sessionEpoch || !$('#import-dialog').open) return;
+      $('#import-error').textContent = messageFor(err);
+      $('#import-error').hidden = false;
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  async function confirmImport() {
+    if (!importBatch || $('#import-confirm').disabled) return;
+    const epoch = state.sessionEpoch;
+    importSaving = true;
+    $('#import-confirm').disabled = true;
+    $('#import-preview').disabled = true;
+    $('#import-cancel').disabled = true;
+    $('#import-error').hidden = true;
+    try {
+      const result = await api('/imports/confirm', { method: 'POST', body: importBatch,
+        signal: AbortSignal.timeout(10000) });
+      if (epoch !== state.sessionEpoch) return;
+      $('#import-dialog').close();
+      const pendingKey = importPendingKey();
+      try { if (pendingKey) localStorage.removeItem(pendingKey); }
+      catch (_) { /* keeping a completed ID only causes a safe replay */ }
+      importBatch = null;
+      toastOk(result.records[0].replayed ? T.importReplayed : T.importSaved);
+    } catch (err) {
+      if (epoch !== state.sessionEpoch) return;
+      $('#import-error').textContent = T.importUncertain;
+      $('#import-error').hidden = false;
+      $('#import-confirm').disabled = false;
+    } finally {
+      importSaving = false;
+      $('#import-preview').disabled = false;
+      $('#import-cancel').disabled = false;
     }
   }
 
@@ -1466,6 +1590,11 @@
     });
     $('#keypad-clear').addEventListener('click', clearAmount);
     $('#expense-save-btn').addEventListener('click', saveExpense);
+    $('#import-preview').addEventListener('click', previewImport);
+    $('#import-confirm').addEventListener('click', confirmImport);
+    $('#import-cancel').addEventListener('click', () => $('#import-dialog').close());
+    $('#import-dialog').addEventListener('cancel', event => { if (importSaving) event.preventDefault(); });
+    $('#import-dialog').addEventListener('close', () => { if (!importSaving) importBatch = null; });
 
     $('#nav').addEventListener('click', (event) => {
       const button = event.target.closest('.nav__btn');

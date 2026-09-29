@@ -65,6 +65,9 @@ jobs:
       - name: Database migration test
         run: npm run test:db
 
+      - name: Synthetic expense import (offline)
+        run: npm run test:import
+
       # A throwaway secret per run; nothing signed with it outlives the job.
       - name: Generate a throwaway secret
         run: echo "JWT_SECRET=$(openssl rand -hex 48)" >> "$GITHUB_ENV"

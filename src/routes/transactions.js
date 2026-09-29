@@ -215,4 +215,19 @@ router.delete('/:id', (req, res) => {
   res.status(204).end();
 });
 
+// The synthetic importer reuses the same ledger and save transaction. Do not
+// duplicate the idempotency implementation in a second route.
+router.lookupKeyed = (userId, key, hash) => {
+  const existing = findKeyed.get(userId, key);
+  if (!existing) return null;
+  if (existing.payload_hash !== hash) {
+    throw new ApiError(409, 'IDEMPOTENCY_CONFLICT', 'This external record ID was already used for different content');
+  }
+  if (!transactionExists.get(existing.transaction_id, userId)) {
+    throw new ApiError(409, 'IDEMPOTENCY_REPLAY_UNAVAILABLE', 'The imported expense no longer exists');
+  }
+  return { transaction_id: existing.transaction_id };
+};
+router.saveImported = (userId, key, body, hash) => keyedSave(userId, key, body, hash);
+
 module.exports = router;

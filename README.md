@@ -78,6 +78,7 @@ schedule model. Recreate these four screenshots with `npm run screenshots`.
 - **Run it:** [Quick start](#quick-start) → [Test setup](docs/testing.md)
 - **Support it:** [Support pack](docs/support/README.md) → [Runbook](docs/support/runbook.md)
 - **Review QA work:** [QA evidence](#qa-evidence) → [Monthly limit case study](qa/docs/analysis-monthly-limit.md)
+- **Inspect the provisional synthetic import:** [Scope and owner decisions](qa/docs/analysis-synthetic-import.md) → [API routes](src/routes/imports.js) → [offline regression](qa/import/synthetic-import.test.js) and [browser review test](qa/e2e/synthetic-import.spec.js). The browser only offers a fixed fictitious record; no provider connector is claimed.
 - **Read the code:** [Folder map](#architecture) → [Architecture notes](spec/architecture.md)
 
 For the API, open the [OpenAPI contract, runnable checks and recorded coverage](docs/api/README.md).
@@ -90,7 +91,7 @@ then follow a [defect from reproduction to regression](qa/docs/defects/).**
 | Evidence | Open the source |
 |---|---|
 | Plan and case design | [Test plan](qa/docs/test-plan.md) · [Design method](qa/docs/test-design.md) · [Case catalogue](qa/docs/test-cases.md) |
-| API and database | [Postman collection](qa/api/wallet.postman_collection.json) · [pytest scenarios](qa/python/test_api.py) · [migration tests](qa/db/migration.test.js) |
+| API and database | [Postman collection](qa/api/wallet.postman_collection.json) · [pytest scenarios](qa/python/test_api.py) · [migration tests](qa/db/migration.test.js) · [synthetic import regression](qa/import/synthetic-import.test.js) |
 | Browser flows | [Playwright specs](qa/e2e/) · [page objects](qa/e2e/pages/) · [Selenium + pytest checks](qa/selenium/) |
 | Concurrency and load | [Race runner](qa/race/run.js) · [k6 workloads](qa/load/) |
 | Recorded results | [Monthly limit report](qa/docs/test-report-monthly-limit.md) · [GitHub CI](https://github.com/DaniilBehus/wallet-tracker/actions/workflows/ci.yml) |

@@ -72,6 +72,7 @@ app.post('/api/auth/login', async (req, res) => {
 // and an error leaving a router takes the mount path with it (requestlog.js).
 app.use('/api/categories', rememberMount, requireAuth, require('./routes/categories'));
 app.use('/api/transactions', rememberMount, requireAuth, require('./routes/transactions'));
+app.use('/api/imports', rememberMount, requireAuth, require('./routes/imports'));
 app.use('/api/schedules', rememberMount, requireAuth, require('./routes/schedules'));
 app.use('/api/summary', rememberMount, requireAuth, require('./routes/summary'));
 app.use('/api/settings', rememberMount, requireAuth, require('./routes/settings'));

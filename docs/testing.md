@@ -7,11 +7,12 @@ Install the application dependencies with `npm ci` first. Use Node.js 22+, Pytho
 ```bash
 npm run check        # invariants: spec hash, no float money, testids, e2e discipline, coverage gates
 npm run check:openapi # schema/local refs and source-derived route/auth/response inventory
-npm run test:contract # 11 named tests, 244 real HTTP checks and validator controls
-npm run test:api     # 271 requests, 939 assertions
+npm run test:contract # 12 named tests, 250 real HTTP checks and validator controls (this local tree)
+npm run test:api     # 274 requests, 945 assertions (this local tree)
+npm run test:import  # 7 offline synthetic batch-import tests; no provider call
 npm run test:db      # 6 migration cases against temporary databases
 npm run test:python  # 27 isolated Python/httpx API items; writes JUnit XML
-npm run test:e2e     # 93 scenarios across a phone and a desktop viewport
+npm run test:e2e     # 96 scenarios across a phone and a desktop viewport
 npm run test:selenium # 11 Selenium runs of 9 cases in headless Chrome; -- --headed shows it
 npm run test:race    # two server processes, one database, concurrent writes
 npm test             # check, migration, Newman, pytest, Playwright and race checks
@@ -71,10 +72,10 @@ an exception with an empty reason fails the build too.
 
 ## Contract checks and the full regression
 
-`npm test` still excludes OpenAPI/contract, AI, fixture evaluation, Selenium and
+`npm test` still excludes OpenAPI/contract, synthetic import, AI, fixture evaluation, Selenium and
 k6. Run their separate commands for complete local verification; k6 additionally
 requires its own installation. The new API CI steps run `check:openapi` and
-`test:contract`, but a local workflow edit is not proof of a new GitHub run.
+`test:contract` and the dedicated `test:import` command, but a local workflow edit is not proof of a new GitHub run. The import tests live in `qa/import/`, reuse the offline disposable-server fixture, and run separately under the API job. A fixed synthetic-demo browser preview/confirm is covered by `qa/e2e/synthetic-import.spec.js`; an external HTTP adapter remains unimplemented.
 
 Contract tests start two real servers on loopback-only ephemeral ports, with
 temporary SQLite, random secrets and an allow-listed environment. AI is off or
