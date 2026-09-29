@@ -19,6 +19,7 @@
     "test:load": "node qa/load/run.js",
     "test:race": "node qa/race/run.js",
     "test:ai": "node qa/ai/run.js",
+    "test:import": "node --require ./qa/ai/support/no-network.js --test qa/import/synthetic-import.test.js",
     "test:ai:e2e": "playwright test -c playwright.ai.config.js",
     "ai:demo": "node qa/ai/demo.js",
     "ai:screenshots": "node qa/ai/screenshots.js",

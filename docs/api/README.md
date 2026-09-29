@@ -11,10 +11,10 @@ The version is selected for parser compatibility, not described as the latest.
 | Read or check | Open |
 |---|---|
 | Methods, fields, headers and documented statuses | [Machine-readable contract](../../spec/openapi.json) |
-| Architecture and business rules | [Architecture](../../spec/architecture.md) · [category limits](../../qa/docs/analysis-category-limits.md) · [AI draft](../../spec/ai-expense-entry.md) |
+| Architecture and business rules | [Architecture](../../spec/architecture.md) · [category limits](../../qa/docs/analysis-category-limits.md) · [AI draft](../../spec/ai-expense-entry.md) · [provisional synthetic import](../../qa/docs/analysis-synthetic-import.md) |
 | Actual implementation | [Server and auth mounts](../../src/server.js) · [routers](../../src/routes/) · [validation](../../src/validate.js) |
 | Check contract drift | [Source/schema gate](../../scripts/lib/openapi.js) · [entry command](../../scripts/check-openapi.js) |
-| Test real HTTP responses | [11 named tests](../../qa/contract/contract.test.js) · [strict response validator](../../qa/contract/response-validator.js) |
+| Test real HTTP responses | [Contract tests](../../qa/contract/contract.test.js) · [strict response validator](../../qa/contract/response-validator.js) |
 | Results and remaining coverage limits | [Local report](../../qa/docs/test-report-contract.md) · [case register](../../qa/docs/test-cases.md#contract-checks--openapi-and-real-http) |
 
 ## Run safely
@@ -23,12 +23,16 @@ The version is selected for parser compatibility, not described as the latest.
 npm ci
 npm run check:openapi
 npm run test:contract
+npm run test:import
 ```
 
 No manual server, `.env`, API key or existing database is needed. The response
 tests create temporary SQLite databases, synthetic accounts, random secrets and
 loopback-only servers. They use AI off and the existing canned demo provider,
 with the network guard loaded in the test process and server processes.
+The separate synthetic-import test uses the same offline guard and disposable
+server; its browser review flow is covered by Playwright. These tests do not
+exercise an external provider.
 Captures remain in memory; output reports observed status sets, not response
 bodies, passwords or bearer tokens.
 

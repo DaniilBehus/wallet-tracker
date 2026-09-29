@@ -11060,6 +11060,48 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Synthetic batch import (offline caller-supplied records)",
+      "event": [{ "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+        "const d = new Date();",
+        "pm.collectionVariables.set('importToday', [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-'));"
+      ] } }],
+      "item": [
+        {
+          "name": "POST /imports/preview is read-only",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"source\":\"synthetic-demo-v1\",\"records\":[{\"external_id\":\"newman-{{runId}}\",\"amount_cents\":3500,\"spent_on\":\"{{importToday}}\",\"category_name\":\"{{catAName}}\",\"note\":\"Synthetic example\"}]}" },
+            "url": { "raw": "{{baseUrl}}/api/imports/preview", "host": ["{{baseUrl}}"], "path": ["api", "imports", "preview"] } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "eval(pm.collectionVariables.get('helpers'));",
+            "expectStatus(200);",
+            "pm.test('new record is only previewed', () => { const j=pm.response.json(); pm.expect(j.source).to.eql('synthetic-demo-v1'); pm.expect(j.records).to.have.length(1); pm.expect(j.records[0]).to.include({state:'new',amount_cents:3500,transaction_id:null}); });"
+          ] } }]
+        },
+        {
+          "name": "POST /imports/confirm saves one expense",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"source\":\"synthetic-demo-v1\",\"records\":[{\"external_id\":\"newman-{{runId}}\",\"amount_cents\":3500,\"spent_on\":\"{{importToday}}\",\"category_name\":\"{{catAName}}\",\"note\":\"Synthetic example\"}]}" },
+            "url": { "raw": "{{baseUrl}}/api/imports/confirm", "host": ["{{baseUrl}}"], "path": ["api", "imports", "confirm"] } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "eval(pm.collectionVariables.get('helpers'));",
+            "expectStatus(201);",
+            "pm.test('save returns a new transaction ID', () => { const r=pm.response.json().records[0]; pm.expect(r.replayed).to.eql(false); pm.expect(r.transaction_id).to.be.a('number'); pm.collectionVariables.set('importTx',r.transaction_id); });"
+          ] } }]
+        },
+        {
+          "name": "POST /imports/confirm lost-response retry replays",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"source\":\"synthetic-demo-v1\",\"records\":[{\"external_id\":\"newman-{{runId}}\",\"amount_cents\":3500,\"spent_on\":\"{{importToday}}\",\"category_name\":\"{{catAName}}\",\"note\":\"Synthetic example\"}]}" },
+            "url": { "raw": "{{baseUrl}}/api/imports/confirm", "host": ["{{baseUrl}}"], "path": ["api", "imports", "confirm"] } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "eval(pm.collectionVariables.get('helpers'));",
+            "expectStatus(200);",
+            "pm.test('retry uses the same transaction', () => { const r=pm.response.json().records[0]; pm.expect(r.replayed).to.eql(true); pm.expect(r.transaction_id).to.eql(Number(pm.collectionVariables.get('importTx'))); });"
+          ] } }]
+        }
+      ]
     }
   ]
 }

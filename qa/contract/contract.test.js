@@ -322,6 +322,20 @@ test('TC-CONTRACT-010: corrupt REAL captures rejected, baselines unchanged', () 
   mustReject('DELETE /api/transactions/{id}', captures.get('deleted'), value => { value.text = '{}'; }, 'empty204');
 });
 
+test('TC-CONTRACT-IMPORT: real offline preview, confirm, replay and conflict', async () => {
+  const record = { external_id: 'contract-synthetic-001', amount_cents: 3500,
+    spent_on: localToday(-1), category_name: owner.categories[0].name, note: 'Synthetic example' };
+  const body = { source: 'synthetic-demo-v1', records: [record] };
+  const preview = await call(off, 'POST', '/api/imports/preview', 200, auth({ body }));
+  assert.equal(preview.body.records[0].state, 'new');
+  const saved = await call(off, 'POST', '/api/imports/confirm', 201, auth({ body }));
+  const again = await call(off, 'POST', '/api/imports/confirm', 200, auth({ body }));
+  assert.equal(again.body.records[0].transaction_id, saved.body.records[0].transaction_id);
+  await call(off, 'POST', '/api/imports/confirm', 409, auth({ body: {
+    ...body, records: [{ ...record, amount_cents: 3501 }],
+  }, code: 'IDEMPOTENCY_CONFLICT' }));
+});
+
 test('TC-CONTRACT-011: complete observed matrix, unexercised statuses and log privacy', () => {
   assertObservedSuccess(validated.operations, observed);
   // A pure copied-matrix control, not a fabricated HTTP observation. Auth

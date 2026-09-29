@@ -13,6 +13,13 @@ class AddPage extends BasePage {
     this.note = page.getByTestId('expense-note');
     // The scrolling list itself, for layout checks (BUG-014).
     this.categories = page.getByRole('group', { name: 'Categories' });
+    this.importOpen = page.getByTestId('import-open');
+    this.importDialog = page.getByTestId('import-dialog');
+    this.importPreview = page.getByTestId('import-preview');
+    this.importReview = page.getByTestId('import-review');
+    this.importError = page.getByTestId('import-error');
+    this.importConfirm = page.getByTestId('import-confirm');
+    this.importCancel = page.getByTestId('import-cancel');
   }
 
   /** One key of the on-screen keypad. */

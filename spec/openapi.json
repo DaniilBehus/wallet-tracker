@@ -3,7 +3,7 @@
   "info": {
     "title": "Wallet Tracker REST API",
     "version": "1.0.0",
-    "description": "Contract for the explicit REST operations implemented by the current server: health, authentication, categories, transactions, schedules, summary, settings and AI drafts. Descriptions record implementation rules that JSON Schema cannot fully express. Document validation alone is not evidence of executed HTTP scenarios: check:openapi validates this contract and test:contract separately exercises disposable offline/demo servers, reporting observed and unexercised statuses. No full-project regression or GitHub CI result is implied by this document. OpenAPI 3.0.3 is selected for parser compatibility, not claimed to be the latest version. This describes a personal project, not a production service."
+    "description": "Contract for the explicit REST operations implemented by the current server: health, authentication, categories, transactions, synthetic batch import, schedules, summary, settings and AI drafts. Descriptions record implementation rules that JSON Schema cannot fully express. Document validation alone is not evidence of executed HTTP scenarios: check:openapi validates this contract and test:contract separately exercises disposable offline/demo servers, reporting observed and unexercised statuses. No full-project regression or GitHub CI result is implied by this document. OpenAPI 3.0.3 is selected for parser compatibility, not claimed to be the latest version. This describes a personal project, not a production service."
   },
   "servers": [
     {
@@ -19,6 +19,7 @@
     { "name": "Summary" },
     { "name": "Settings" },
     { "name": "Transactions" },
+    { "name": "Synthetic import" },
     { "name": "Schedules" },
     { "name": "AI" }
   ],
@@ -294,6 +295,45 @@
         }
       }
     },
+    "/api/imports/preview": {
+      "post": {
+        "operationId": "previewSyntheticImport",
+        "tags": ["Synthetic import"],
+        "summary": "Validate and review a synthetic expense batch without saving",
+        "description": "Authenticated caller-supplied JSON only; no external provider request. Exactly one fixed source, 1–10 records, strict numeric integer cents, valid local dates and exact own-category names. Existing external IDs are account-scoped and compared by semantic fingerprint. Preview writes neither expenses nor retry-ledger rows; confirm is separately required. Provisional choices are recorded in qa/docs/analysis-synthetic-import.md.",
+        "parameters": [{ "$ref": "#/components/parameters/RequestId" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyntheticImportRequest" } } } },
+        "responses": {
+          "200": { "description": "Read-only review of each submitted record.", "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyntheticImportPreview" } } } },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/KeyedConflict" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/imports/confirm": {
+      "post": {
+        "operationId": "confirmSyntheticImport",
+        "tags": ["Synthetic import"],
+        "summary": "Atomically save a reviewed synthetic expense batch",
+        "description": "Caller must explicitly confirm; the API does not require a preview token and revalidates the entire batch. One BEGIN IMMEDIATE transaction covers all records and existing keyed-save ledger entries. Same external ID and content replays the original transaction; changed content or deleted original returns 409 without a partial batch. This does not connect to an external provider.",
+        "parameters": [{ "$ref": "#/components/parameters/RequestId" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyntheticImportRequest" } } } },
+        "responses": {
+          "200": { "description": "Entire batch replayed without new expenses.", "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyntheticImportConfirmation" } } } },
+          "201": { "description": "At least one new expense saved atomically.", "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyntheticImportConfirmation" } } } },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/KeyedConflict" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
     "/api/schedules": {
       "get": {
         "operationId": "listSchedules",
@@ -459,6 +499,55 @@
       }
     },
     "schemas": {
+      "SyntheticImportRequest": {
+        "type": "object", "additionalProperties": false, "required": ["source", "records"],
+        "properties": {
+          "source": { "type": "string", "enum": ["synthetic-demo-v1"] },
+          "records": { "type": "array", "minItems": 1, "maxItems": 10, "items": { "$ref": "#/components/schemas/SyntheticImportRecord" } }
+        }
+      },
+      "SyntheticImportRecord": {
+        "type": "object", "additionalProperties": false,
+        "required": ["external_id", "amount_cents", "spent_on", "category_name"],
+        "properties": {
+          "external_id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}$" },
+          "amount_cents": { "type": "integer", "minimum": 1, "maximum": 100000000 },
+          "spent_on": { "$ref": "#/components/schemas/LocalDate" },
+          "category_name": { "type": "string", "minLength": 1, "maxLength": 60 },
+          "note": { "type": "string", "nullable": true, "maxLength": 160 }
+        }
+      },
+      "SyntheticImportPreview": {
+        "type": "object", "additionalProperties": false, "required": ["source", "records"],
+        "properties": {
+          "source": { "type": "string", "enum": ["synthetic-demo-v1"] },
+          "records": { "type": "array", "minItems": 1, "maxItems": 10, "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["external_id", "amount_cents", "spent_on", "category_name", "note", "category_id", "state", "transaction_id"],
+            "properties": {
+              "external_id": { "type": "string" }, "amount_cents": { "type": "integer", "minimum": 1 },
+              "spent_on": { "$ref": "#/components/schemas/LocalDate" }, "category_name": { "type": "string" },
+              "note": { "type": "string", "nullable": true }, "category_id": { "type": "integer", "nullable": true, "minimum": 1 },
+              "state": { "type": "string", "enum": ["new", "already_imported"] },
+              "transaction_id": { "type": "integer", "nullable": true, "minimum": 1 }
+            }
+          } }
+        }
+      },
+      "SyntheticImportConfirmation": {
+        "type": "object", "additionalProperties": false, "required": ["source", "records"],
+        "properties": {
+          "source": { "type": "string", "enum": ["synthetic-demo-v1"] },
+          "records": { "type": "array", "minItems": 1, "maxItems": 10, "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["external_id", "transaction_id", "replayed"],
+            "properties": {
+              "external_id": { "type": "string" }, "transaction_id": { "type": "integer", "minimum": 1 },
+              "replayed": { "type": "boolean" }
+            }
+          } }
+        }
+      },
       "AiCapabilities": {
         "type": "object", "additionalProperties": false,
         "required": ["enabled", "mode", "provider", "max_input_chars", "languages", "requires_external_consent"],
