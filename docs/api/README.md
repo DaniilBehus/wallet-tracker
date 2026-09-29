@@ -69,10 +69,20 @@ text is a placeholder, not a credential. Money is integer cents.
 POST /api/transactions
 Content-Type: application/json
 Authorization: Bearer <local-token>
-Idempotency-Key: synthetic-save-0001
+Idempotency-Key: example-key
 
 {"amount_cents":1250,"spent_on":"2026-09-28","category_id":null,"note":"Synthetic lunch"}
 ```
+
+An idempotency key is a client-chosen operation identifier, not an authentication
+credential. Authentication still requires the separate bearer token.
+
+The root [`.gitleaksignore`](../../.gitleaksignore) contains exactly one historical
+finding fingerprint: commit `9965d076cfffc0301a10d4ac881b61fdfb9082a8`, this
+document, rule `generic-api-key`, line 72. That reviewed false positive was the
+synthetic operation key in the original HTTP example. Only that exact historical
+finding is exempted; no file, commit or detection rule is excluded. The current
+example uses `example-key`. New findings still block the scan.
 
 For a new keyed save, use a valid date no later than server tomorrow. A successful
 creation returns201. Repeating the same canonical payload and key returns the
