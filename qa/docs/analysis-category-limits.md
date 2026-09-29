@@ -26,7 +26,9 @@ implementation has to meet. The analysis and architecture were committed on
 clarification are frozen together in the separate specification commit on
 2026-09-28, before category-limit production code. Later changes require a dated
 entry in [§7](#7-change-notes), with the reason. §5 now records the actual local
-implementation run of 2026-09-28. Owner UAT and publication remain pending; the
+implementation run of 2026-09-28. The implementation is now public; see the
+[dated publication and exact-build CI record](../../docs/analysis/README.md#dated-publication-evidence--2026-09-29).
+Owner UAT remains unsigned; the
 original specification-first freeze is preserved at `4d08651`.
 
 ## 1. Business goal, scope and assumptions
@@ -431,3 +433,14 @@ specification-before-code versions remain at `4d08651`. Sections 1–4 and 6,
 including CL-D1…12, all acceptance criteria and decision-table rules, remain
 unchanged. No business-rule amendment was needed. Owner UAT is unsigned;
 integration, publication and category-limit GitHub CI remain pending.
+
+### 2026-09-29 — publication evidence, not owner acceptance
+
+The implementation and OpenAPI checks are public in build `ed22c71`; its
+exact-build CI completed successfully, as recorded in the
+[analysis index](../../docs/analysis/README.md#dated-publication-evidence--2026-09-29).
+The pending statements in the dated notes above describe their historical
+states, not the current publication status. Sections 1–4 and 6, frozen at
+`4d08651`, and the dated local results remain unchanged. No business rule was
+amended. The [owner acceptance script](uat-category-limits.md) is still unsigned;
+automated checks and this publication record do not constitute owner UAT.

@@ -39,7 +39,7 @@ const MODELS = {
   'category-limit-process': {
     kind: 'bpmn',
     title: 'Category spending limits — BPMN 2.0',
-    desc: 'Implemented locally; owner UAT and publication pending: ownership-safe set or clear, non-blocking expense saves, four category states computed on read.',
+    desc: 'Ownership-safe set or clear, non-blocking expense saves, four category states computed on read; owner acceptance is recorded separately in the linked UAT document.',
   },
   'draft-save-sequence': {
     kind: 'mermaid',
@@ -49,7 +49,7 @@ const MODELS = {
   database: {
     kind: 'mermaid',
     title: 'Database — schema and category limits',
-    desc: 'Local schema and declared foreign keys, including the nullable category-limit column with its enforced CHECK; publication and owner UAT pending.',
+    desc: 'Schema and declared foreign keys, including the nullable category-limit column with its enforced CHECK; owner acceptance is recorded separately in the linked UAT document.',
   },
   'use-cases': { kind: 'uml' },
 };

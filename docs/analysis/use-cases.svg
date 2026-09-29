@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1250" height="1050" viewBox="0 0 1250 1050" role="img" aria-labelledby="title desc">
   <title id="title">Wallet Tracker — UML user goals</title>
-  <desc id="desc">A person is associated with nine locally implemented goals inside Wallet. Category limits were specified before code; owner acceptance and publication remain pending. An optional extraction provider participates only in requesting and reviewing an AI draft. Lines are associations, not a sequence.</desc>
+  <desc id="desc">A person is associated with implemented goals inside Wallet. Category limits were specified before code; owner acceptance is recorded separately in the linked UAT document. An optional extraction provider participates only in requesting and reviewing an AI draft. Lines are associations, not a sequence.</desc>
   <style>
     text { font-family: Arial, sans-serif; fill: #173b36; font-size: 19px; }
     .boundary { fill: #f6fbf9; stroke: #2b514b; stroke-width: 2; }
