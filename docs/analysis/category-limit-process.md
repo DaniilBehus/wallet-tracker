@@ -2,12 +2,12 @@
 
 [← Back to README](../../README.md#start-here) · [Analysis index](README.md) · [Next: database model →](database.md)
 
-**Implemented locally; owner UAT and publication pending.** This model was frozen
+**Implemented and published; owner UAT remains unsigned.** This model was frozen
 before code at `4d08651`; see the [local test report](../../qa/docs/test-report-category-limits.md).
 Existing overall-limit behaviour is shown
 separately in the [monthly limit model](monthly-limit-process.md).
 
-![Category-limit process: scope set or clear requests, save expenses without blocking, judge month rows on read; local implementation, owner UAT pending](category-limit-process.svg)
+![Category-limit process: ownership-safe set or clear, non-blocking expense saves and four category states calculated on read](category-limit-process.svg)
 
 [Full-size SVG](category-limit-process.svg) · [Editable BPMN 2.0 source](category-limit-process.bpmn)
 
@@ -58,4 +58,5 @@ separately in the [monthly limit model](monthly-limit-process.md).
   [actual results](../../qa/docs/test-report-category-limits.md) distinguish
   local automation from owner acceptance and GitHub CI.
 
-No owner UAT or published category-limit CI success is claimed here.
+[Dated publication and CI evidence](README.md#dated-publication-evidence--2026-09-29)
+is separate from the still unsigned owner acceptance script.

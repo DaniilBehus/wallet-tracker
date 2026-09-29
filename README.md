@@ -7,9 +7,41 @@
 [![CI](https://github.com/DaniilBehus/wallet-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/DaniilBehus/wallet-tracker/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-087f6d.svg)](LICENSE)
 
-[Start here](#start-here) · [Screenshots](#screenshots) · [QA evidence](#qa-evidence) · [Quick start](#quick-start) · [Architecture](#architecture)
+[Analyst portfolio](#analyst-portfolio) · [Screenshots](#screenshots) · [Start here](#start-here) · [QA evidence](#qa-evidence) · [Quick start](#quick-start)
 
 </div>
+
+## Analyst portfolio
+
+Explore how a personal-project feature moves from a business rule to a model,
+working code and test evidence. These are descriptive models, not enterprise
+experience or proof of owner acceptance.
+
+<p align="center">
+  <a href="docs/analysis/use-cases.svg"><img src="docs/analysis/use-cases.svg" width="720" alt="Wallet UML user goals: expenses, monthly and category budgets, schedules and optional AI draft review; open the full-size diagram for labels"></a>
+</p>
+
+<p align="center"><strong>User goals, not a screen map</strong> · <a href="docs/analysis/use-cases.svg">Open full-size SVG</a> · <a href="docs/analysis/use-cases.md">Read the scope and coverage</a></p>
+
+**Choose a model:**
+
+- [Category-limit process — BPMN](docs/analysis/category-limit-process.md): set or clear a budget; saving an expense is never blocked by it.
+- [Monthly-limit process — BPMN](docs/analysis/monthly-limit-process.md): compare actual spending with the overall limit.
+- [AI expense process — BPMN](docs/analysis/ai-expense-process.md): describe → review → explicitly save, with refusal and cancellation paths.
+- [User goals — UML use cases](docs/analysis/use-cases.md): what a person can accomplish, and what is outside scope.
+- [Draft-and-save sequence](docs/analysis/draft-save-sequence.md): component responsibilities, keyed retries and transaction boundaries.
+- [Database model — ERD](docs/analysis/database.md): declared relationships, constraints and the category-limit column.
+
+**Follow one feature: category budgets**
+
+1. [Business goal and rules](qa/docs/analysis-category-limits.md#1-business-goal-scope-and-assumptions) and [user stories / acceptance criteria](qa/docs/analysis-category-limits.md#2-requirements-and-acceptance-criteria).
+2. [Process model](docs/analysis/category-limit-process.md) → [data model](docs/analysis/database.md) → [category API](src/routes/categories.js) and [summary calculation](src/routes/summary.js).
+3. [Browser regression](qa/e2e/category-limits.spec.js) → [requirement-to-test traceability](qa/docs/analysis-category-limits.md#5-traceability) → [recorded results](qa/docs/test-report-category-limits.md).
+4. [Unsigned owner acceptance script](qa/docs/uat-category-limits.md): publishing and automated checks do not sign it.
+
+[All models, source files and dated publication evidence](docs/analysis/README.md) ·
+[Whole-API contract and executable checks](docs/api/README.md) ·
+[Selenium + Python browser checks](qa/selenium/README.md)
 
 ## Screenshots
 
@@ -42,14 +74,13 @@ schedule model. Recreate these four screenshots with `npm run screenshots`.
 ## Start here
 
 - **See the app:** [Screenshots](#screenshots) → [Product scope](spec/architecture.md#1-product-and-scope)
+- **Review analysis:** [Analyst portfolio](#analyst-portfolio) → [models and evidence paths](docs/analysis/README.md)
 - **Run it:** [Quick start](#quick-start) → [Test setup](docs/testing.md)
 - **Support it:** [Support pack](docs/support/README.md) → [Runbook](docs/support/runbook.md)
 - **Review QA work:** [QA evidence](#qa-evidence) → [Monthly limit case study](qa/docs/analysis-monthly-limit.md)
 - **Read the code:** [Folder map](#architecture) → [Architecture notes](spec/architecture.md)
 
-For the analysis view, open the [process, use-case, sequence and database models](docs/analysis/).
 For the API, open the [OpenAPI contract, runnable checks and recorded coverage](docs/api/README.md).
-Category limits: [specification](qa/docs/analysis-category-limits.md) → [local test report](qa/docs/test-report-category-limits.md) → [unsigned owner UAT](qa/docs/uat-category-limits.md); publication pending.
 
 ## QA evidence
 

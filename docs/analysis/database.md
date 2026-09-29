@@ -4,12 +4,13 @@
 
 [SVG preview](database.svg) · [Editable Mermaid source](database.mmd)
 
-**Implemented locally; owner UAT and publication pending.** The category column
+**Implemented and published; owner UAT remains unsigned.** The category column
 was frozen before code at `4d08651`. The local schema and guarded migration now
 enforce `CHECK (monthly_limit_cents IS NULL OR monthly_limit_cents >= 0)` in SQLite,
 not just in an API validator. All eight foreign-key relationships are unchanged.
 See the [migration proof](../../qa/docs/test-report-category-limits.md) and
 [CL-D12 / REQ-CL-13](../../qa/docs/analysis-category-limits.md#req-cl-13--an-existing-database-keeps-working).
+See the separate [dated publication and CI record](README.md#dated-publication-evidence--2026-09-29).
 
 <!-- diagram-source: database.mmd -->
 
