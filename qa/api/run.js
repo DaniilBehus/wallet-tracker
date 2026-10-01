@@ -98,35 +98,6 @@ function startServer() {
   return server;
 }
 
-/**
- * Housekeeping, and it runs at the START of a run — never at the end.
- *
- * This runner used to kill its server and delete its database the moment the
- * collection finished, and a run where all 340 assertions passed exited **127**
- * (BUG-008). CI reads that number and nothing else, so the first build would
- * have been red for a reason that had nothing to do with the application.
- *
- * The trigger is not the kill. Isolated: `fs.rmSync` on a better-sqlite3
- * database another process still has open **terminates this process inside the
- * call** — no exception, no return. Killing the child first does not help,
- * because the kill is asynchronous and the file is still held a moment later.
- *
- * So: sweep old `data/api-*.db` files on the way IN, where they cannot affect a
- * result that has not happened yet (Rule R8), and never delete this run's own.
- */
-function sweepOldDatabases() {
-  const dir = path.join(ROOT, 'data');
-  if (!fs.existsSync(dir)) return;
-  for (const name of fs.readdirSync(dir)) {
-    if (!name.startsWith('api-')) continue;
-    try {
-      fs.rmSync(path.join(dir, name), { force: true });
-    } catch {
-      /* still held by a process that has not finished dying */
-    }
-  }
-}
-
 function runNewman() {
   return new Promise((resolve) => {
     newman.run(
@@ -196,7 +167,6 @@ function runNewman() {
 async function main() {
   fs.mkdirSync(REPORT_DIR, { recursive: true });
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-  sweepOldDatabases();
 
   const server = EXTERNAL_URL ? null : startServer();
 
