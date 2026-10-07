@@ -107,6 +107,8 @@ test('upstream failures and bad responses are safe and never write Wallet state'
     ['malformed JSON', (_req, res) => send(res, 'fake-private-payload'), 'INVALID_RESPONSE'],
     ['invalid amount type', (_req, res) => send(res, { records: [{ ...valid, amount_cents: '3500' }] }), 'INVALID_RESPONSE'],
     ['invalid shape', (_req, res) => send(res, { records: [{ ...valid, extra: true }] }), 'INVALID_RESPONSE'],
+    ['empty records', (_req, res) => send(res, { records: [] }), 'INVALID_RESPONSE'],
+    ['duplicate external ID', (_req, res) => send(res, { records: [valid, { ...valid }] }), 'INVALID_RESPONSE'],
     ['too many records', (_req, res) => send(res, { records: Array.from({ length: 11 }, (_, i) => ({ ...valid, external_id: `id-${i}` })) }), 'INVALID_RESPONSE'],
     ['oversized body', (_req, res) => send(res, { records: [valid], padding: 'fake-private-payload'.repeat(1000) }), 'RESPONSE_TOO_LARGE'],
     ['redirect', (_req, res) => { res.writeHead(302, { location: 'https://example.invalid/private' }); res.end(); }, 'UPSTREAM_STATUS'],

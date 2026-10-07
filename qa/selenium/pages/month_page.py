@@ -35,6 +35,12 @@ class MonthPage(BasePage):
         self.type_into(self.CATEGORY_LIMIT_INPUT, figure)
         self.click(self.CATEGORY_LIMIT_SAVE)
         self.wait_hidden(self.CATEGORY_LIMIT_INPUT)
+        # The dialog closes before loadMonth() finishes. Wait for withBusy's
+        # final re-enable too, or an immediate second submit can be ignored.
+        self.wait.until(
+            lambda _: self.driver.find_element(*self.CATEGORY_LIMIT_SAVE).is_enabled(),
+            "category save did not finish refreshing the month",
+        )
 
     EDIT_NOTE = testid("tx-edit-note")
     EDIT_SAVE = testid("tx-edit-save")

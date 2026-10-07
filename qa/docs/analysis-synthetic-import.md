@@ -4,11 +4,13 @@
 
 [← Back to README](../../README.md) · [Architecture](../../spec/architecture.md) · [Next: API contract →](../../spec/openapi.json)
 
+[Local regression note](test-report-synthetic-import.md)
+
 ## Goal and boundary
 
 Let an authenticated person inspect up to ten synthetic external expense records, then explicitly confirm them into Wallet. Preview is read-only. Confirmation uses the existing transaction and keyed-save contracts; it must never create half a batch or duplicate an external record after a lost response.
 
-The source is the fixed identifier `synthetic-demo-v1`. This is a caller-supplied batch-import API, **not an external provider integration**. The API accepts only this source and synthetic JSON. No provider request, credential, file upload, scheduled sync, or automatic save is implemented. A local HTTP provider stub/adapter, timeout mapping, malformed upstream response and upstream authorization checks remain a separate unimplemented step; this slice must not be cited as evidence of external integration skill.
+The source is the fixed identifier `synthetic-demo-v1`. The product API accepts caller-supplied JSON, **not an external provider connection**. It makes no provider request and has no provider credential, file upload, scheduled sync, or automatic save. A separate, test-only loopback adapter and disposable HTTP stub exercise timeout, malformed response and authorization-denial handling; they are not connected to a public route or product flow and do not establish real-provider integration experience.
 
 ## Provisional decisions for owner review
 
