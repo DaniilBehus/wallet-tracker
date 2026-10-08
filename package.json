@@ -21,6 +21,7 @@
     "test:ai": "node qa/ai/run.js",
     "test:import": "node --require ./qa/ai/support/no-network.js --test qa/import/synthetic-import.test.js qa/import/provider-adapter.test.js",
     "test:ai:e2e": "playwright test -c playwright.ai.config.js",
+    "test:a11y": "playwright test -c playwright.a11y.config.js",
     "ai:demo": "node qa/ai/demo.js",
     "ai:screenshots": "node qa/ai/screenshots.js",
     "eval:ai": "node qa/ai/evaluate.js",
@@ -39,6 +40,7 @@
   },
   "devDependencies": {
     "@apidevtools/swagger-parser": "12.1.0",
+    "@axe-core/playwright": "4.13.0",
     "@playwright/test": "^1.62.1",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",

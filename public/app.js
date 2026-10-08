@@ -1023,7 +1023,10 @@
 
   // ------------------------------------------------- editing an expense (D-029)
 
+  let transactionEditOpener = null;
+
   function openTransactionEditor(tx) {
+    transactionEditOpener = document.activeElement;
     state.month.editing = tx.id;
 
     const select = $('#tx-edit-category');
@@ -1053,6 +1056,13 @@
   function closeTransactionEditor() {
     $('#tx-edit-sheet').hidden = true;
     state.month.editing = null;
+    transactionEditOpener = null;
+  }
+
+  function dismissTransactionEditor() {
+    const opener = transactionEditOpener;
+    closeTransactionEditor();
+    if (opener?.isConnected) opener.focus();
   }
 
   /**
@@ -1637,13 +1647,19 @@
     });
 
     $('#tx-load-more').addEventListener('click', loadMoreTransactions);
-    $('#tx-edit-cancel').addEventListener('click', closeTransactionEditor);
+    $('#tx-edit-cancel').addEventListener('click', dismissTransactionEditor);
     $('#tx-edit-form').addEventListener('submit', submitTransactionEdit);
+    $('#tx-edit-sheet').addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        dismissTransactionEditor();
+      }
+    });
     // Clicking the dimmed area behind the panel closes it, the way a sheet is
     // expected to behave. The check keeps a click inside the panel from
     // bubbling out and closing what the user is filling in.
     $('#tx-edit-sheet').addEventListener('click', (event) => {
-      if (event.target === $('#tx-edit-sheet')) closeTransactionEditor();
+      if (event.target === $('#tx-edit-sheet')) dismissTransactionEditor();
     });
   }
 

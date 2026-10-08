@@ -21,6 +21,7 @@ npm run test:load    # k6; needs k6 installed separately
 npm run test:ai      # 237 offline tests (1 skipped where file symlinks need privilege)
 npm run eval:ai      # fixture evaluation of the 116-row corpus (MODEL_QUALITY=NOT_MEASURED)
 npm run test:ai:e2e  # 25 AI browser scenarios × phone and desktop, local fake provider
+npm run test:a11y    # WCAG-tagged axe checks, keyboard regression, local rendered-contrast evidence
 ```
 
 Nothing needs to be started first: each layer starts a server of its own, with
@@ -54,6 +55,7 @@ catalogue does not list fails before the test runs.
 | [`qa/api/`](../qa/api/) | Postman collection; the environment holds two variables and no literals |
 | [`qa/python/`](../qa/python/) | pytest + httpx scenarios; a real Express child, temporary SQLite, health check and JUnit XML |
 | [`qa/e2e/`](../qa/e2e/) | Playwright specs and page objects |
+| [`qa/docs/accessibility-baseline.md`](../qa/docs/accessibility-baseline.md) | Accessibility gate, local scan evidence, keyboard fix and unresolved contrast targets |
 | [`qa/selenium/`](../qa/selenium/) | Selenium WebDriver + pytest checks with Page Objects, explicit waits and failure evidence |
 | [`qa/race/`](../qa/race/) | Concurrency checks against two real server processes |
 | [`qa/load/`](../qa/load/) | k6 scripts; each measures the same endpoint idle and under load |
@@ -70,9 +72,17 @@ testid is addressed from a page object, every status the server can return is
 provoked by some case. Exceptions live in one file with a written reason each;
 an exception with an empty reason fails the build too.
 
+The separate accessibility command starts its own offline demo server and
+disposable database. It fails on automatically detected WCAG-tagged axe
+violations, attaches full JSON including inconclusive outcomes, and checks
+bounded keyboard and known solid-surface contrast behavior. Its HTML report
+and screenshots stay in ignored `qa/reports/playwright-a11y/` and
+`test-results/a11y/`. The local workflow edit adds it after E2E; that is not
+evidence of a completed GitHub Actions run.
+
 ## Contract checks and the full regression
 
-`npm test` still excludes OpenAPI/contract, synthetic import, AI, fixture evaluation, Selenium and
+`npm test` still excludes OpenAPI/contract, synthetic import, AI, fixture evaluation, Selenium, accessibility and
 k6. Run their separate commands for complete local verification; k6 additionally
 requires its own installation. The new API CI steps run `check:openapi` and
 `test:contract` and the dedicated `test:import` command, but a local workflow edit is not proof of a new GitHub run. The import tests live in `qa/import/`, reuse the offline disposable-server fixture, and run separately under the API job. A fixed synthetic-demo browser preview/confirm is covered by `qa/e2e/synthetic-import.spec.js`; an external HTTP adapter remains unimplemented.
