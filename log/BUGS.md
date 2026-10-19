@@ -7,7 +7,8 @@
 > Original observations, failed-before results and older "local/uncommitted"
 > text remain as history, not today's Git state. A green CI run closes only
 > defects with their own repair and relevant regression evidence; it does not
-> sign owner UAT or waive a remaining High defect. See [QA status](../docs/qa-status.md).
+> sign owner UAT. The later owner attestation closes only BUG-021's outstanding
+> named gate, without a broader risk waiver. See [QA status](../docs/qa-status.md).
 <!-- Current-status notice end -->
 
 Written as real defect reports, not as notes. Reproduction steps, expected vs
@@ -49,7 +50,7 @@ State: `OPEN` · `IN PROGRESS` · `CLOSED` · `WONTFIX` (needs a reason).
 | BUG-018 | A large loan loses an integer cent in remaining money | Critical | CLOSED | S21 | bd516ac | R14 |
 | BUG-019 | Oversized JSON is reported as an internal server failure | Medium | CLOSED | S21 | published in `2face59` | R14 |
 | BUG-020 | Valid early-year dates produce malformed next dates | Medium | CLOSED | S21 + 2026-10-10 controls | published · CI verified | R14 |
-| BUG-021 | Schedules cannot be edited through the interface | High | IN PROGRESS | S21 | published · owner UAT pending | R14 |
+| BUG-021 | Schedules cannot be edited through the interface | High | CLOSED | S21 | published · CI · owner UAT | R14 |
 | BUG-022 | Expense overlay does not contain keyboard focus | Medium | CLOSED | S21 | published · CI verified | R14 |
 | BUG-023 | Registration-race violation was ignored by final verdict | High | CLOSED | 2026-10-09 control | published · CI verified | — |
 | BUG-024 | Required validator inputs could disappear with a green result | High | CLOSED | 2026-10-09 control | published · CI verified | — |
@@ -75,7 +76,8 @@ a limit nobody wrote down gets rediscovered as a panic later.
 The **Fix** column records current disposition; dated sections below retain
 their original local observations. The specific evidence and remaining limits
 are reconciled next. `CLOSED` is scoped to the stated defect, not a claim of
-general WCAG conformance, snapshot pagination, live AI quality or owner UAT.
+general WCAG conformance, snapshot pagination, live AI quality or UAT beyond
+the recorded owner scope.
 
 ## Current dispositions — 2026-10-19
 
@@ -91,7 +93,7 @@ such as “local and uncommitted” is retained below as a dated observation.
 |---|---|
 | BUG-005 · OPEN | [Original timeout report](../qa/docs/defects/BUG-005-e2e-timeout-on-slow-runs.md); the cause was not proved. Later green CI does not reclassify the earlier timeout. |
 | BUG-020 · CLOSED | [Date-boundary report](../qa/docs/test-report-date-boundaries.md) and date/contract tasks in the API CI group; only the stated four-digit domain is claimed. |
-| BUG-021 · IN PROGRESS | [Schedule-edit failed-before and local regression](../qa/docs/test-report-schedule-editing.md), now included in Playwright CI. Publication and automated gates are met, but the [owner's current-build schedule check](../qa/docs/uat-current-build.md) is **PENDING**. No risk exception is recorded; this High defect still blocks release acceptance. |
+| BUG-021 · CLOSED | [Schedule-edit failed-before and local regression](../qa/docs/test-report-schedule-editing.md), published with Playwright CI, plus the [product owner's 2026-10-19 current-build schedule-edit PASS and test-build acceptance](../qa/docs/uat-current-build.md#owner-record--reported-2026-10-19). This closes the specific missing-Edit defect; the agent did not perform UAT or obtain a general risk waiver. |
 | BUG-022 · CLOSED | [Modal/focus report](../qa/docs/test-report-modal-bind.md), published native dialog and browser/accessibility CI. This closes the specific containment defect, not a human accessibility audit or WCAG certification. |
 | BUG-023 · CLOSED | [E-only negative verdict and enforcing-scenario controls](../qa/docs/test-report-validator-controls.md); race task passed in current API CI. D remains measurement-only. |
 | BUG-024 · CLOSED | [Missing-input and empty-inventory controls](../qa/docs/test-report-validator-controls.md); required static gates passed in current API CI. Static declarations are not behavioral coverage. |
@@ -111,7 +113,8 @@ such as “local and uncommitted” is retained below as a dated observation.
 F23 (development/test dependency migration) remains an **open accepted-finding
 gap**, not a 25th executed test or a release-progress percentage. The
 [current QA status](../docs/qa-status.md)
-separates that gap, unresolved owner UAT and the historical signed monthly UAT.
+separates that gap, the scoped current-build owner acceptance, the optional
+unrun lost-response check and the historical signed monthly UAT.
 
 ## Report template
 
