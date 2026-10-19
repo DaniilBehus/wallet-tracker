@@ -36,7 +36,7 @@ test.before(async () => {
   child.stderr.on('data', (d) => { output += d; });
   const deadline = Date.now() + 20000;
   for (;;) {
-    const m = output.match(/listening on http:\/\/localhost:(\d+)/);
+    const m = output.match(/listening on http:\/\/127\.0\.0\.1:(\d+)/);
     if (m) { baseUrl = `http://127.0.0.1:${m[1]}`; break; }
     if (child.exitCode !== null || Date.now() > deadline) throw new Error(`demo did not start:\n${output}`);
     await new Promise((r) => setTimeout(r, 100));

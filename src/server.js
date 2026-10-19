@@ -10,6 +10,7 @@ const rateLimit = require('./ratelimit');
 const { requestContext, rememberMount, logUnhandled } = require('./requestlog');
 
 const PORT = Number(process.env.PORT) || 3000;
+const HOST = process.env.WALLET_HOST?.trim() || '127.0.0.1';
 const VERSION = '1.0.0';
 
 const app = express();
@@ -121,8 +122,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`wallet ${VERSION} listening on http://localhost:${PORT}`);
+app.listen(PORT, HOST, () => {
+  const urlHost = HOST.includes(':') ? `[${HOST}]` : HOST;
+  console.log(`wallet ${VERSION} listening on http://${urlHost}:${PORT}`);
 });
 
 module.exports = app;

@@ -331,12 +331,7 @@ function userFactory(app) {
   const findUser = app.db.prepare('SELECT id FROM users WHERE email = ?');
   const insertCategory = app.db.prepare('INSERT INTO categories (user_id, name, icon) VALUES (?, ?, NULL)');
   const readCategories = app.db.prepare('SELECT id, name FROM categories WHERE user_id = ?');
-  return function userFor(categories) {
-    const key = JSON.stringify(categories);
-    if (cache.has(key)) return cache.get(key);
-    // L2: one stable synthetic user per category set. A new user per run
-    // would reset every per-user counter the limiter keeps.
-    const email = `eval-${crypto.createHash('sha256').update(key).digest('hex').slice(0, 16)}@wallet.test`;
+  const getOrCreate = app.db.transaction((email, categories) => {
     const existing = findUser.get(email);
     let userId;
     if (existing) {
@@ -346,8 +341,19 @@ function userFactory(app) {
       if (categories === 'default') app.seedCategories(userId);
       else for (const name of categories) insertCategory.run(userId, name);
     }
-    const names = new Map(readCategories.all(userId).map((c) => [c.id, c.name]));
-    const user = { userId, names };
+    const names = new Map(readCategories.all(userId).map((category) => [category.id, category.name]));
+    return { userId, names };
+  });
+  return function userFor(categories) {
+    const key = JSON.stringify(categories);
+    if (cache.has(key)) return cache.get(key);
+    // L2: one stable synthetic user per category set. A new user per run
+    // would reset every per-user counter the limiter keeps.
+    const email = `eval-${crypto.createHash('sha256').update(key).digest('hex').slice(0, 16)}@wallet.test`;
+    // BEGIN IMMEDIATE serializes lookup, creation and category initialization
+    // across evaluator processes. A thrown seed error rolls back all of them.
+    // Only a committed, complete identity enters this process-local cache.
+    const user = getOrCreate.immediate(email, categories);
     cache.set(key, user);
     return user;
   };
@@ -505,12 +511,52 @@ const posixRelative = (p) => path.relative(ROOT, p).split(path.sep).join('/');
 function writeReport(report) {
   fs.mkdirSync(REPORT_DIR, { recursive: true });
   const stamp = report.started_at.replace(/[:.]/g, '-');
-  const base = `${report.mode.toLowerCase()}-${stamp}`;
-  fs.writeFileSync(path.join(REPORT_DIR, `${base}.json`), `${JSON.stringify(report, null, 2)}\n`);
+  const mode = report.mode.toLowerCase();
+  // The timestamp is readable context, not an identity: concurrent runs can
+  // start in the same millisecond. Complete temporary files are published by
+  // exclusive hard links, so an existing immutable report is never replaced.
+  const base = `${mode}-${stamp}-${crypto.randomUUID()}`;
+  const jsonPath = path.join(REPORT_DIR, `${base}.json`);
+  const mdPath = path.join(REPORT_DIR, `${base}.md`);
+  const tempJson = path.join(REPORT_DIR, `.${base}.json.tmp`);
+  const tempMd = path.join(REPORT_DIR, `.${base}.md.tmp`);
   const md = markdownReport(report);
-  fs.writeFileSync(path.join(REPORT_DIR, `${base}.md`), md);
-  fs.writeFileSync(path.join(REPORT_DIR, `${report.mode.toLowerCase()}-latest.md`), md);
-  return path.relative(ROOT, path.join(REPORT_DIR, `${base}.md`));
+  const owned = [];
+  const writeTemp = (file, contents) => {
+    const fd = fs.openSync(file, 'wx');
+    owned.push(file);
+    try { fs.writeFileSync(fd, contents); } finally { fs.closeSync(fd); }
+  };
+  try {
+    writeTemp(tempJson, `${JSON.stringify(report, null, 2)}\n`);
+    writeTemp(tempMd, md);
+    fs.linkSync(tempJson, jsonPath);
+    owned.push(jsonPath);
+    fs.linkSync(tempMd, mdPath);
+    owned.push(mdPath);
+  } catch (err) {
+    const cleanupFailures = [];
+    for (const file of owned.reverse()) {
+      try { fs.unlinkSync(file); } catch (cleanupErr) { cleanupFailures.push(cleanupErr.code || cleanupErr.message); }
+    }
+    throw new Error(`report pair write failed (${err.code || err.message}); cleanup failures: ${cleanupFailures.length ? cleanupFailures.join(', ') : 'none'}`);
+  }
+  fs.unlinkSync(tempJson);
+  fs.unlinkSync(tempMd);
+
+  // A convenience view of the last completed writer, not authoritative report
+  // identity or a claim that the two-file pair commits atomically. Its first
+  // line names the immutable Markdown; each run keeps its own JSON/Markdown.
+  const latest = path.join(REPORT_DIR, `${mode}-latest.md`);
+  const tempLatest = path.join(REPORT_DIR, `.${base}-latest.tmp`);
+  try {
+    fs.writeFileSync(tempLatest, `Latest completed report: [${base}.md](${base}.md)\n\n${md}`, { flag: 'wx' });
+    fs.renameSync(tempLatest, latest);
+  } catch (err) {
+    try { fs.unlinkSync(tempLatest); } catch (_) { /* immutable pair still exists */ }
+    console.warn(`latest view update failed (${err.code || err.message}); immutable report retained`);
+  }
+  return path.relative(ROOT, mdPath);
 }
 
 // ---------------------------------------------------------------------- CLI

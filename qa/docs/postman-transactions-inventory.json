@@ -1,0 +1,605 @@
+{
+  "schemaVersion": 1,
+  "status": "PARTIAL_STATIC_SOURCE_INVENTORY",
+  "execution": "NOT_RUN",
+  "otherLayers": "NOT_CHECKED",
+  "scope": {
+    "folder": "04 · Transactions",
+    "catalogueSection": "## API · Transactions",
+    "note": "Only this reviewed Postman folder and matching catalogue section"
+  },
+  "counts": {
+    "requests": 21,
+    "cases": 21,
+    "edges": 21
+  },
+  "gaps": {
+    "declaredOnly": [],
+    "sourceOnly": []
+  },
+  "requests": [
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "DELETE /transactions/:id → 204",
+        "method": "DELETE",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{txOneCent}}"
+      },
+      "requestEventSha256": "1c9ffb309fa6666e78c91441912427cabf5b23b3f1ca1c4f3cdb36cfa4c9dffe",
+      "caseIds": [
+        "TC-API-040"
+      ],
+      "oracleReason": "Inherited user-A bearer auth deletes earlier txOneCent; expects 204 and zero-length response body.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "DELETE /transactions/:id again → 404",
+        "method": "DELETE",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{txOneCent}}"
+      },
+      "requestEventSha256": "7f3553b42a87cf2b902caa54ce9da4fd2f8916fe9cccd97936c9395e1bd6e236",
+      "caseIds": [
+        "TC-API-041"
+      ],
+      "oracleReason": "Repeats deletion of txOneCent after the prior 204 request; expects 404 NOT_FOUND, dependent on execution order.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "DELETE /transactions/:id another user's row → 404, not 403",
+        "method": "DELETE",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{txA}}"
+      },
+      "requestEventSha256": "193c2b9415e2495834b655a411bb2dc839f4776cd019c7ec82c60c967bca8878",
+      "caseIds": [
+        "TC-API-039"
+      ],
+      "oracleReason": "Explicit tokenB bearer auth attempts deletion of user-A txA; expects 404 NOT_FOUND and not 403. No independent readback proves txA survived.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "DELETE /transactions/:id non-numeric id → 400",
+        "method": "DELETE",
+        "rawUrl": "{{baseUrl}}/api/transactions/not-a-number"
+      },
+      "requestEventSha256": "e6ee21b4695320bbc7e028e5e74fff3ad83b7853cacbc61a9ec5e2a1cd959c62",
+      "caseIds": [
+        "TC-API-042"
+      ],
+      "oracleReason": "Deletes route with literal nonnumeric id not-a-number; expects 400 VALIDATION_FAILED.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "GET /transactions → 200, defaults to the current month",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "7c18bf2ee67b59d9fae4a71d85d19be62dcee6e9585a9f04aa85a402c4bb326e",
+      "caseIds": [
+        "TC-API-034"
+      ],
+      "oracleReason": "No date query; expects 200/transactionList, includes txA and spent_on values sorted descending. No explicit out-of-month exclusion fixture or same-date secondary-sort proof.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "GET /transactions?category_id of another user → 404, not 403",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/transactions?category_id={{catB}}"
+      },
+      "requestEventSha256": "62c66641f5e78c185a41f3b02d4e6858b506dc530d35033698ed145a0d6e0f6d",
+      "caseIds": [
+        "TC-API-038"
+      ],
+      "oracleReason": "Inherited user-A bearer token filters by catB; expects 404 NOT_FOUND and explicitly not 403, relying on the earlier B-category fixture.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "GET /transactions?from later than to → 400",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/transactions?from=2026-12-31&to=2026-01-01"
+      },
+      "requestEventSha256": "e20a0e2afbff7ec610c6b6a8b4ee0a62772086befa55ed9376ad0c422ebfa4e3",
+      "caseIds": [
+        "TC-API-037"
+      ],
+      "oracleReason": "Queries fixed from=2026-12-31 and to=2026-01-01 in reverse order; expects 400 VALIDATION_FAILED.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "GET /transactions?limit=200 → 200",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/transactions?limit=200"
+      },
+      "requestEventSha256": "ce7f2e4c5a6bc0edaf385afe3e84643d4de37e02e42d99f01c91895b15a42f71",
+      "caseIds": [
+        "TC-API-036"
+      ],
+      "oracleReason": "Queries limit=200 and expects 200/transactionList schema; no explicit returned count of 200 is asserted.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "GET /transactions?limit=201 → 400",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/transactions?limit=201"
+      },
+      "requestEventSha256": "4a2c5b82beb656f09dcbf017fe7d11f002ca494dd53ba2bea9b2b63280d7ae11",
+      "caseIds": [
+        "TC-API-035"
+      ],
+      "oracleReason": "Queries limit=201 and expects 400 VALIDATION_FAILED.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "POST /transactions → 201, spent_on defaults to today",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "c14d18b2079ce382b16c282c0522ef7b237f8520549d605b48364dfa05543c3e",
+      "caseIds": [
+        "TC-API-022"
+      ],
+      "oracleReason": "Posts integer 1250 cents with catA and no spent_on; 201/transaction schema, returned amount exactly 1250 and spent_on equals the test script's local calendar date. No timezone-boundary proof.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "POST /transactions amount_cents = 0 → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "e0c309a5f74521377a9ec763a516393cdbff9c0dddab9783ccce796478ded53d",
+      "caseIds": [
+        "TC-API-023"
+      ],
+      "oracleReason": "Posts numeric zero cents and expects 400 VALIDATION_FAILED/error schema.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "POST /transactions amount_cents = 1 → 201",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "169b7ae56c5e055ea8c7221f97072627bb6c0e9f945ece7b5e5107a39a85fba2",
+      "caseIds": [
+        "TC-API-024"
+      ],
+      "oracleReason": "Posts one numeric cent, expects 201/transaction schema and stores returned ID as txOneCent for later deletion; no explicit amount echo assertion.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "POST /transactions amount_cents = ceiling → 201",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "bfb8487c2f8a8d55c7737b3592faf92ecf21c9242a3f1a4d68848ae51e4c890b",
+      "caseIds": [
+        "TC-API-025"
+      ],
+      "oracleReason": "Posts {{ceiling}} (collection variable 100000000), expects 201/transaction schema and exact returned amount 100000000.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "POST /transactions amount_cents = ceiling + 1 → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "637198a297280b1d818263c7b847babe6c7fc42e17cc93fad93e9a7c1b415697",
+      "caseIds": [
+        "TC-API-026"
+      ],
+      "oracleReason": "Posts numeric 100000001 cents, one above the stated ceiling; expects 400 VALIDATION_FAILED.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "POST /transactions amount_cents as a string → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "6984cedfd78f83855e866335303e2283c51ecfdacf137556782a6889c722c645",
+      "caseIds": [
+        "TC-API-028"
+      ],
+      "oracleReason": "Posts string \"1250\" instead of a number and expects 400 VALIDATION_FAILED; no numeric coercion accepted.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "POST /transactions amount_cents not an integer → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "2282e101b9e5c40109c39587da4dee4c9fa84a7d03093ec16c66cc9ee01e303b",
+      "caseIds": [
+        "TC-API-027"
+      ],
+      "oracleReason": "Posts numeric fractional amount 12.5 cents and expects 400 VALIDATION_FAILED.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "POST /transactions broken JSON → 400, not 500",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "9c2c3fbc12519a9b9958726d5729aa8e0e79d09466b9153feaf3a94462494e80",
+      "caseIds": [
+        "TC-API-030"
+      ],
+      "oracleReason": "Posts JSON truncated mid-object with JSON content type; expects 400 VALIDATION_FAILED/error schema, non-500 and response Content-Type containing application/json.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "POST /transactions missing amount_cents → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "32ef3ec51012c0975a803d777ac5e1f890893d85e847292ecdbf36dd7eb31aea",
+      "caseIds": [
+        "TC-API-029"
+      ],
+      "oracleReason": "Omits amount_cents entirely and expects 400 VALIDATION_FAILED.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "POST /transactions spent_on far in the future → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "0600a2455d21bc48ecef2a42d3b89a44f1bdc3b7682ab9544ed51654f3a2727a",
+      "caseIds": [
+        "TC-API-032"
+      ],
+      "oracleReason": "Prerequest builds a local calendar date 30 days ahead for {{farFuture}}; expects 400 VALIDATION_FAILED. This is not a timezone-boundary test.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "POST /transactions spent_on in the wrong format → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "43a7235e86f7475c357e06bec1561ae22ca66c8e2d82917a9071dc4b321fa2c0",
+      "caseIds": [
+        "TC-API-031"
+      ],
+      "oracleReason": "Posts spent_on 02/09/2026 rather than ISO date format and expects 400 VALIDATION_FAILED.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "04 · Transactions",
+        "name": "POST /transactions with another user's category_id → 404, not 403",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "ba5d046602a191f0817ed1e6a54457d178951e280dffa274bbc702efbc42a8af",
+      "caseIds": [
+        "TC-API-033"
+      ],
+      "oracleReason": "Inherited user-A bearer token posts catB category ID; expects 404 NOT_FOUND and explicitly not 403, relying on the earlier B-category fixture.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    }
+  ],
+  "cases": [
+    {
+      "id": "TC-API-022",
+      "rowSha256": "b58f8edb7bc2e5bf932a7cd289c0147cffe2a3935433232235503d5640bbdb97",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "POST /transactions → 201, spent_on defaults to today",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/transactions"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-023",
+      "rowSha256": "8018fd5b314879572f0e94d0e94c6c6351ee40a25678884e6596e162fda8a735",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "POST /transactions amount_cents = 0 → 400",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/transactions"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-024",
+      "rowSha256": "198b8912b41a7feb242fb7ef6825b75ed54dc2700ec10b03ba069fb5fa32ac9f",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "POST /transactions amount_cents = 1 → 201",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/transactions"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-025",
+      "rowSha256": "2301ffba9ea76f915c3f23e305131376d9b9c9e4bcbff3fc5196b67a33a07d06",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "POST /transactions amount_cents = ceiling → 201",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/transactions"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-026",
+      "rowSha256": "0a825e3bc9c3e8d39046e6c99628729e55f32a5e1545a1a3c4198be954c2e802",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "POST /transactions amount_cents = ceiling + 1 → 400",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/transactions"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-027",
+      "rowSha256": "a8dfe5eb061ea1a32335dc5836633afc9d108699d9b4a832c2e06bc903cc9433",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "POST /transactions amount_cents not an integer → 400",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/transactions"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-028",
+      "rowSha256": "9a1b0240b47aaa801a01bfe56f3ad9fbced5f090e8f5558ded67ae3692ad066a",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "POST /transactions amount_cents as a string → 400",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/transactions"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-029",
+      "rowSha256": "32877207dc76abb6845172da028b0c42cfe7eb10e572de98f847525b52df71a9",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "POST /transactions missing amount_cents → 400",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/transactions"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-030",
+      "rowSha256": "6b156ea23dae9176ac445ffaedb014a6860cd7bb454d87d12a2ce589d0429c09",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "POST /transactions broken JSON → 400, not 500",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/transactions"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-031",
+      "rowSha256": "a59adf478ccf815f2e003f9949d8254b6a783ce0b34817ca4fc50a31e296ebea",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "POST /transactions spent_on in the wrong format → 400",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/transactions"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-032",
+      "rowSha256": "06b8d7371dfe0b4e7139e72c4e8aefdbdc28dd306b189d310849433af56b341e",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "POST /transactions spent_on far in the future → 400",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/transactions"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-033",
+      "rowSha256": "c1e92c111d66a0e05537ee1f9ba45fee9e92ae162e11682641ea77bb8ade049e",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "POST /transactions with another user's category_id → 404, not 403",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/transactions"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-034",
+      "rowSha256": "0a074389a81bdeb475de60ce68c132d879bc01a77dffdbe43076c588aeded969",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "GET /transactions → 200, defaults to the current month",
+          "method": "GET",
+          "rawUrl": "{{baseUrl}}/api/transactions"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-035",
+      "rowSha256": "6a1e04e5e15c6508c93d681fb0c4af62b1a0db8a3fad0909fb38e971f8617352",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "GET /transactions?limit=201 → 400",
+          "method": "GET",
+          "rawUrl": "{{baseUrl}}/api/transactions?limit=201"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-036",
+      "rowSha256": "f13ff32378e40bcdf666214259a0e4f6e6f22af4632844eeb218b8de8de7ac5c",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "GET /transactions?limit=200 → 200",
+          "method": "GET",
+          "rawUrl": "{{baseUrl}}/api/transactions?limit=200"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-037",
+      "rowSha256": "036571a2ead0bd9dd2084c20ef8e078b9021158088378e2395345804d73db70e",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "GET /transactions?from later than to → 400",
+          "method": "GET",
+          "rawUrl": "{{baseUrl}}/api/transactions?from=2026-12-31&to=2026-01-01"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-038",
+      "rowSha256": "bd57b1488c423a684ccef4f38b1c1e5dc18a4e7b4aff32a37a15966b9b15316b",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "GET /transactions?category_id of another user → 404, not 403",
+          "method": "GET",
+          "rawUrl": "{{baseUrl}}/api/transactions?category_id={{catB}}"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-039",
+      "rowSha256": "07d1f8b375673f93ffcacc3441b6ed69e1541a489f40d8367a7754351d65d5e9",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "DELETE /transactions/:id another user's row → 404, not 403",
+          "method": "DELETE",
+          "rawUrl": "{{baseUrl}}/api/transactions/{{txA}}"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-040",
+      "rowSha256": "b1facb2ba833cbc605587614125a2c12bb092504b6123e98af3d4380b5e88e43",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "DELETE /transactions/:id → 204",
+          "method": "DELETE",
+          "rawUrl": "{{baseUrl}}/api/transactions/{{txOneCent}}"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-041",
+      "rowSha256": "7d693ee67df577b8f35f003fbce95a89cb4aab959da5dbd818c7a8d7dc0cab2b",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "DELETE /transactions/:id again → 404",
+          "method": "DELETE",
+          "rawUrl": "{{baseUrl}}/api/transactions/{{txOneCent}}"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-042",
+      "rowSha256": "7306194f70be35673c35d3bea76d1c39f1f60bb7c4151675f16b056cb1e58f6a",
+      "requests": [
+        {
+          "folder": "04 · Transactions",
+          "name": "DELETE /transactions/:id non-numeric id → 400",
+          "method": "DELETE",
+          "rawUrl": "{{baseUrl}}/api/transactions/not-a-number"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    }
+  ],
+  "sources": {
+    "collection": {
+      "path": "qa/api/wallet.postman_collection.json",
+      "sha256": "fbda0cfd251bc0c8affea61ccd45f2d69f22680685186310a5ad107599a1446d"
+    },
+    "catalogue": {
+      "path": "qa/docs/test-cases.md",
+      "sha256": "a2d1ff0cb206113ac82ec8f6014a5d17d7627265a26602dd6cb81f52962b512d"
+    },
+    "mapping": {
+      "path": "qa/traceability/postman-transactions.json",
+      "sha256": "40e23c2f7cdf0c64bc49d56cc8620dd10cabaad33442dc5ce0a5eca83d69c784"
+    }
+  }
+}

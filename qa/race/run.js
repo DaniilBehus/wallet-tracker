@@ -68,23 +68,42 @@ const { spawn } = require('child_process');
 
 const ROOT = path.join(__dirname, '..', '..');
 const REPORT_DIR = path.join(ROOT, 'qa', 'reports');
+const DATA_DIR = path.join(ROOT, 'data');
 
 const PORTS = [3110, 3111];
-const DB_PATH = path.join(ROOT, 'data', `race-${Date.now()}.db`);
+let DB_PATH;
+let ownedDirectory;
+let ownedIdentity;
 const SECRET = crypto.randomBytes(48).toString('hex');
-const PAIRS = Number(process.env.RACE_PAIRS || 120);
+const PAIRS = Number(process.env.RACE_PAIRS ?? 120);
 
 const servers = [];
 const problems = [];
 
 // --------------------------------------------------------------------- setup
-function sweepOldDatabases() {
-  const dir = path.join(ROOT, 'data');
-  if (!fs.existsSync(dir)) return;
-  for (const name of fs.readdirSync(dir)) {
-    if (!name.startsWith('race-')) continue;
-    try { fs.rmSync(path.join(dir, name), { force: true }); } catch { /* still held */ }
+function createOwnedDatabase() {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  const parent = fs.realpathSync(DATA_DIR);
+  const directory = fs.realpathSync(fs.mkdtempSync(path.join(parent, 'race-')));
+  if (path.dirname(directory) !== parent || !path.basename(directory).startsWith('race-')) {
+    throw new Error('race database directory escaped its parent');
   }
+  ownedDirectory = directory;
+  ownedIdentity = fs.lstatSync(directory);
+  DB_PATH = path.join(directory, 'wallet.db');
+}
+
+function removeOwnedDatabase() {
+  if (!ownedDirectory) return;
+  const parent = fs.realpathSync(DATA_DIR);
+  const directory = fs.realpathSync(ownedDirectory);
+  const identity = fs.lstatSync(ownedDirectory);
+  if (path.dirname(directory) !== parent || !path.basename(directory).startsWith('race-') ||
+      identity.isSymbolicLink() || identity.dev !== ownedIdentity.dev ||
+      identity.ino !== ownedIdentity.ino) {
+    throw new Error('refusing to remove a database directory outside this run');
+  }
+  fs.rmSync(ownedDirectory, { recursive: true });
 }
 
 function startServer(port) {
@@ -378,15 +397,21 @@ async function registerTwice(apiA, apiB, label) {
 
 // --------------------------------------------------------------------- main
 async function main() {
-  fs.mkdirSync(REPORT_DIR, { recursive: true });
-  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-  sweepOldDatabases();
+  if (!Number.isSafeInteger(PAIRS) || PAIRS <= 0) {
+    console.error('RACE_PAIRS must be a positive safe integer');
+    process.exitCode = 1;
+    return;
+  }
 
-  for (const port of PORTS) startServer(port);
   let code = 1;
-  const summary = {};
+  const summary = { pairs: PAIRS, scenarios: {} };
 
   try {
+    fs.mkdirSync(REPORT_DIR, { recursive: true });
+    createOwnedDatabase();
+    summary.database = path.relative(ROOT, DB_PATH);
+    console.log(`owned database: ${summary.database}`);
+    for (const port of PORTS) startServer(port);
     for (const port of PORTS) await waitForServer(port);
     console.log(`two servers on ${PORTS.join(' and ')}, one database: ` +
       `${path.relative(ROOT, DB_PATH)}`);
@@ -439,22 +464,37 @@ async function main() {
     printTally('outcomes', e.outcomes);
     console.log(`    violations: ${e.violations}\n`);
 
-    summary.pairs = PAIRS;
-    summary.scenarios = {
-      A: { outcomes: Object.fromEntries(a.outcomes), violations: a.violations },
-      B1: { outcomes: Object.fromEntries(b.outcomes), violations: b.violations },
-      B2: { outcomes: Object.fromEntries(b2.outcomes), violations: b2.violations },
-      B3: { outcomes: Object.fromEntries(b3.outcomes), violations: b3.violations, forced: true },
-      C: { outcomes: Object.fromEntries(c.outcomes), violations: c.violations },
-      D: { outcomes: Object.fromEntries(d.outcomes), duplicated: d.duplicated, measuredOnly: true },
-      E: { outcomes: Object.fromEntries(e.outcomes), violations: e.violations },
-    };
-    fs.writeFileSync(
-      path.join(REPORT_DIR, 'race-summary.json'),
-      JSON.stringify(summary, null, 2)
-    );
+    // This one registry creates the report and the verdict. D is deliberately
+    // measured but never counted as a passing or failing invariant.
+    const scenarios = [
+      { id: 'A', result: a, enforce: true },
+      { id: 'B1', result: b, enforce: true },
+      { id: 'B2', result: b2, enforce: true },
+      { id: 'B3', result: b3, enforce: true, forced: true },
+      { id: 'C', result: c, enforce: true },
+      { id: 'D', result: d, enforce: false, measuredOnly: true },
+      { id: 'E', result: e, enforce: true },
+    ];
+    for (const { id, result, enforce, forced, measuredOnly } of scenarios) {
+      if (Object.prototype.toString.call(result.outcomes) !== '[object Map]' ||
+          !Number.isSafeInteger(result.violations) || result.violations < 0) {
+        throw new Error(`${id}: missing or invalid scenario result`);
+      }
+      const counts = [...result.outcomes.values()];
+      const expected = PAIRS * (measuredOnly ? 2 : 1);
+      if (counts.length === 0 || counts.some(n => !Number.isSafeInteger(n) || n <= 0) ||
+          counts.reduce((sum, n) => sum + n, 0) !== expected) {
+        throw new Error(`${id}: expected ${expected} observed outcome(s), got ${counts.reduce((sum, n) => sum + n, 0)}`);
+      }
+      summary.scenarios[id] = {
+        outcomes: Object.fromEntries(result.outcomes),
+        ...(enforce ? { violations: result.violations } : { duplicated: result.duplicated, measuredOnly: true }),
+        ...(forced ? { forced: true } : {}),
+      };
+    }
 
-    const total = a.violations + b.violations + b2.violations + b3.violations + c.violations;
+    const total = scenarios.filter(item => item.enforce)
+      .reduce((sum, item) => sum + item.result.violations, 0);
     if (total === 0) {
       console.log('no invariant was violated in any scenario');
       code = 0;
@@ -464,25 +504,55 @@ async function main() {
       if (problems.length > 20) console.log(`  … and ${problems.length - 20} more`);
       code = 1;
     }
-    console.log(`summary: ${path.relative(ROOT, path.join(REPORT_DIR, 'race-summary.json'))}`);
   } catch (err) {
     console.error(err.message);
+    summary.error = err.message;
     code = 1;
   }
 
-  // The result is recorded before any cleanup and nothing below may change it
-  // (R8, and the two ways it has already been broken: BUG-008 and BUG-010).
-  process.exitCode = code;
-
+  let allStopped = true;
   for (const { server, isGone } of servers) {
     if (isGone()) continue;
-    await new Promise((resolve) => {
-      server.once('exit', resolve);
-      const giveUp = setTimeout(resolve, 5000);
-      giveUp.unref();
-      server.kill();
+    const stopped = await new Promise((resolve) => {
+      let settled = false;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(giveUp);
+        resolve(value);
+      };
+      const giveUp = setTimeout(() => finish(isGone()), 5000);
+      server.once('exit', () => finish(true));
+      try { server.kill(); } catch { finish(false); }
     });
+    if (!stopped && !isGone()) allStopped = false;
   }
+
+  if (!allStopped) {
+    console.error(`server did not stop; database preserved: ${DB_PATH}`);
+    summary.cleanup = 'preserved: server still running';
+    code = 1;
+  } else if (ownedDirectory) {
+    try {
+      removeOwnedDatabase();
+      summary.cleanup = 'removed owned directory';
+    } catch (err) {
+      console.error(`database preserved at ${DB_PATH}: ${err.message}`);
+      summary.cleanup = 'preserved: cleanup failed';
+      code = 1;
+    }
+  }
+
+  summary.verdict = code === 0 ? 'PASS' : 'FAIL';
+  try {
+    fs.mkdirSync(REPORT_DIR, { recursive: true });
+    fs.writeFileSync(path.join(REPORT_DIR, 'race-summary.json'), JSON.stringify(summary, null, 2));
+    console.log(`summary: ${path.relative(ROOT, path.join(REPORT_DIR, 'race-summary.json'))}`);
+  } catch (err) {
+    console.error(`could not write race summary: ${err.message}`);
+    code = 1;
+  }
+  process.exitCode = code;
 }
 
 main();

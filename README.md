@@ -85,7 +85,7 @@ For the API, open the [OpenAPI contract, runnable checks and recorded coverage](
 
 ## QA evidence
 
-**Start with [test design](qa/docs/test-design.md), browse the [test cases](qa/docs/test-cases.md),
+**Start with [current QA status](docs/qa-status.md), [test design](qa/docs/test-design.md), browse the [test cases](qa/docs/test-cases.md),
 then follow a [defect from reproduction to regression](qa/docs/defects/).**
 
 | Evidence | Open the source |
@@ -133,7 +133,7 @@ one presentation finding (UAT-OBS-01).
 
 ## Quick start
 
-**Requires Node.js 22+.** Clone the repository, then install the locked dependencies:
+**Requires stable Node.js `^22.14.0 || >=23.6.0` with Node-API 10+.** The installed SQLite binding needs Node-API 10; older 22.x and 23.0–23.5 runtimes are rejected before native loading. Use a current patched supported LTS release for normal use; CI's exact 22.14.0 pin is a compatibility-floor check, not a security recommendation. Clone the repository, then install the locked dependencies:
 
 ```bash
 git clone https://github.com/DaniilBehus/wallet-tracker.git
@@ -150,7 +150,12 @@ node -e "console.log(require('node:crypto').randomBytes(48).toString('hex'))"
 npm start
 ```
 
-Open **http://localhost:3000**. The standard app runs locally with SQLite; no AI key is required.
+Open **http://127.0.0.1:3000**. The standard app binds explicitly to IPv4 loopback,
+runs locally with SQLite and needs no AI key. For deliberate LAN listening, set
+`WALLET_HOST` explicitly (for example `WALLET_HOST=0.0.0.0 npm start` on a POSIX
+shell, or `$env:WALLET_HOST='0.0.0.0'; npm start` in PowerShell). An unset or empty
+value stays loopback; generic `HOST` is ignored. A broader bind is not proof of
+safe deployment: review firewall, authentication and network exposure separately.
 
 For API, Python, browser and load test prerequisites, see [Running the tests](docs/testing.md).
 
@@ -176,7 +181,7 @@ One offline test is skipped on hosts where file symlinks require extra privilege
 
 ## Architecture
 
-**Node.js 22+ · Express · SQLite · JWT · bcrypt**
+**Node.js `^22.14.0 || >=23.6.0` (Node-API 10+) · Express · SQLite · JWT · bcrypt**
 Plain HTML, CSS and JavaScript in the browser. Four runtime dependencies, no frontend build step.
 
 | Decision | Why it matters |

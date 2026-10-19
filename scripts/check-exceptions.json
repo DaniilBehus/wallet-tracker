@@ -4,19 +4,18 @@
     "",
     "Every entry needs a reason and the gate refuses an empty one — the point of",
     "this file is that a gap is a sentence somebody wrote, not a silent skip.",
-    "An entry that no longer matches anything is reported as stale, so the list",
-    "cannot quietly outlive what it excused.",
+    "An entry absent from the current static inventory is stale; one already",
+    "addressed by a matching declaration is redundant. Both fail C9.",
     "",
-    "An exception is for something that CANNOT be tested, not for something that",
-    "has not been tested yet. A missing test is a finding and is closed with a",
-    "test."
+    "An exception records a current static gap and a specific limitation; it",
+    "does not prove that a runtime behavior is impossible to test."
   ],
   "C6": [],
   "C7": [],
   "C8": [
     {
       "item": "500",
-      "reason": "spec §5: a 500 must never be reachable. Asserting one would mean deliberately breaking the app to prove it can break. The collection asserts the opposite instead — every error case carries 'never a 500 (spec §5)', which is 40+ assertions that no path reaches it."
+      "reason": "Global static gap: source declares an internal-error 500, but the current collection and AI tests do not assert a controlled 500 response. Expected-input tests reject unexpected 500s; that is a different guarantee and does not exercise internal-error handling. A controlled 500 test remains possible future work."
     }
   ]
 }

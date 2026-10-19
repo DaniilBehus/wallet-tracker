@@ -1,15 +1,10 @@
 'use strict';
 
-// Coverage gates C6-C9, kept in their own file: check.js asserts invariants
-// about how things are *written*, these assert that what exists is actually
-// *covered*. That is the failure mode a test suite has and a codebase does not
-// — a route added without a case, a testid nobody selects, a status nobody
-// provokes. Each is invisible, and each makes the suite quietly less true than
-// it looks.
+// C6-C8 compare static source declarations. They do not prove that a request,
+// locator, or status assertion executed; runtime suites provide that evidence.
 //
 // Exceptions live in scripts/check-exceptions.json and need a written reason.
-// Something that cannot be tested is a sentence somebody had to write; something
-// that merely has not been tested yet is a finding, and is closed with a test.
+// An exception records a current unaddressed static item and its limitation.
 //
 // No dependencies (spec §2). Node built-ins only.
 
@@ -31,16 +26,40 @@ function walk(dir, ext, out = []) {
 
 function loadExceptions() {
   const file = at('scripts/check-exceptions.json');
-  if (!fs.existsSync(file)) return { data: { C6: [], C7: [], C8: [] }, problems: [] };
-
-  const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const empty = { C6: [], C7: [], C8: [] };
+  if (!fs.existsSync(file)) return {
+    data: empty,
+    problems: ['required scripts/check-exceptions.json is missing'],
+  };
+  let data;
+  try { data = JSON.parse(fs.readFileSync(file, 'utf8')); }
+  catch (error) { return { data: empty, problems: [`invalid exception JSON: ${error.message}`] }; }
   const problems = [];
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return { data: empty, problems: ['exception file must be an object'] };
+  }
   for (const gate of ['C6', 'C7', 'C8']) {
-    for (const entry of data[gate] || []) {
-      if (!entry.reason || entry.reason.trim().length < 20) {
+    if (!Array.isArray(data[gate])) {
+      problems.push(`${gate}: exceptions must be an array`);
+      data[gate] = [];
+      continue;
+    }
+    const seen = new Set();
+    const validEntries = [];
+    for (const entry of data[gate]) {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry) ||
+        typeof entry.item !== 'string' || !entry.item.trim() || entry.item !== entry.item.trim()) {
+        problems.push(`${gate}: exception has an invalid item`);
+        continue;
+      }
+      validEntries.push(entry);
+      if (seen.has(entry.item)) problems.push(`${gate}: duplicate exception "${entry.item}"`);
+      seen.add(entry.item);
+      if (typeof entry.reason !== 'string' || entry.reason.trim().length < 20) {
         problems.push(`${gate}: exception "${entry.item}" has no usable reason`);
       }
     }
+    data[gate] = validEntries;
   }
   return { data, problems };
 }
@@ -65,15 +84,89 @@ function collectionRequests() {
   return out;
 }
 
+function inventoryC6() {
+  if (!has('src/server.js')) return { error: 'required src/server.js is missing' };
+  const requests = collectionRequests();
+  if (!requests || requests.length === 0) return { error: 'required collection has no requests or is missing' };
+  const server = fs.readFileSync(at('src/server.js'), 'utf8');
+  const routes = [];
+  const missingFiles = [];
+  for (const m of server.matchAll(/app\.(get|post|put|patch|delete)\(\s*'([^']+)'/g)) {
+    routes.push({ method: m[1].toUpperCase(), path: m[2] });
+  }
+  for (const m of server.matchAll(/app\.use\(\s*'([^']+)'[^)]*require\('\.\/(routes\/[\w-]+)'\)/g)) {
+    const routeFile = at('src', m[2] + '.js');
+    if (!fs.existsSync(routeFile)) { missingFiles.push(path.relative(ROOT, routeFile)); continue; }
+    for (const r of fs.readFileSync(routeFile, 'utf8').matchAll(/router\.(get|post|put|patch|delete)\(\s*'([^']+)'/g)) {
+      routes.push({ method: r[1].toUpperCase(), path: m[1] + (r[2] === '/' ? '' : r[2]) });
+    }
+  }
+  if (missingFiles.length) return { error: missingFiles.map(file => `mounted route file missing: ${file}`).join('; ') };
+  if (!routes.length) return { error: 'server and mounted routers expose no routes' };
+  const covered = new Set(requests.map(r =>
+    (r.request.method || 'GET').toUpperCase() + ' ' + normalisePath(r.request.url.path || [])));
+  return { items: new Set(routes.map(route => route.method + ' ' + route.path)),
+    covered: new Set(routes.filter(route => covered.has(route.method + ' ' +
+      normalisePath(route.path.replace(/^\//, '').split('/'))))
+      .map(route => route.method + ' ' + route.path)) };
+}
+
+function inventoryC7() {
+  if (!has('public') || !has('qa/e2e/pages')) return { error: 'required public/ or qa/e2e/pages/ is missing' };
+  const publicFiles = [...walk(at('public'), '.html'), ...walk(at('public'), '.js')];
+  const pageFiles = walk(at('qa/e2e/pages'), '.js');
+  if (!publicFiles.length || !pageFiles.length) return { error: 'public/ or qa/e2e/pages/ has no JavaScript/HTML inventory' };
+  const items = new Set();
+  for (const file of publicFiles) {
+    const body = fs.readFileSync(file, 'utf8');
+    for (const m of body.matchAll(/data-testid="([^"$]+)"/g)) items.add(m[1]);
+    for (const m of body.matchAll(/'data-testid':\s*`([^`]+)`/g)) {
+      items.add(m[1].replace(/\$\{[^}]*\}/g, '').replace(/-+$/, '-'));
+    }
+  }
+  if (!items.size) return { error: 'no rendered data-testid values were found' };
+  const pages = pageFiles.map(file => fs.readFileSync(file, 'utf8')).join('\n');
+  const prefixes = [...pages.matchAll(/getByTestId\(`([^`$]*)\$\{/g)].map(m => m[1]);
+  const covered = new Set([...items].filter(testid =>
+    pages.includes("'" + testid + "'") || pages.includes('"' + testid + '"') ||
+    pages.includes('`' + testid) || pages.includes('/^' + testid) ||
+    prefixes.some(prefix => prefix !== '' && testid.startsWith(prefix))));
+  return { items, covered };
+}
+
+function inventoryC8() {
+  if (!has('src')) return { error: 'required src/ is missing' };
+  const requests = collectionRequests();
+  if (!requests || !requests.length) return { error: 'required collection has no requests or is missing' };
+  const files = walk(at('src'), '.js');
+  if (!files.length) return { error: 'src/ has no JavaScript source files' };
+  const items = new Set();
+  for (const file of files) {
+    const body = fs.readFileSync(file, 'utf8');
+    for (const m of body.matchAll(/res\.status\((\d{3})\)/g)) items.add(m[1]);
+    for (const m of body.matchAll(/ApiError\((\d{3})/g)) items.add(m[1]);
+  }
+  if (!items.size) return { error: 'source files expose no status codes to check' };
+  const scripts = requests.flatMap(r => (r.event || []).filter(e => e.listen === 'test'))
+    .flatMap(e => e.script.exec).join('\n');
+  const asserted = new Set();
+  for (const m of scripts.matchAll(/expect(?:Status|Ok|Error)\((\d{3})/g)) asserted.add(m[1]);
+  if (has('qa/ai/tests')) {
+    for (const file of walk(at('qa/ai/tests'), '.test.js')) {
+      for (const m of fs.readFileSync(file, 'utf8').matchAll(/expectApiError\(.*?,\s*(\d{3})\s*,\s*'[A-Z_]+'\s*\)/g)) asserted.add(m[1]);
+    }
+  }
+  if (!asserted.size) return { error: 'no status assertions were found' };
+  return { items, covered: asserted, assertedCount: asserted.size };
+}
+
 /**
- * "{{txA}}", "41" and ":id" are all just "an id" as far as coverage goes: one
+ * "{{txA}}", "41" and ":id" are all just "an id" for this static comparison: one
  * is how the collection writes a variable, one is a literal in a URL, one is
  * how Express writes a parameter.
  *
- * Missing the third produced this gate's first false positive — it reported
- * DELETE /api/transactions/:id as uncovered while three cases were exercising
- * it. Worth the comment: a coverage gate that cries wolf gets an exception
- * written for it, and then it is excusing a gap that was never there.
+ * Missing the third produced this gate's first false positive. This mapping
+ * compares declarations; it is not proof that a request executed.
  */
 const normalisePath = (segments) =>
   '/' + segments
@@ -82,156 +175,55 @@ const normalisePath = (segments) =>
     .join('/');
 
 // ---------------------------------------------------------------------- C6
-function c6RoutesCovered({ pass, skip, fail }, exceptions) {
-  const id = 'C6', name = 'every route in src/ has a request in the collection';
-  if (!has('src/server.js')) return skip(id, name, 'src/server.js does not exist yet');
-
-  const requests = collectionRequests();
-  if (!requests) return skip(id, name, 'the collection does not exist yet');
-
-  const server = fs.readFileSync(at('src/server.js'), 'utf8');
-  const routes = [];
-
-  // Endpoints declared straight on the app.
-  for (const m of server.matchAll(/app\.(get|post|put|patch|delete)\(\s*'([^']+)'/g)) {
-    routes.push({ method: m[1].toUpperCase(), path: m[2] });
-  }
-
-  // Mounted routers: app.use('/api/x', requireAuth, require('./routes/y'))
-  for (const m of server.matchAll(/app\.use\(\s*'([^']+)'[^)]*require\('\.\/(routes\/[\w-]+)'\)/g)) {
-    const base = m[1];
-    const routeFile = at('src', m[2] + '.js');
-    if (!fs.existsSync(routeFile)) continue;
-    const body = fs.readFileSync(routeFile, 'utf8');
-    for (const r of body.matchAll(/router\.(get|post|put|patch|delete)\(\s*'([^']+)'/g)) {
-      routes.push({ method: r[1].toUpperCase(), path: base + (r[2] === '/' ? '' : r[2]) });
-    }
-  }
-
-  const covered = new Set(requests.map((r) =>
-    (r.request.method || 'GET').toUpperCase() + ' ' + normalisePath(r.request.url.path || [])));
-
-  const missing = [];
-  for (const route of routes) {
-    const wanted = route.method + ' ' + normalisePath(route.path.replace(/^\//, '').split('/'));
-    const key = route.method + ' ' + route.path;
-    if (!covered.has(wanted) && !excepted(exceptions, 'C6', key)) missing.push(key);
-  }
-
-  if (missing.length === 0) return pass(id, name, routes.length + ' routes');
-  fail(id, name, [
-    ...missing.map((m) => '  no request for  ' + m), '',
-    'A route with no case is code nobody has run. Add a request, or add an entry',
-    'to scripts/check-exceptions.json saying why it cannot have one.',
-  ]);
+function c6RoutesCovered({ pass, fail }, exceptions, inventory = inventoryC6()) {
+  const id = 'C6', name = 'static route/request declarations';
+  if (inventory.error) return fail(id, name, [inventory.error]);
+  const missing = [...inventory.items].filter(item => !inventory.covered.has(item) && !excepted(exceptions, id, item));
+  if (!missing.length) return pass(id, name, inventory.items.size + ' route declarations');
+  fail(id, name, missing.map(item => '  no matching request declaration for  ' + item));
 }
 
 // ---------------------------------------------------------------------- C7
-function c7TestidsInPageObjects({ pass, skip, fail }, exceptions) {
-  const id = 'C7', name = 'every data-testid in public/ is addressed from a page object';
-  if (!has('public') || !has('qa/e2e/pages')) {
-    return skip(id, name, 'public/ or qa/e2e/pages/ does not exist yet');
-  }
-
-  const rendered = new Set();
-  for (const file of [...walk(at('public'), '.html'), ...walk(at('public'), '.js')]) {
-    const body = fs.readFileSync(file, 'utf8');
-    for (const m of body.matchAll(/data-testid="([^"$]+)"/g)) rendered.add(m[1]);
-    // A generated id such as tx-row-${tx.id} is only addressable by its prefix.
-    for (const m of body.matchAll(/'data-testid':\s*`([^`]+)`/g)) {
-      rendered.add(m[1].replace(/\$\{[^}]*\}/g, '').replace(/-+$/, '-'));
-    }
-  }
-
-  const pages = walk(at('qa/e2e/pages'), '.js')
-    .map((f) => fs.readFileSync(f, 'utf8'))
-    .join('\n');
-
-  // getByTestId(`keypad-${digit}`) covers keypad-0 .. keypad-9.
-  const templatePrefixes = [...pages.matchAll(/getByTestId\(`([^`$]*)\$\{/g)].map((m) => m[1]);
-
-  const missing = [];
-  for (const testid of rendered) {
-    const covered =
-      pages.includes("'" + testid + "'") ||
-      pages.includes('"' + testid + '"') ||
-      pages.includes('`' + testid) ||
-      pages.includes('/^' + testid) ||
-      templatePrefixes.some((prefix) => prefix !== '' && testid.startsWith(prefix));
-    if (!covered && !excepted(exceptions, 'C7', testid)) missing.push(testid);
-  }
-
-  if (missing.length === 0) return pass(id, name, rendered.size + ' testids');
-  fail(id, name, [
-    ...missing.sort().map((m) => '  no page object addresses  ' + m), '',
-    'Locators live in page objects and nowhere else (D-012). A testid reached for',
-    'from a spec is a locator that escaped.',
-  ]);
+function c7TestidsInPageObjects({ pass, fail }, exceptions, inventory = inventoryC7()) {
+  const id = 'C7', name = 'static testid/page-object addressability';
+  if (inventory.error) return fail(id, name, [inventory.error]);
+  const missing = [...inventory.items].filter(item => !inventory.covered.has(item) && !excepted(exceptions, id, item));
+  if (!missing.length) return pass(id, name, inventory.items.size + ' testid declarations');
+  fail(id, name, missing.sort().map(item => '  no page-object address for  ' + item));
 }
 
 // ---------------------------------------------------------------------- C8
-function c8StatusesAsserted({ pass, skip, fail }, exceptions) {
-  const id = 'C8', name = 'every status code src/ can return is asserted in the collection or qa/ai';
-  if (!has('src')) return skip(id, name, 'src/ does not exist yet');
-
-  const requests = collectionRequests();
-  if (!requests) return skip(id, name, 'the collection does not exist yet');
-
-  const produced = new Set();
-  for (const file of walk(at('src'), '.js')) {
-    const body = fs.readFileSync(file, 'utf8');
-    for (const m of body.matchAll(/res\.status\((\d{3})\)/g)) produced.add(m[1]);
-    for (const m of body.matchAll(/ApiError\((\d{3})/g)) produced.add(m[1]);
-  }
-
-  const scripts = requests
-    .flatMap((r) => (r.event || []).filter((e) => e.listen === 'test'))
-    .flatMap((e) => e.script.exec)
-    .join('\n');
-
-  const asserted = new Set();
-  for (const m of scripts.matchAll(/expect(?:Status|Ok|Error)\((\d{3})/g)) asserted.add(m[1]);
-
-  // D-036: the collection runs against a server with the AI feature off, so
-  // statuses that need a provider (403 consent, 422 context, 502 invalid
-  // answer) cannot be provoked there. qa/ai provokes them against a live-mode
-  // server and a local fake, always through one helper whose call carries the
-  // status AND the error code: expectApiError(response, 422, 'AI_...').
-  // Counting only that shape keeps a bare number elsewhere from passing.
-  if (has('qa/ai/tests')) {
-    for (const file of walk(at('qa/ai/tests'), '.test.js')) {
-      const body = fs.readFileSync(file, 'utf8');
-      for (const m of body.matchAll(/expectApiError\(.*?,\s*(\d{3})\s*,\s*'[A-Z_]+'\s*\)/g)) asserted.add(m[1]);
-    }
-  }
-
-  const missing = [...produced]
-    .filter((code) => !asserted.has(code) && !excepted(exceptions, 'C8', code))
-    .sort();
-
-  if (missing.length === 0) {
-    return pass(id, name, produced.size + ' produced, ' + asserted.size + ' asserted');
-  }
-  fail(id, name, [
-    ...missing.map((m) => '  nothing provokes  ' + m), '',
-    'A status nobody provokes is a branch nobody has executed. Add a case, or',
-    'record in scripts/check-exceptions.json why it cannot be provoked.',
-  ]);
+function c8StatusesAsserted({ pass, fail }, exceptions, inventory = inventoryC8()) {
+  const id = 'C8', name = 'static global status-assertion declarations';
+  if (inventory.error) return fail(id, name, [inventory.error]);
+  const missing = [...inventory.items].filter(item => !inventory.covered.has(item) && !excepted(exceptions, id, item));
+  if (!missing.length) return pass(id, name, `${inventory.items.size} source statuses, ${inventory.assertedCount} asserted literals`);
+  fail(id, name, missing.sort().map(item => '  no matching status assertion declaration for  ' + item));
 }
 
 // ---------------------------------------------------------------------- C9
 /** An exception nobody needs any more is a lie waiting to be believed. */
-function c9ExceptionsExplained({ pass, fail }, problems) {
-  const id = 'C9', name = 'every exception carries a usable reason';
+function c9ExceptionsExplained({ pass, fail }, problems, exceptions, inventories) {
+  const id = 'C9', name = 'static exception identity and reason validation';
+  for (const gate of ['C6', 'C7', 'C8']) {
+    const inventory = inventories[gate];
+    if (inventory.error) { problems.push(`${gate}: inventory unavailable; exception identity cannot be checked`); continue; }
+    for (const entry of exceptions[gate]) {
+      if (!entry || typeof entry.item !== 'string' || !entry.item.trim()) continue;
+      if (!inventory.items.has(entry.item)) problems.push(`${gate}: stale exception "${entry.item}" is not in current inventory`);
+      else if (inventory.covered.has(entry.item)) problems.push(`${gate}: redundant exception "${entry.item}" is already addressed`);
+    }
+  }
   if (problems.length === 0) return pass(id, name);
-  fail(id, name, [...problems, '',
-    'Fix the reason or drop the entry. An exception with nothing behind it',
-    'excuses nothing and reads as though it does.']);
+  fail(id, name, problems);
 }
 
 
 module.exports = {
   loadExceptions,
+  inventoryC6,
+  inventoryC7,
+  inventoryC8,
   c6RoutesCovered,
   c7TestidsInPageObjects,
   c8StatusesAsserted,

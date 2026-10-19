@@ -4,7 +4,7 @@
 
 [SVG preview](database.svg) · [Editable Mermaid source](database.mmd)
 
-**Implemented and published; owner UAT remains unsigned.** The category column
+**Implemented and published in the [dated 2026-09-29 build](README.md#dated-publication-evidence--2026-09-29); owner UAT remains unsigned.** The category column
 was frozen before code at `4d08651`. The local schema and guarded migration now
 enforce `CHECK (monthly_limit_cents IS NULL OR monthly_limit_cents >= 0)` in SQLite,
 not just in an API validator. All eight foreign-key relationships are unchanged.
@@ -128,8 +128,9 @@ identities, including where the schema does not spell out `NOT NULL`.
 
 - [Category-limit specification](../../qa/docs/analysis-category-limits.md):
   additive migration, existing rows stay `NULL`, repeated boot is safe, database
-  CHECK required. [Recorded local results](../../qa/docs/test-report-category-limits.md);
-  owner acceptance and publication remain pending.
+  CHECK required. [Recorded local results](../../qa/docs/test-report-category-limits.md)
+  preceded the [dated publication](README.md#dated-publication-evidence--2026-09-29);
+  [owner acceptance](../../qa/docs/uat-category-limits.md) remains unsigned.
 - [Complete schema](../../src/schema.sql) and [boot / additive limit migration](../../src/db.js).
 - [Ownership and value validators](../../src/validate.js), [schedule writes and derived fields](../../src/routes/schedules.js),
   [keyed transaction writes](../../src/routes/transactions.js), [quota reservations](../../src/ai/limits.js).

@@ -79,7 +79,7 @@ limit and `T` that category's total of expenses for the month, both in cents.
 Every criterion is written as Given / When / Then and ends in at least one test
 (§5).
 
-### REQ-CL-01 · Set a category limit
+### <a id="req-cl-01"></a>REQ-CL-01 · Set a category limit
 
 *As a person who budgets by category, I want to give one category a monthly
 limit, so that I can see whether that part of my spending stays within what I
@@ -91,7 +91,7 @@ planned.*
 | AC-01.2 | the category's limit is 20000 | I send 15000 | 15000 replaces it: there is one current value (CL-D5) |
 | AC-01.3 | the category has no limit | I send `0` | `0` is stored and returned as `0`, not `null` — a real zero limit (CL-D6) |
 
-### REQ-CL-02 · Clear a category limit
+### <a id="req-cl-02"></a>REQ-CL-02 · Clear a category limit
 
 *As a person who budgets by category, I want to remove a category's limit, so
 that a category I no longer plan for stops being judged.*
@@ -101,7 +101,7 @@ that a category I no longer plan for stops being judged.*
 | AC-02.1 | the category has a limit and spending this month | I send `{"monthly_limit_cents": null}` | `200` with `null`; `GET /api/categories` returns `null`; its summary row reads `not_set`, with `null` limit and remaining |
 | AC-02.2 | the category has a limit and nothing spent this month | I clear the limit | the category leaves `by_category`: no limit and no spending is hidden, as before (CL-D10) |
 
-### REQ-CL-03 · A request without a limit leaves it alone
+### <a id="req-cl-03"></a>REQ-CL-03 · A request without a limit leaves it alone
 
 *As a person who budgets by category, I want a request that gives no limit to
 leave the stored one alone, so that nothing I send by accident wipes a limit I
@@ -113,7 +113,7 @@ set.*
 | AC-03.2 | the same | I send only `name` or `icon` | `400 VALIDATION_FAILED` naming the unknown field — renaming is out of scope; nothing changes |
 | AC-03.3 | the same | I create a category, or save my income or my overall limit | the category's limit is still 20000 |
 
-### REQ-CL-04 · A mistyped limit is refused
+### <a id="req-cl-04"></a>REQ-CL-04 · A mistyped limit is refused
 
 *As a person who budgets by category, I want a mistyped limit to be refused, so
 that a wrong figure never becomes my budget.*
@@ -124,7 +124,7 @@ that a wrong figure never becomes my budget.*
 | AC-04.2 | any category of mine | I send exactly `100000000` — 1 000 000 EUR, the ceiling of every amount | it is accepted and returned exactly |
 | AC-04.3 | — | the id in the path is not a positive integer (`abc`, `0`, `-1`, `1.5`, `null`) | `400 VALIDATION_FAILED`. Uncategorised has no id, so no request can give it a limit (CL-D3) |
 
-### REQ-CL-05 · My limits are mine alone
+### <a id="req-cl-05"></a>REQ-CL-05 · My limits are mine alone
 
 *As a person who budgets by category, I want my category limits to belong to my
 account alone, so that no other account can read or change them.*
@@ -135,7 +135,7 @@ account alone, so that no other account can read or change them.*
 | AC-05.2 | the same | B reads `GET /api/categories` and `GET /api/summary` | B sees only B's own categories and limits |
 | AC-05.3 | no token | a client sends `PATCH /api/categories/:id` | `401`, and nothing changes |
 
-### REQ-CL-06 · The summary judges every category row
+### <a id="req-cl-06"></a>REQ-CL-06 · The summary judges every category row
 
 *As a person who budgets by category, I want the month summary to give each
 category's limit, state and what is left, so that the screen and any other
@@ -149,7 +149,7 @@ client read one judgement.*
 | AC-06.4 | the decision table in §3 | the suites run | each of its rules is asserted by a test |
 | AC-06.5 | an overall limit and category limits are both set | I read the summary | its top-level `limit_*` fields describe the overall limit alone, computed exactly as before (CL-D1) |
 
-### REQ-CL-07 · A limited category is listed before anything is spent
+### <a id="req-cl-07"></a>REQ-CL-07 · A limited category is listed before anything is spent
 
 *As a person who budgets by category, I want a category with a limit to appear
 in the month before I spend in it, so that I can see my whole plan from the
@@ -161,7 +161,7 @@ first day.*
 | AC-07.2 | a category has neither a limit nor spending this month | I read the summary | it is not in `by_category`, as before |
 | AC-07.3 | rows with and without spending | I read the summary | rows with spending come first, largest total first, as before; limited rows with nothing spent follow in the order the categories were created; the totals still add up to `total_cents` |
 
-### REQ-CL-08 · Only money that was spent counts
+### <a id="req-cl-08"></a>REQ-CL-08 · Only money that was spent counts
 
 *As a person who budgets by category, I want a category's total to count what
 was actually paid in it — a paid loan or subscription instalment included — and
@@ -173,7 +173,7 @@ nothing that is only planned, so that the state reflects money that has left.*
 | AC-08.2 | an active schedule in `C` with an instalment not yet paid | I read the summary | neither `C`'s total nor the month total includes it |
 | AC-08.3 | a monthly income is set | I read the summary | the income never enters a category's total (CL-D8) |
 
-### REQ-CL-09 · Uncategorised is never judged
+### <a id="req-cl-09"></a>REQ-CL-09 · Uncategorised is never judged
 
 *As a person who budgets by category, I want expenses without a category to stay
 outside every category limit, so that an expense I did not assign is never
@@ -184,7 +184,7 @@ judged against a budget it was not given.*
 | AC-09.1 | uncategorised expenses this month, and limits on other categories | I read the summary | the Uncategorised row (`category_id: null`) reads `not_set`, with `null` limit and remaining; its expenses still count toward `total_cents` and the overall limit (CL-D3) |
 | AC-09.2 | the breakdown shows an Uncategorised row | I look for its editor | there is none: the row is not a control |
 
-### REQ-CL-10 · A limit never blocks, and stands on its own
+### <a id="req-cl-10"></a>REQ-CL-10 · A limit never blocks, and stands on its own
 
 *As a person who budgets by category, I want saving to work whatever my category
 limits say, and each limit to be judged on its own, so that the app records what
@@ -196,7 +196,7 @@ happened and does not tie my budgets together.*
 | AC-10.2 | an overall limit of 40000 | I give two categories limits of 30000 each | both are accepted with `200`, with no warning about their sum (CL-D1) |
 | AC-10.3 | an overall limit, an income and a category limit are set | I set or clear the category limit | the overall limit, the income and the month total do not change; saving the income or the overall limit leaves category limits alone |
 
-### REQ-CL-11 · The breakdown shows each limited category against its limit
+### <a id="req-cl-11"></a>REQ-CL-11 · The breakdown shows each limited category against its limit
 
 *As a person who budgets by category, I want each limited category in the month
 breakdown to show what I spent of its limit and whether budget is left, so that
@@ -212,7 +212,7 @@ I see at a glance where the month went over.*
 | AC-11.6 | any state | I read the row | the words carry the state and the box repeats it, so colour is never the only signal |
 | AC-11.7 | a 320 px wide screen, the longest amounts and a long category name | I open *This month* | the row, its amount and its box fit: nothing is clipped and the page does not scroll sideways |
 
-### REQ-CL-12 · Set or clear a limit from the breakdown
+### <a id="req-cl-12"></a>REQ-CL-12 · Set or clear a limit from the breakdown
 
 *As a person who budgets by category, I want to tap a category in the month
 breakdown and set or clear its limit there, so that I change a budget where I
@@ -227,7 +227,7 @@ see it.*
 | AC-12.5 | the editor | I type something that is not an amount and save | the app's error message; nothing is sent; the stored limit is unchanged |
 | AC-12.6 | the editor | I press Cancel | it closes and nothing is sent |
 
-### REQ-CL-13 · An existing database keeps working
+### <a id="req-cl-13"></a>REQ-CL-13 · An existing database keeps working
 
 *As the owner of an existing Wallet database, I want the upgrade to add category
 limits without touching my data, so that nothing is judged until I set a limit.*

@@ -14,6 +14,20 @@ const { installProvider } = require(path.join(SRC, 'ai', 'provider'));
 const { createOpenAIProvider, API_URL } = require(path.join(SRC, 'ai', 'openai'));
 const { forwardingFetch } = require('./fake-openai');
 
+// This entry is reachable only from qa/ runners. Pin the existing quota clock
+// dependency for boundary-sensitive HTTP tests without changing production
+// routes, timers, authentication time, or the provider's local fake transport.
+if (process.env.AI_TEST_QUOTA_NOW) {
+  const fixedNow = new Date(process.env.AI_TEST_QUOTA_NOW);
+  if (Number.isNaN(fixedNow.getTime())) throw new Error('invalid AI_TEST_QUOTA_NOW');
+  const quota = require(path.join(SRC, 'ai', 'limits'));
+  const createLimits = quota.createLimits;
+  quota.createLimits = (deps) => createLimits({
+    ...deps,
+    clock: { now: () => new Date(fixedNow.getTime()) },
+  });
+}
+
 const fakeUrl = process.env.WALLET_AI_TEST_FAKE_URL;
 if (process.env.WALLET_AI_MODE === 'live' && fakeUrl) {
   installProvider(createOpenAIProvider({

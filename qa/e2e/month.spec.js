@@ -3,6 +3,7 @@
 const { test, expect, eur, eurPattern, eurWithin } = require('./fixtures/wallet');
 const { testCase } = require('./case-link');
 const { MonthPage } = require('./pages/month.page');
+const { AuthPage } = require('./pages/auth.page');
 const { contrastRatio, parseRgb } = require('./support/contrast');
 
 /**
@@ -11,6 +12,266 @@ const { contrastRatio, parseRgb } = require('./support/contrast');
  */
 
 test.describe('This month', () => {
+  test('support_control: an older JSON body cannot replace a newer Month state', async ({ signedIn, api }) => {
+    const month = new MonthPage(signedIn);
+    const [category] = await api.categories();
+    await signedIn.evaluate(() => {
+      window.__oldBodyEntered = false;
+      window.__oldBodyConsumed = false;
+      const nativeFetch = window.fetch.bind(window);
+      let firstSummary = true;
+      window.fetch = async (...args) => {
+        const gateThis = firstSummary && String(args[0]).includes('/api/summary');
+        if (gateThis) firstSummary = false;
+        const response = await nativeFetch(...args);
+        if (gateThis) {
+          const originalJson = response.json.bind(response);
+          response.json = async () => {
+            const value = await originalJson();
+            window.__oldBodyEntered = true;
+            await new Promise(resolve => { window.__releaseOldBody = resolve; });
+            requestAnimationFrame(() => { window.__oldBodyConsumed = true; });
+            return value;
+          };
+        }
+        return response;
+      };
+    });
+    await month.goToMonth();
+    await signedIn.waitForFunction(() => window.__oldBodyEntered === true);
+    await api.addExpense({ amount_cents: 3100, category_id: category.id });
+    await month.goToAdd();
+    await month.goToMonth();
+    await expect(month.total).toHaveText(eurPattern(3100));
+    await signedIn.evaluate(() => window.__releaseOldBody());
+    await signedIn.waitForFunction(() => window.__oldBodyConsumed === true);
+    await expect(month.total).toHaveText(eurPattern(3100));
+    await expect(month.rows).toHaveCount(1);
+  });
+
+  test('support_control: old 401 after new sign-in cannot sign out or overwrite the new account', async ({ signedIn, request }) => {
+    const month = new MonthPage(signedIn);
+    const auth = new AuthPage(signedIn);
+    await signedIn.evaluate(() => {
+      window.__old401Consumed = false;
+      const nativeFetch = window.fetch.bind(window);
+      let firstSummary = true;
+      window.fetch = async (...args) => {
+        const old = firstSummary && String(args[0]).includes('/api/summary');
+        if (old) firstSummary = false;
+        const response = await nativeFetch(...args);
+        if (old) {
+          const originalJson = response.json.bind(response);
+          response.json = async () => {
+            const value = await originalJson();
+            requestAnimationFrame(() => { window.__old401Consumed = true; });
+            return value;
+          };
+        }
+        return response;
+      };
+    });
+    let release, observed;
+    const held = new Promise(resolve => { release = resolve; });
+    const firstObserved = new Promise(resolve => { observed = resolve; });
+    let calls = 0;
+    await signedIn.route('**/api/summary', async route => {
+      calls += 1;
+      if (calls !== 1) return route.continue();
+      observed();
+      await held;
+      return route.fulfill({ status: 401, contentType: 'application/json',
+        body: JSON.stringify({ error: { code: 'UNAUTHORIZED', message: 'Synthetic old-session denial' } }) });
+    });
+    await signedIn.route(/\/api\/schedules\?active=1$/, route => route.fulfill({ status: 401,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: { code: 'UNAUTHORIZED', message: 'Synthetic current-session denial' } }),
+    }));
+    try {
+      await month.goToMonth();
+      await firstObserved;
+      await month.goToUpcoming();
+      await expect(auth.submit).toBeVisible();
+      const email = `new-session-${Date.now()}@wallet.test`;
+      const password = 'synthetic-new-session-password';
+      const registered = await request.post('/api/auth/register', { data: { email, password } });
+      expect(registered.status()).toBe(201);
+      const { token } = await registered.json();
+      const categories = await (await request.get('/api/categories', {
+        headers: { Authorization: `Bearer ${token}` },
+      })).json();
+      await request.post('/api/transactions', { headers: { Authorization: `Bearer ${token}` },
+        data: { amount_cents: 2300, category_id: categories[0].id } });
+      await auth.signIn(email, password);
+      await month.goToMonth();
+      await expect(month.total).toHaveText(eurPattern(2300));
+    } finally { release(); }
+    await signedIn.waitForFunction(() => window.__old401Consumed === true);
+    await expect(month.total).toHaveText(eurPattern(2300));
+    await expect(auth.submit).toBeHidden();
+  });
+
+  test('support_control: an old-session network rejection cannot show an error after new sign-in', async ({ signedIn, request }) => {
+    const month = new MonthPage(signedIn);
+    const auth = new AuthPage(signedIn);
+    await month.goToMonth();
+    await signedIn.evaluate(() => {
+      window.__oldErrorConsumed = false;
+      const nativeFetch = window.fetch.bind(window);
+      window.fetch = async (...args) => {
+        try { return await nativeFetch(...args); }
+        catch (error) {
+          if (String(args[0]).includes('/api/settings')) {
+            requestAnimationFrame(() => { window.__oldErrorConsumed = true; });
+          }
+          throw error;
+        }
+      };
+    });
+    let releaseOld;
+    const held = new Promise(resolve => { releaseOld = resolve; });
+    let oldPosts = 0;
+    await signedIn.route('**/api/settings', async route => {
+      if (route.request().method() !== 'PUT') return route.continue();
+      oldPosts += 1;
+      await held;
+      return route.abort('failed');
+    });
+    await signedIn.route(/\/api\/schedules\?active=1$/, route => route.fulfill({ status: 401,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: { code: 'UNAUTHORIZED', message: 'Synthetic session end' } }),
+    }));
+    try {
+      await month.incomeEdit.click();
+      await month.incomeInput.fill('1000.00');
+      await month.incomeSave.click();
+      await expect.poll(() => oldPosts).toBe(1);
+      await month.goToUpcoming();
+      await expect(auth.submit).toBeVisible();
+      const email = `new-error-session-${Date.now()}@wallet.test`;
+      const password = 'synthetic-new-session-password';
+      const registered = await request.post('/api/auth/register', { data: { email, password } });
+      expect(registered.status()).toBe(201);
+      await auth.signIn(email, password);
+      await month.goToMonth();
+      await expect(month.total).toHaveText(eurPattern(0));
+    } finally { releaseOld(); }
+    await signedIn.waitForFunction(() => window.__oldErrorConsumed === true);
+    await expect(auth.submit).toBeHidden();
+    await expect(month.toastError).toBeHidden();
+  });
+
+  test('support_control: a left screen ignores late success and error after their bodies settle', async ({ signedIn, api }) => {
+    const month = new MonthPage(signedIn);
+    const schedule = await api.addSchedule({ name: 'Late screen control', amount_cents: 500,
+      day_of_month: 12, starts_on: '2026-01-01' });
+    await signedIn.evaluate(() => {
+      window.__lateScheduleBodies = 0;
+      const nativeFetch = window.fetch.bind(window);
+      window.fetch = async (...args) => {
+        const response = await nativeFetch(...args);
+        if (String(args[0]).includes('/api/schedules?active=1')) {
+          const originalJson = response.json.bind(response);
+          response.json = async () => {
+            const value = await originalJson();
+            requestAnimationFrame(() => { window.__lateScheduleBodies += 1; });
+            return value;
+          };
+        }
+        return response;
+      };
+    });
+    let releaseSuccess, releaseError, observedSuccess, observedError;
+    const successHeld = new Promise(resolve => { releaseSuccess = resolve; });
+    const errorHeld = new Promise(resolve => { releaseError = resolve; });
+    const successObserved = new Promise(resolve => { observedSuccess = resolve; });
+    const errorObserved = new Promise(resolve => { observedError = resolve; });
+    let calls = 0;
+    await signedIn.route(/\/api\/schedules\?active=1$/, async route => {
+      calls += 1;
+      if (calls === 1) {
+        const response = await route.fetch();
+        observedSuccess();
+        await successHeld;
+        return route.fulfill({ response });
+      }
+      observedError();
+      await errorHeld;
+      return route.fulfill({ status: 503, contentType: 'application/json',
+        body: JSON.stringify({ error: { code: 'INTERNAL', message: 'Synthetic late read error' } }) });
+    });
+    try {
+      await month.goToUpcoming();
+      await successObserved;
+      await month.goToSchedules();
+      await expect(signedIn.getByTestId(`schedule-row-${schedule.id}`)).toHaveCount(1);
+      releaseSuccess();
+      await signedIn.waitForFunction(() => window.__lateScheduleBodies === 1);
+      await expect(signedIn.getByTestId(`schedule-row-${schedule.id}`)).toHaveCount(1);
+      await expect(month.toastError).toBeHidden();
+
+      await month.goToUpcoming();
+      await errorObserved;
+      await month.goToSchedules();
+      releaseError();
+      await signedIn.waitForFunction(() => window.__lateScheduleBodies === 2);
+      await expect(signedIn.getByTestId(`schedule-row-${schedule.id}`)).toHaveCount(1);
+      await expect(month.toastError).toBeHidden();
+    } finally { releaseSuccess(); releaseError(); }
+  });
+
+  test('support_control: older Month response cannot replace a newer same-screen load', async ({ signedIn, api }) => {
+    const month = new MonthPage(signedIn);
+    const [category] = await api.categories();
+    await signedIn.evaluate(() => {
+      window.__oldSummaryConsumed = false;
+      const nativeFetch = window.fetch.bind(window);
+      let observedSummary = false;
+      window.fetch = async (...args) => {
+        const oldSummary = !observedSummary && String(args[0]).includes('/api/summary');
+        if (oldSummary) observedSummary = true;
+        const response = await nativeFetch(...args);
+        if (oldSummary) {
+          const originalJson = response.json.bind(response);
+          response.json = async () => {
+            const value = await originalJson();
+            // The app's await continuation runs before this next task.
+            requestAnimationFrame(() => { window.__oldSummaryConsumed = true; });
+            return value;
+          };
+        }
+        return response;
+      };
+    });
+    let release;
+    const held = new Promise(resolve => { release = resolve; });
+    let observed;
+    const firstObserved = new Promise(resolve => { observed = resolve; });
+    let calls = 0;
+    await signedIn.route('**/api/summary', async route => {
+      calls += 1;
+      if (calls !== 1) return route.continue();
+      const oldResponse = await route.fetch();
+      observed();
+      await held;
+      return route.fulfill({ response: oldResponse });
+    });
+    try {
+      await month.goToMonth();
+      await firstObserved;
+      await api.addExpense({ amount_cents: 1700, category_id: category.id });
+      await month.goToAdd();
+      await month.goToMonth();
+      await expect(month.total).toHaveText(eurPattern(1700));
+    } finally {
+      release();
+    }
+    await signedIn.waitForFunction(() => window.__oldSummaryConsumed === true);
+    await expect.poll(() => calls).toBe(2);
+    await expect(month.total).toHaveText(eurPattern(1700));
+    await expect(month.rows).toHaveCount(1);
+  });
+
   test('the total, the bars and the list agree with what was spent', testCase('TC-E2E-012'), async ({ signedIn, api }) => {
     const month = new MonthPage(signedIn);
     const [groceries, transport] = await api.categories();
