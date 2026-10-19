@@ -2588,7 +2588,7 @@
       "path": "qa/ai/support/test-server.js",
       "role": "helper",
       "roleNote": "Shared fixture/page/support helper; not a case: qa/ai/support/test-server.js",
-      "sha256": "9d3356c6d9ddb4ea26bfb4dbda24fb27e8ecab888349451babd528baf9cd82ac",
+      "sha256": "a5dbc536d419790ce141bc6afbad7beefc5736e5ed4e636fc7ea8e9b068111ba",
       "declarations": [],
       "links": [],
       "parameters": [],
@@ -2691,7 +2691,7 @@
       "path": "qa/ai/tests/demo.test.js",
       "role": "separate_ai",
       "roleNote": "Separate AI source declarations, not owner catalogue: qa/ai/tests/demo.test.js",
-      "sha256": "894f0d42a353be9c3ac41f39ca137e33ba8c73f6fbf6325796ed3d9e96db130d",
+      "sha256": "960f5552d50f98f7d135a0c2b410638ff4c05205d38997e0ec3d98d947ffc5d8",
       "declarations": [
         "the banner says demo and names the examples; the database is the demo folder",
         "capabilities: demo, no external consent, never OpenAI even with a key in the environment",
@@ -3512,7 +3512,7 @@
       "path": "qa/ai/tests/integration.test.js",
       "role": "separate_ai",
       "roleNote": "Separate AI source declarations, not owner catalogue: qa/ai/tests/integration.test.js",
-      "sha256": "d6bc8bed9abb99e313263da0bd64692e09ed5f30630210d3f7d575aa3f5f8d24",
+      "sha256": "c419c7faff256df0c78987ddbdcb8009e7043e11bbcaccab539eaaa4ce9bb555",
       "declarations": [
         "capabilities: live-mode flags and nothing secret",
         "capabilities and draft with the feature off: disabled, manual entry untouched",
@@ -6747,7 +6747,7 @@
     },
     "manifest": {
       "path": "qa/traceability/test-source-manifest.json",
-      "sha256": "5e28ee97f1685bdcfc1ad316e8f6f1cbe17938860787edecc2262d54ca06c0ae"
+      "sha256": "843c2780abd7061750ad750998d608227829fbd72a4d5ddad4736791ac38796e"
     },
     "apiInventory": {
       "path": "qa/docs/postman-api-inventory.json",
