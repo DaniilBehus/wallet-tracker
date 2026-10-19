@@ -18,7 +18,7 @@ router.get('/', (req, res) => {
 router.post('/', (req, res) => {
   const body = req.body || {};
   const name = v.name(body.name);
-  const icon = body.icon === undefined || body.icon === null ? null : String(body.icon);
+  const icon = v.nullableText(body.icon, 'icon');
 
   const duplicate = db
     .prepare('SELECT id FROM categories WHERE user_id = ? AND name = ?')

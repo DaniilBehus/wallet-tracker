@@ -65,6 +65,15 @@ class MonthPage extends BasePage {
     return this.page.getByTestId(`tx-row-${transactionId}`);
   }
 
+  async visibleIds() {
+    const ids = [];
+    for (const row of await this.rows.all()) {
+      const marker = await row.getAttribute('data-testid');
+      ids.push(Number(marker.slice('tx-row-'.length)));
+    }
+    return ids;
+  }
+
   deleteButton(transactionId) {
     return this.page.getByTestId(`tx-delete-${transactionId}`);
   }

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "scope": {
+    "folder": "03 · Categories",
+    "catalogueSection": "## API · Categories",
+    "collectionContextSha256": "45eff4491008e0071c47167e9847e3adb353ee43855b0d0cf6eef07a4afc439c"
+  },
+  "caseRowSha256": {
+    "TC-API-015": "739d4d03b06dff02a9886151236a32eb41cc1ae4495159e967d2a9b0df067575",
+    "TC-API-016": "43b10c358606c1057e31079ee23b1b29be8c7c8ce48dfb7375b8fd1767d7a2e8",
+    "TC-API-017": "9fe30cc2c93fc8c506d3065052b81ef26da051659451cd8f01bc3cf13d7ae3b5",
+    "TC-API-018": "1284e46292d79c4045fc6b7570c784263476710c122fdee8e7c44024e436f064",
+    "TC-API-019": "aa7b8955d582d50cab77f178ffaca2c2a07bddf616ec8f7fe7a48aed70a4159b",
+    "TC-API-020": "b5ddbb371a07eb2f30005e01394544afaa75eb4ec44d88d159583e3a522122e0",
+    "TC-API-021": "ff07a25a3a517c38b51be489f23e4e9b7b40dbed8caca74b3922ab9a66021b8d"
+  },
+  "edges": [
+    {"selector":{"folder":"03 · Categories","name":"GET /categories → 200, seeded on registration","method":"GET","rawUrl":"{{baseUrl}}/api/categories"},"requestEventSha256":"8368e02535c7a3439de114c150d9ef0ddd44a81293c3b92e233de8a26ca52db5","caseIds":["TC-API-015"],"testMarker":"registration seeded a starting set of categories","oracleReason":"Inherited bearer auth; expectOk(200, 'categoryList') validates array/item schema and the test requires a nonempty seeded list."},
+    {"selector":{"folder":"03 · Categories","name":"GET /categories as user B → different ids","method":"GET","rawUrl":"{{baseUrl}}/api/categories"},"requestEventSha256":"9ba978ecd43ca98daace360633623cccad8e0b2f50983bc7880a9f95597d281e","caseIds":["TC-API-016"],"testMarker":"user B's categories are not user A's rows","oracleReason":"Explicit tokenB bearer auth; 200/categoryList and B's returned IDs exclude only stored catA (the first A ID). Catalogue says none of all A IDs, which this assertion does not prove."},
+    {"selector":{"folder":"03 · Categories","name":"POST /categories → 201","method":"POST","rawUrl":"{{baseUrl}}/api/categories"},"requestEventSha256":"46c13767c4c4c1da6ef6107c2d4a01d1d016e2ac3e84a669753666e71eef84b4","caseIds":["TC-API-017"],"testMarker":"echoes back what was sent","oracleReason":"Posts run-specific QA {{runId}} name and emoji icon; expects 201/category schema and matching returned name/icon."},
+    {"selector":{"folder":"03 · Categories","name":"POST /categories duplicate name → 409","method":"POST","rawUrl":"{{baseUrl}}/api/categories"},"requestEventSha256":"e7f589dda44febf21b49ffbddd3e8ecb4934d949856dfee10b31eeac97bafaba","caseIds":["TC-API-018"],"testMarker":"expectError(409, 'CONFLICT')","oracleReason":"Repeats the same run-specific name/icon body after the create request; expects 409 CONFLICT and error schema."},
+    {"selector":{"folder":"03 · Categories","name":"POST /categories empty name → 400","method":"POST","rawUrl":"{{baseUrl}}/api/categories"},"requestEventSha256":"6bb1ecb21a4be841b5e9982a66b7b7c03e23de057f0f40719641e42c63b28d28","caseIds":["TC-API-019"],"testMarker":"expectError(400, 'VALIDATION_FAILED')","oracleReason":"Posts name containing three spaces, not a missing, empty or null name; expects 400 VALIDATION_FAILED and error schema."},
+    {"selector":{"folder":"03 · Categories","name":"POST /categories name of 61 characters → 400","method":"POST","rawUrl":"{{baseUrl}}/api/categories"},"requestEventSha256":"d5a9b436f4d7e91b6a20e89e78a5ad935005bef49c59562a1e08a73d9aa44026","caseIds":["TC-API-020"],"testMarker":"pm.collectionVariables.set('name61', 'x'.repeat(61));","oracleReason":"Prerequest creates a 61-character name and body uses {{name61}}; expects 400 VALIDATION_FAILED and error schema."},
+    {"selector":{"folder":"03 · Categories","name":"POST /categories name of exactly 60 → 201","method":"POST","rawUrl":"{{baseUrl}}/api/categories"},"requestEventSha256":"ca60d63f9a5d7f4f18d992c74d8a0d160639ec8d5364860dcd9d163e3ee54f5d","caseIds":["TC-API-021"],"testMarker":"the stored name is 60 characters long","oracleReason":"Prerequest derives a run-specific name padded/sliced to 60 characters; expects 201/category schema and returned name length 60."}
+  ]
+}

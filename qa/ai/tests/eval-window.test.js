@@ -381,6 +381,11 @@ test('W9 · three evaluator processes at once share one window: never more than 
   planOpenAI(6);
   const env = liveEnv({ WALLET_AI_EVAL_DB: evalDb });
   const runs = await Promise.all([1, 2, 3].map(() => runEvaluator({ args: ['--live', '--limit', '2'], env, fakeUrl: openaiUrl })));
+  const aborted = runs.map((r, index) => ({ r, index })).filter(({ r }) => r.code === 2 || r.code === null || r.signal !== null);
+  assert.deepEqual(aborted.map(({ r, index }) => ({
+    child: index + 1, code: r.code, signal: r.signal,
+    error: (r.out.match(/^evaluator error: (.+)$/m) || [])[1] || 'unexpected child termination',
+  })), [], 'W9 must exercise the quota, not silently lose a child during setup');
   const total = openai.requests.length;
   assert.ok(total <= 5, `${total} requests: ${runs.map((r) => r.out).join('\n---\n')}`);
   assert.equal(rowsIn(evalDb), total, 'every request had a reservation and every reservation a dispatch');

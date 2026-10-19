@@ -28,27 +28,27 @@ conversion, income, refunds, transfers, schedules, chat memory, RAG, tool calls.
 
 | ID | Rule |
 |---|---|
-| AI-R01 | Parsing never creates or changes a financial record |
-| AI-R02 | Every save is an explicit action after an editable review |
-| AI-R03 | Keypad entry works with AI off, unavailable, limited or misconfigured |
-| AI-R04 | Exactly one completed expense; several are never merged or summed |
-| AI-R05 | A missing or ambiguous amount stays empty; nothing is invented |
-| AI-R06 | Amounts are converted by digit strings into integer cents |
-| AI-R07 | EUR only; an explicit other currency is unsupported, never converted |
-| AI-R08 | Relative dates use the validated reference date and calendar rules |
-| AI-R09 | A missing date defaults visibly to today; an unparsed date never does |
-| AI-R10 | Category suggestions come only from the user's own categories |
-| AI-R11 | An unknown category stays unselected |
-| AI-R12 | No input text, provider body, auth header or key in ordinary logs |
-| AI-R13 | No real network calls in default tests or PR CI |
-| AI-R14 | Refusal, truncation, invalid output, timeout and upstream failure are distinct |
-| AI-R15 | Editing, cancelling, signing out or leaving invalidates a pending request |
-| AI-R16 | Retrying one confirmed save cannot insert a second expense |
-| AI-R17 | Two deliberate identical purchases remain two expenses |
-| AI-R18 | Limits are enforced before any provider call, also under concurrency |
-| AI-R19 | Keyboard-usable, works at 320×568, matches the existing style |
-| AI-R20 | Reports separate model errors, application rejection and transport failure |
-| AI-R21 | Claims about the feature stay within what its tests and reports show |
+| <a id="ai-r01"></a>AI-R01 | Parsing never creates or changes a financial record |
+| <a id="ai-r02"></a>AI-R02 | Every save is an explicit action after an editable review |
+| <a id="ai-r03"></a>AI-R03 | Keypad entry works with AI off, unavailable, limited or misconfigured |
+| <a id="ai-r04"></a>AI-R04 | Exactly one completed expense; several are never merged or summed |
+| <a id="ai-r05"></a>AI-R05 | A missing or ambiguous amount stays empty; nothing is invented |
+| <a id="ai-r06"></a>AI-R06 | Amounts are converted by digit strings into integer cents |
+| <a id="ai-r07"></a>AI-R07 | EUR only; an explicit other currency is unsupported, never converted |
+| <a id="ai-r08"></a>AI-R08 | Relative dates use the validated reference date and calendar rules |
+| <a id="ai-r09"></a>AI-R09 | A missing date defaults visibly to today; an unparsed date never does |
+| <a id="ai-r10"></a>AI-R10 | Category suggestions come only from the user's own categories |
+| <a id="ai-r11"></a>AI-R11 | An unknown category stays unselected |
+| <a id="ai-r12"></a>AI-R12 | No input text, provider body, auth header or key in ordinary logs |
+| <a id="ai-r13"></a>AI-R13 | No real network calls in default tests or PR CI |
+| <a id="ai-r14"></a>AI-R14 | Refusal, truncation, invalid output, timeout and upstream failure are distinct |
+| <a id="ai-r15"></a>AI-R15 | Editing, cancelling, signing out or leaving invalidates a pending request |
+| <a id="ai-r16"></a>AI-R16 | Retrying one confirmed save cannot insert a second expense |
+| <a id="ai-r17"></a>AI-R17 | Two deliberate identical purchases remain two expenses |
+| <a id="ai-r18"></a>AI-R18 | Limits are enforced before any provider call, also under concurrency |
+| <a id="ai-r19"></a>AI-R19 | Keyboard-usable, works at 320×568, matches the existing style |
+| <a id="ai-r20"></a>AI-R20 | Reports separate model errors, application rejection and transport failure |
+| <a id="ai-r21"></a>AI-R21 | Claims about the feature stay within what its tests and reports show |
 
 ## 3. Modes
 

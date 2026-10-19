@@ -1,11 +1,24 @@
 'use strict';
 
+const crypto = require('crypto');
 const express = require('express');
 const { db } = require('../db');
-const { nextDue, today, laterOf } = require('../dates');
+const { nextDue, today, laterOf, isValidDate } = require('../dates');
 const v = require('../validate');
+const { ApiError } = require('../errors');
 
 const router = express.Router();
+
+function scheduleNextDue(dayOfMonth, startsOn) {
+  try {
+    return nextDue(dayOfMonth, laterOf(today(), startsOn));
+  } catch (err) {
+    if (err instanceof RangeError && err.code === 'DATE_OUT_OF_RANGE') {
+      throw v.badRequest('next_due exceeds the supported local date range 0000..9999');
+    }
+    throw err;
+  }
+}
 
 /**
  * Turn a stored row into the API shape.
@@ -31,7 +44,7 @@ function shape(row) {
     starts_on: row.starts_on,
     // A schedule that has not started yet is next due on or after its start
     // date, not today.
-    next_due: nextDue(row.day_of_month, laterOf(today(), row.starts_on)),
+    next_due: scheduleNextDue(row.day_of_month, row.starts_on),
     total_count: row.total_count,
     paid_count: row.paid_count,
     remaining_count: remainingCount,
@@ -53,6 +66,7 @@ router.post('/', (req, res) => {
   const startsOn = v.startsOn(body.starts_on);
   const totalCount = v.totalCount(body.total_count);
   v.loanTotalCents(amountCents, totalCount);
+  scheduleNextDue(dayOfMonth, startsOn); // refuse overflow before INSERT
 
   const info = db
     .prepare(
@@ -87,6 +101,82 @@ router.get('/', (req, res) => {
 // something the next reader has to work out.
 router.patch('/:id/pay', (req, res) => {
   const id = v.id(req.params.id, 'id');
+  const key = req.get('Idempotency-Key');
+
+  // No key means the original API, including its ignored request body.
+  if (key !== undefined) {
+    if (!/^[A-Za-z0-9-]{8,64}$/.test(key)) {
+      throw v.badRequest('Idempotency-Key must be 8-64 characters of letters, digits and hyphens');
+    }
+    const body = req.body || {};
+    const fields = ['expected_paid_count', 'expected_amount_cents', 'expected_category_id',
+      'expected_name', 'expected_total_count', 'spent_on'];
+    if (Object.keys(body).length !== fields.length ||
+        Object.keys(body).some(field => !fields.includes(field))) {
+      throw v.badRequest(`keyed Pay requires exactly ${fields.join(', ')}`);
+    }
+    const count = body.expected_paid_count;
+    if (!Number.isSafeInteger(count) || count < 0) {
+      throw v.badRequest('expected_paid_count must be a non-negative safe integer');
+    }
+    const amount = v.amountCents(body.expected_amount_cents);
+    const category = body.expected_category_id === null ? null : v.id(body.expected_category_id, 'expected_category_id');
+    const name = v.name(body.expected_name);
+    const total = v.totalCount(body.expected_total_count);
+    if (!isValidDate(body.spent_on)) throw v.badRequest('spent_on must be a date in YYYY-MM-DD form');
+    const canonical = JSON.stringify(['schedule-pay-v1', id, count, amount, category, name, total, body.spent_on]);
+    const hash = crypto.createHash('sha256').update(canonical).digest('hex');
+
+    const keyedPay = db.transaction(() => {
+      const existing = db.prepare(
+        'SELECT payload_hash, transaction_id, response_json FROM transaction_requests WHERE user_id = ? AND operation_key = ?'
+      ).get(req.userId, key);
+      if (existing) {
+        if (existing.payload_hash !== hash) {
+          throw new ApiError(409, 'IDEMPOTENCY_CONFLICT', 'This key was already used for a different operation');
+        }
+        const original = db.prepare(
+          'SELECT 1 FROM transactions WHERE id = ? AND user_id = ? AND schedule_id = ?'
+        ).get(existing.transaction_id, req.userId, id);
+        if (!original) {
+          throw new ApiError(409, 'IDEMPOTENCY_REPLAY_UNAVAILABLE', 'The payment saved with this key no longer exists');
+        }
+        return { replayed: true, body: JSON.parse(existing.response_json) };
+      }
+
+      const schedule = findForUser(id, req.userId);
+      if (!schedule) throw v.notFound(`No schedule with id ${id}`);
+      if (schedule.active === 0) throw v.conflict('This schedule is no longer active and cannot be paid');
+      if (schedule.paid_count !== count || schedule.amount_cents !== amount ||
+          schedule.category_id !== category || schedule.name !== name ||
+          schedule.total_count !== total) {
+        throw v.conflict('Schedule changed since this payment was prepared; reload it before a new payment');
+      }
+      const spentOn = v.spentOn(body.spent_on);
+      const txInfo = db.prepare(
+        `INSERT INTO transactions (user_id, amount_cents, category_id, spent_on, note, schedule_id)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      ).run(req.userId, amount, category, spentOn, name, id);
+      const paidCount = count + 1;
+      const finished = total !== null && paidCount >= total;
+      db.prepare('UPDATE schedules SET paid_count = ?, active = ? WHERE id = ?')
+        .run(paidCount, finished ? 0 : 1, id);
+      const result = {
+        paid_count: paidCount,
+        remaining_count: total === null ? null : total - paidCount,
+        finished,
+        transaction_id: Number(txInfo.lastInsertRowid),
+      };
+      db.prepare(
+        `INSERT INTO transaction_requests (user_id, operation_key, payload_hash, transaction_id, response_json)
+         VALUES (?, ?, ?, ?, ?)`
+      ).run(req.userId, key, hash, result.transaction_id, JSON.stringify(result));
+      return { replayed: false, body: result };
+    });
+    const outcome = keyedPay.immediate();
+    if (outcome.replayed) res.set('Idempotency-Replayed', 'true');
+    return res.status(200).json(outcome.body);
+  }
 
   // The read, the checks and the writes are ALL inside the transaction.
   //
@@ -171,8 +261,10 @@ router.patch('/:id', (req, res) => {
   const newAmountCents = given.includes('amount_cents') ? v.amountCents(body.amount_cents) : undefined;
   if (newAmountCents !== undefined) set('amount_cents', newAmountCents);
   if (given.includes('category_id')) set('category_id', v.ownedCategoryId(body.category_id, req.userId));
-  if (given.includes('day_of_month')) set('day_of_month', v.dayOfMonth(body.day_of_month));
-  if (given.includes('starts_on')) set('starts_on', v.startsOn(body.starts_on));
+  const newDayOfMonth = given.includes('day_of_month') ? v.dayOfMonth(body.day_of_month) : undefined;
+  if (newDayOfMonth !== undefined) set('day_of_month', newDayOfMonth);
+  const newStartsOn = given.includes('starts_on') ? v.startsOn(body.starts_on) : undefined;
+  if (newStartsOn !== undefined) set('starts_on', newStartsOn);
 
   const newTotalCount = given.includes('total_count') ? v.totalCount(body.total_count) : undefined;
 
@@ -194,6 +286,11 @@ router.patch('/:id', (req, res) => {
       newAmountCents === undefined ? before.amount_cents : newAmountCents,
       totalCount
     );
+
+    scheduleNextDue(
+      newDayOfMonth === undefined ? before.day_of_month : newDayOfMonth,
+      newStartsOn === undefined ? before.starts_on : newStartsOn
+    ); // refuse overflow before UPDATE; transaction keeps the old row intact
 
     if (totalCount !== null && totalCount < before.paid_count) {
       throw v.conflict(

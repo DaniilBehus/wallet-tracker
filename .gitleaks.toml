@@ -1,0 +1,17 @@
+title = "Wallet Tracker secret scanning"
+
+# Keep every built-in rule. In v8.18.4, defining an existing [[rules]] ID
+# replaces that rule, so the exception must be global instead. Allowlist
+# criteria combine with OR: no path/commit/stopword exemption is specified.
+# Only whole, checksum-only lines match; a credential beside one cannot match.
+# v8.18.4's finding.Line may start with the preceding newline (location.go).
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Reviewed TC-API row digests and the exact provenance-only report line"
+regexTarget = "line"
+regexes = [
+  '''^(?:\r?\n)?[ \t]{4}"TC-API-[0-9]{3}": "[a-f0-9]{64}",?$''',
+  '''^(?:\r?\n)?Collection SHA-256: `[a-f0-9]{64}`; catalogue: `[a-f0-9]{64}`; Token mapping: `[a-f0-9]{64}`; generated Token JSON: `[a-f0-9]{64}`\. Separately inspected `qa/api/run\.js` SHA-256: `[a-f0-9]{64}` — its hash is recorded for provenance, not enforced by this validator\.$''',
+]

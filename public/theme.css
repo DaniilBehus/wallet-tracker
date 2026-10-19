@@ -213,7 +213,7 @@ input[type="checkbox"] { accent-color: var(--accent); }
 .toast { box-shadow: var(--shadow-lg); }
 .toast--success { background: var(--ok-bg); color: var(--ok); border-color: #33745f; }
 .toast--error { background: var(--danger-bg); color: var(--danger); border-color: #855057; }
-.sheet { background: rgba(2, 12, 12, 0.76); }
+.sheet::backdrop { background: rgba(2, 12, 12, 0.76); }
 .sheet__panel {
   background: var(--surface);
   border: 1px solid var(--line-strong);
