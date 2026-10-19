@@ -2,9 +2,11 @@
 
 [← Back to README](../../README.md#qa-evidence) · [Local automated report](test-report-category-limits.md) · [Requirements](analysis-category-limits.md)
 
-**Not executed or signed by the owner.** Automated browser checks are not UAT.
-Use a disposable account and database, never personal records or `npm start`
-(which loads a local environment file and defaults to the real database).
+**Owner-reported 13/13 PASS and test-build acceptance on 2026-10-19; see the
+[current-build record](uat-current-build.md#owner-record--reported-2026-10-19).**
+Automated browser checks are separate from UAT. Use a disposable account and
+database for any rerun, never personal records or `npm start` (which loads a
+local environment file and defaults to the real database).
 For the [current-build handoff](uat-current-build.md), use its existing server
 and synthetic database; do not start a second server on the same port.
 
@@ -53,4 +55,4 @@ coverage in the report; they are not fabricated manual UAT observations.
 
 | Build SHA | Date | Reviewer | Result | Observations |
 |---|---|---|---|---|
-| | | | | |
+| `15dfc45c9e34bb7f0da5632c73fa37c07563c7cf` (same application tree as published `7b1cb328`) | 2026-10-19 | Product owner | PASS 13/13; accepted this test build | Owner-reported result; no per-step screenshots or observations supplied |

@@ -148,12 +148,17 @@ CI and UAT.
    An unresolved Critical/High defect in `OPEN` **or** `IN PROGRESS` blocks
    release unless the **owner explicitly** grants and records a scoped
    exception; local or uncommitted repair is not automatic release clearance.
-   [BUG-021](../../log/BUGS.md) is High/IN PROGRESS pending owner schedule-edit
-   UAT; no owner exception is recorded. [BUG-005](../../log/BUGS.md)
-   remains Low/OPEN with an unknown cause; do not relabel it as flaky or fixed.
+   [BUG-021](../../log/BUGS.md#current-dispositions--2026-10-19) is now
+   CLOSED: the published schedule-edit regression and the owner's named
+   2026-10-19 UAT PASS meet its specific criteria. This is not a blanket
+   risk waiver. [BUG-005](../../log/BUGS.md) remains Low/OPEN with an unknown
+   cause; do not relabel it as flaky or fixed.
 3. **Owner UAT complete:** the owner executes and signs the relevant scripts.
-   An automated PASS, an agent's local report or a GitHub publication is not
-   a substitute for that decision.
+   The owner reported [13/13 category-limit steps plus schedule edit, focus and
+   Month refresh PASS](uat-current-build.md#owner-record--reported-2026-10-19)
+   and accepted that synthetic-data test build. Optional uncertain Save/Pay
+   response remains **NOT RUN**. This scoped decision is not a live-provider,
+   load or general release certificate; automation alone cannot supply it.
 
 Keep each defect's reproduction, repair and regression evidence in
 [the register](../../log/BUGS.md), including a rule or an explicit one-off
