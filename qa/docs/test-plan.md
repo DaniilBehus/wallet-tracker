@@ -6,7 +6,8 @@
 spending limit.** [Current QA/release status](../../docs/qa-status.md) separates
 this plan from dated results. The current public architecture notes are in
 [`spec/architecture.md`](../../spec/architecture.md). Dated run results are
-recorded separately in the reports and CI.
+recorded separately in the reports and CI. The published application snapshot
+`7b1cb328` has a [6/6 post-merge CI run](https://github.com/DaniilBehus/wallet-tracker/actions/runs/39248991256); this does not sign owner UAT.
 
 The [architecture notes](../../spec/architecture.md) and feature analyses,
 including the [monthly limit analysis](analysis-monthly-limit.md), define the
@@ -147,8 +148,8 @@ CI and UAT.
    An unresolved Critical/High defect in `OPEN` **or** `IN PROGRESS` blocks
    release unless the **owner explicitly** grants and records a scoped
    exception; local or uncommitted repair is not automatic release clearance.
-   [BUG-021](../../log/BUGS.md) is High/OPEN, and other High findings remain
-   IN PROGRESS; no owner exception is recorded. [BUG-005](../../log/BUGS.md)
+   [BUG-021](../../log/BUGS.md) is High/IN PROGRESS pending owner schedule-edit
+   UAT; no owner exception is recorded. [BUG-005](../../log/BUGS.md)
    remains Low/OPEN with an unknown cause; do not relabel it as flaky or fixed.
 3. **Owner UAT complete:** the owner executes and signs the relevant scripts.
    An automated PASS, an agent's local report or a GitHub publication is not
@@ -187,7 +188,7 @@ names what is still unresolved; neither is a live execution count.
 | API layer | newman, run through `qa/api/run.js`, which waits for `/api/health` and mints the expired token |
 | Python API layer | Python 3.12+, pytest + httpx; `qa/python/conftest.py` starts and health-checks a real Node child on a dynamic loopback port, with temporary SQLite and a new secret |
 | End-to-end | Playwright, Chromium, two viewports: Pixel 5 (the primary — the app is phone-first) and desktop |
-| CI | GitHub Actions, `ubuntu-latest`: one shared [verification inventory](../../scripts/verification-plan.js) for secret scan → API (including race) → Python → Playwright/Selenium; offline AI depends on API. The [current status](../../docs/qa-status.md) distinguishes committed workflow code from an unverified new combined-tree CI result |
+| CI | GitHub Actions, `ubuntu-latest`: one shared [verification inventory](../../scripts/verification-plan.js) for secret scan → API (including race) → Python → Playwright/Selenium; offline AI depends on API. The [current status](../../docs/qa-status.md) links the exact published-build result and its remaining non-CI gates |
 | Database | A throwaway file per CI job. Never a database with real data in it |
 
 ---
@@ -206,8 +207,8 @@ names what is still unresolved; neither is a live execution count.
 | `qa/docs/test-design.md` | How a change becomes a set of cases |
 | `qa/docs/test-cases.md` | The case register with ids and results |
 | `qa/docs/defects/` | Defect reports found by this layer |
-| `qa/reports/api-report.html` | Local Newman HTML; see [current status](../../docs/qa-status.md) before claiming a remote upload |
-| `qa/reports/python-junit.xml` | Local pytest JUnit; see [current status](../../docs/qa-status.md) before claiming a remote upload |
+| `qa/reports/api-report.html` | Local Newman HTML; the [published-build CI run](https://github.com/DaniilBehus/wallet-tracker/actions/runs/39248991256) separately retained an API artifact containing its own HTML/JUnit/race summary |
+| `qa/reports/python-junit.xml` | Local pytest JUnit; the same CI run separately retained its Python JUnit artifact |
 | `playwright-report/` | Playwright HTML report and traces (CI artifact) |
 | `qa/reports/selenium/` | Screenshot, page source and console of each failed Selenium test (CI artifact on failure) |
 | `log/BUGS.md` | The project-wide defect register — the single source of truth |
@@ -245,5 +246,5 @@ users do not mean separate databases or IP login buckets inside one run. A
 new, explicitly supplied `DB_PATH` is retained, never reused or cleaned as an
 owned default. Direct Playwright invocation fails closed; use `npm run test:e2e`.
 See the [isolation report](test-report-e2e-isolation.md) for measured controls
-and limits. The combined uncommitted tree has no newly verified full CI run;
-see the [current status](../../docs/qa-status.md).
+and limits. The published application snapshot has a [6/6 post-merge CI run](https://github.com/DaniilBehus/wallet-tracker/actions/runs/39248991256);
+owner UAT remains a separate gate in the [current status](../../docs/qa-status.md).
