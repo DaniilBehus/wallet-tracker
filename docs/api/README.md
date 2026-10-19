@@ -147,12 +147,12 @@ These are verification requirements for this layer, not new product features.
 
 | ID | Requirement | Evidence |
 |---|---|---|
-| REQ-CONTRACT-01 | Local-ref OpenAPI and source operation/auth/parameter parity; fail drift | [Gate](../../scripts/lib/openapi.js), TC-CONTRACT-002 |
-| REQ-CONTRACT-02 | Typed selected status/media/header; empty204; no mutation/fallback | [Validator](../../qa/contract/response-validator.js), TC-CONTRACT-001/010 |
-| REQ-CONTRACT-03 | Actual success and meaningful denial/bounds/ownership/state scenarios | TC-CONTRACT-003…009 in [tests](../../qa/contract/contract.test.js) |
-| REQ-CONTRACT-04 | Disposable offline environment, no inherited provider keys or captured JWT logs | [Harness](../../qa/contract/support.js), TC-CONTRACT-001/008/011 |
-| REQ-CONTRACT-05 | Real-capture/inventory controls reject corruption; originals remain unchanged | TC-CONTRACT-002/010 |
-| REQ-CONTRACT-06 | Observed success for every source operation; unexercised statuses explicit | TC-CONTRACT-011, [matrix](../../qa/docs/test-report-contract.md#observed-status-matrix) |
+| <a id="req-contract-01"></a>REQ-CONTRACT-01 | Local-ref OpenAPI and source operation/auth/parameter parity; fail drift | [Gate](../../scripts/lib/openapi.js), TC-CONTRACT-002 |
+| <a id="req-contract-02"></a>REQ-CONTRACT-02 | Typed selected status/media/header; empty204; no mutation/fallback | [Validator](../../qa/contract/response-validator.js), TC-CONTRACT-001/010 |
+| <a id="req-contract-03"></a>REQ-CONTRACT-03 | Actual success and meaningful denial/bounds/ownership/state scenarios | TC-CONTRACT-003…009 in [tests](../../qa/contract/contract.test.js) |
+| <a id="req-contract-04"></a>REQ-CONTRACT-04 | Disposable offline environment, no inherited provider keys or captured JWT logs | [Harness](../../qa/contract/support.js), TC-CONTRACT-001/008/011 |
+| <a id="req-contract-05"></a>REQ-CONTRACT-05 | Real-capture/inventory controls reject corruption; originals remain unchanged | TC-CONTRACT-002/010 |
+| <a id="req-contract-06"></a>REQ-CONTRACT-06 | Observed success for every source operation; unexercised statuses explicit | TC-CONTRACT-011, [matrix](../../qa/docs/test-report-contract.md#observed-status-matrix) |
 
 Follow the evidence: [requirement](#requirements-for-the-contract-checks) →
 [implementation decision](#run-safely) → [test](../../qa/contract/contract.test.js) →

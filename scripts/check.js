@@ -6,7 +6,7 @@
 //
 // This is not a test suite. These checks assert invariants that are expensive
 // to discover late: a spec that drifted, float money on the server, a testid
-// that was never added, a route or status nobody tests. Behaviour is checked
+// that was never added, a static route or status declaration without a match. Behaviour is checked
 // by the test layers in qa/.
 //
 // No dependencies, by design (architecture §2). Node built-ins only.
@@ -22,7 +22,6 @@ const has = (f) => fs.existsSync(at(f));
 
 const results = [];
 const pass = (id, name, note) => results.push({ id, name, state: 'PASS', note });
-const skip = (id, name, why) => results.push({ id, name, state: 'SKIP', why });
 const fail = (id, name, lines) => results.push({ id, name, state: 'FAIL', lines });
 
 // Walk a directory, returning every file matching `ext`.
@@ -42,7 +41,7 @@ function walk(dir, ext, out = []) {
 function c1SpecUnchanged() {
   const id = 'C1', name = 'spec/architecture.md unchanged';
   if (!has('spec/architecture.md') || !has('spec/architecture.sha256')) {
-    return skip(id, name, 'spec or recorded hash is missing');
+    return fail(id, name, ['required architecture note or recorded hash is missing']);
   }
   const actual = crypto.createHash('sha256')
     .update(fs.readFileSync(at('spec/architecture.md')))
@@ -72,9 +71,11 @@ const FLOAT_MONEY = [
 ];
 function c2NoFloatMoney() {
   const id = 'C2', name = 'no float money arithmetic in src/';
-  if (!has('src')) return skip(id, name, 'src/ does not exist yet');
+  if (!has('src')) return fail(id, name, ['required src/ is missing']);
+  const files = walk(at('src'), '.js');
+  if (files.length === 0) return fail(id, name, ['src/ has no JavaScript files to check']);
   const hits = [];
-  for (const file of walk(at('src'), '.js')) {
+  for (const file of files) {
     const rel = path.relative(ROOT, file).replace(/\\/g, '/');
     fs.readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
       for (const [re, label] of FLOAT_MONEY) {
@@ -105,9 +106,9 @@ const TESTIDS_PREFIX = [
 ];
 function c3Testids() {
   const id = 'C3', name = 'every data-testid from architecture §5 is present';
-  if (!has('public')) return skip(id, name, 'public/ does not exist yet');
+  if (!has('public')) return fail(id, name, ['required public/ is missing']);
   const files = [...walk(at('public'), '.html'), ...walk(at('public'), '.js')];
-  if (files.length === 0) return skip(id, name, 'public/ has no .html or .js yet');
+  if (files.length === 0) return fail(id, name, ['public/ has no HTML or JavaScript files to check']);
   const blob = files.map((f) => fs.readFileSync(f, 'utf8')).join('\n');
   const missing = [
     ...TESTIDS_EXACT.filter((t) => !blob.includes(t)),
@@ -141,10 +142,12 @@ const E2E_FORBIDDEN = [
 ];
 function c5E2eDiscipline() {
   const id = 'C5', name = 'no fixed waits and no CSS selectors in qa/e2e';
-  if (!has('qa/e2e')) return skip(id, name, 'qa/e2e does not exist yet');
+  if (!has('qa/e2e')) return fail(id, name, ['required qa/e2e/ is missing']);
+  const files = walk(at('qa/e2e'), '.js');
+  if (files.length === 0) return fail(id, name, ['qa/e2e/ has no JavaScript tests to check']);
 
   const hits = [];
-  for (const file of walk(at('qa/e2e'), '.js')) {
+  for (const file of files) {
     const rel = path.relative(ROOT, file).replace(/\\/g, '/');
     fs.readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
       // Comments explain the rules; they are not violations of them.
@@ -168,13 +171,18 @@ c3Testids();
 c5E2eDiscipline();
 
 // Coverage gates live in their own module: C1-C5 ask how things are written,
-// C6-C9 ask whether what exists is actually covered.
-const report = { pass, skip, fail };
+// C6-C8 compare static inventories; C9 validates current exception identities.
+const report = { pass, fail };
 const { data: exceptions, problems: exceptionProblems } = coverage.loadExceptions();
-coverage.c6RoutesCovered(report, exceptions);
-coverage.c7TestidsInPageObjects(report, exceptions);
-coverage.c8StatusesAsserted(report, exceptions);
-coverage.c9ExceptionsExplained(report, exceptionProblems);
+const inventories = {
+  C6: coverage.inventoryC6(),
+  C7: coverage.inventoryC7(),
+  C8: coverage.inventoryC8(),
+};
+coverage.c6RoutesCovered(report, exceptions, inventories.C6);
+coverage.c7TestidsInPageObjects(report, exceptions, inventories.C7);
+coverage.c8StatusesAsserted(report, exceptions, inventories.C8);
+coverage.c9ExceptionsExplained(report, exceptionProblems, exceptions, inventories);
 
 let failed = 0, skipped = 0;
 for (const r of results) {

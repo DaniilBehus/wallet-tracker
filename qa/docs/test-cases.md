@@ -17,10 +17,12 @@ Every case is automated — a case that exists only in a document is a case nobo
 runs. **Automated by** names the file that executes it, so any result traces
 back to code.
 
-**Traces to** is the column that makes this register auditable: every case
-points at the clause it exists to check, or at the defect it exists to stop from
-returning. A case that traces to neither is a case testing somebody's opinion,
-and there are none here.
+**Traces to** now points to a current public rule or a named defect/limit
+record. The [core-rule migration index](../../spec/core-requirements.md#legacy-reference-migration-index)
+explains retired clause and D labels. The static checker can validate
+identity, source and anchors; it cannot decide whether a case actually
+exercises the rule, was run, or proves a current CI result. Those meanings
+still require review against the steps, expected value and dated evidence.
 
 **Priority:** `P1` money is wrong, data leaks between users, or the app is
 unusable · `P2` a documented requirement is not met · `P3` cosmetic.
@@ -37,105 +39,105 @@ the API unless the case is about creating them.
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-API-001 | Health check | `GET /api/health` | 200, `{status, version, db}`, `db` is `ok`, no auth | §5 health | P2 | PASS |
-| TC-API-002 | Register | `POST /auth/register`, fresh e-mail | 201, body is `{token}` and nothing else | §5 register | P1 | PASS |
-| TC-API-003 | Register a second user | Same, another e-mail | 201, token differs from TC-API-002 | §5 register | P1 | PASS |
-| TC-API-004 | Duplicate e-mail | Re-register the TC-API-002 address | 409 `CONFLICT` | §5 status table | P2 | PASS |
-| TC-API-005 | Password under 8 characters | Register with `"short"` | 400 `VALIDATION_FAILED` | §5 register | P2 | PASS |
-| TC-API-006 | Password missing | No `password` field | 400 | §4.3 missing field | P2 | PASS |
-| TC-API-007 | Sign in | `POST /auth/login`, correct credentials | 200, `{token}` | §5 login | P1 | PASS |
-| TC-API-008 | Wrong password | Correct e-mail, wrong password | 401 `UNAUTHORIZED` | §5 login | P1 | PASS |
-| TC-API-009 | Unknown e-mail is indistinguishable | Login with an unregistered address | 401 with **the same message** as TC-API-008 — the form must not reveal which addresses exist | §5 login (401) | P1 | PASS |
-| TC-API-106 | The longest password bcrypt reads whole | Register with 72 ASCII characters | 201 and a token — the limit itself is accepted, not refused | **BUG-017**, D-045 | P2 | PASS |
-| TC-API-107 | One byte past the limit | Register with 73 ASCII characters | 400 `VALIDATION_FAILED`; no account is created, because a stored hash would ignore the 73rd byte | **BUG-017**, D-045 | P1 | PASS |
-| TC-API-108 | The limit counts bytes, not characters | Register with 37 × `é` — 37 characters, 74 bytes in UTF-8 | 400 `VALIDATION_FAILED`, although the password is half the character limit | **BUG-017**, D-045 | P1 | PASS |
+| TC-API-001 | Health check | `GET /api/health` | 200, `{status, version, db}`, `db` is `ok`, no auth | [REQ-CORE-01](../../spec/core-requirements.md#req-core-01) | P2 | PASS |
+| TC-API-002 | Register | `POST /auth/register`, fresh e-mail | 201, body is `{token}` and nothing else | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02) | P1 | PASS |
+| TC-API-003 | Register a second user | Same, another e-mail | 201, token differs from TC-API-002 | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02) | P1 | PASS |
+| TC-API-004 | Duplicate e-mail | Re-register the TC-API-002 address | 409 `CONFLICT` | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02); [REQ-CORE-16](../../spec/core-requirements.md#req-core-16) | P2 | PASS |
+| TC-API-005 | Password under 8 characters | Register with `"short"` | 400 `VALIDATION_FAILED` | [REQ-CORE-03](../../spec/core-requirements.md#req-core-03) | P2 | PASS |
+| TC-API-006 | Password missing | No `password` field | 400 | [REQ-CORE-03](../../spec/core-requirements.md#req-core-03) | P2 | PASS |
+| TC-API-007 | Sign in | `POST /auth/login`, correct credentials | 200, `{token}` | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02) | P1 | PASS |
+| TC-API-008 | Wrong password | Correct e-mail, wrong password | 401 `UNAUTHORIZED` | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02) | P1 | PASS |
+| TC-API-009 | Unknown e-mail is indistinguishable | Login with an unregistered address | 401 with **the same message** as TC-API-008 — the form must not reveal which addresses exist | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02); [REQ-CORE-17](../../spec/core-requirements.md#req-core-17) | P1 | PASS |
+| TC-API-106 | The longest password bcrypt reads whole | Register with 72 ASCII characters | 201 and a token — the limit itself is accepted, not refused | [REQ-CORE-03](../../spec/core-requirements.md#req-core-03); [BUG-017](../../log/BUGS.md) | P2 | PASS |
+| TC-API-107 | One byte past the limit | Register with 73 ASCII characters | 400 `VALIDATION_FAILED`; no account is created, because a stored hash would ignore the 73rd byte | [REQ-CORE-03](../../spec/core-requirements.md#req-core-03); [BUG-017](../../log/BUGS.md) | P1 | PASS |
+| TC-API-108 | The limit counts bytes, not characters | Register with 37 × `é` — 37 characters, 74 bytes in UTF-8 | 400 `VALIDATION_FAILED`, although the password is half the character limit | [REQ-CORE-03](../../spec/core-requirements.md#req-core-03); [BUG-017](../../log/BUGS.md) | P1 | PASS |
 
 ## API · Token handling
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-API-010 | No token | `GET /categories`, no header | 401 in the standard error shape | §5 (401 row) | P1 | PASS |
-| TC-API-011 | Wrong scheme | `Authorization: Token <jwt>` | 401 | §5 auth header | P2 | PASS |
-| TC-API-012 | Corrupted token | Valid token, last signature character flipped | 401 — header and payload untouched, so a server that only decoded would accept it | §5 (401: malformed) | P1 | PASS |
-| TC-API-013 | Expired token | JWT signed with the real secret, `exp` 10 days past | 401. Asserts the token **is** expired before asserting the 401 | §5 (401: expired) | P1 | PASS |
-| TC-API-014 | Another user's token is scoped to them | `GET /transactions` as user B | 200, `total` is 0 | §4.3 ownership | P1 | PASS |
+| TC-API-010 | No token | `GET /categories`, no header | 401 in the standard error shape | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02) | P1 | PASS |
+| TC-API-011 | Wrong scheme | `Authorization: Token <jwt>` | 401 | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02) | P2 | PASS |
+| TC-API-012 | Corrupted token | Valid token, last signature character flipped | 401 — header and payload untouched, so a server that only decoded would accept it | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02) | P1 | PASS |
+| TC-API-013 | Expired token | JWT signed with the real secret, `exp` 10 days past | 401. Asserts the token **is** expired before asserting the 401 | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02) | P1 | PASS |
+| TC-API-014 | Another user's token is scoped to them | `GET /transactions` as user B | 200, `total` is 0 | [REQ-CORE-04](../../spec/core-requirements.md#req-core-04) | P1 | PASS |
 
 ## API · Categories
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-API-015 | Seeded on registration | `GET /categories` | 200, non-empty array matching the schema | §8 session 2 | P2 | PASS |
-| TC-API-016 | Categories are per user | `GET /categories` as user B | 200, none of user A's ids present | §3 `UNIQUE(user_id,name)` | P1 | PASS |
-| TC-API-017 | Create | `POST /categories` with name and emoji | 201, echoes name and icon | §5 categories | P2 | PASS |
-| TC-API-018 | Duplicate name | Repeat TC-API-017 | 409 | §5 (409: duplicate category) | P2 | PASS |
-| TC-API-019 | Blank name | `"   "` | 400 | §4.3 name empty | P2 | PASS |
-| TC-API-020 | Name of 61 characters | One past the limit | 400 | §4.3 name > 60 | P2 | PASS |
-| TC-API-021 | Name of exactly 60 | The allowed side of the boundary | 201, stored name is 60 long | §4.3 name > 60 | P2 | PASS |
+| TC-API-015 | Seeded on registration | `GET /categories` | 200, non-empty array matching the schema | [REQ-CORE-05](../../spec/core-requirements.md#req-core-05) | P2 | PASS |
+| TC-API-016 | Categories are per user | `GET /categories` as user B | 200, none of user A's ids present | [REQ-CORE-04](../../spec/core-requirements.md#req-core-04); [REQ-CORE-05](../../spec/core-requirements.md#req-core-05) | P1 | PASS |
+| TC-API-017 | Create | `POST /categories` with name and emoji | 201, echoes name and icon | [REQ-CORE-05](../../spec/core-requirements.md#req-core-05) | P2 | PASS |
+| TC-API-018 | Duplicate name | Repeat TC-API-017 | 409 | [REQ-CORE-05](../../spec/core-requirements.md#req-core-05); [REQ-CORE-16](../../spec/core-requirements.md#req-core-16) | P2 | PASS |
+| TC-API-019 | Blank name | `"   "` | 400 | [REQ-CORE-05](../../spec/core-requirements.md#req-core-05); [REQ-CORE-16](../../spec/core-requirements.md#req-core-16) | P2 | PASS |
+| TC-API-020 | Name of 61 characters | One past the limit | 400 | [REQ-CORE-05](../../spec/core-requirements.md#req-core-05); [REQ-CORE-16](../../spec/core-requirements.md#req-core-16) | P2 | PASS |
+| TC-API-021 | Name of exactly 60 | The allowed side of the boundary | 201, stored name is 60 long | [REQ-CORE-05](../../spec/core-requirements.md#req-core-05) | P2 | PASS |
 
 ## API · Transactions
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-API-022 | Create an expense | Amount + category | 201, `spent_on` defaults to today, amount returned as the integer sent | §5 POST transactions | P1 | PASS |
-| TC-API-023 | `amount_cents` = 0 | Boundary | 400 | §4.3 amount ≤ 0 | P1 | PASS |
-| TC-API-024 | `amount_cents` = 1 | Smallest legal | 201 | §4.3 amount ≤ 0 | P1 | PASS |
-| TC-API-025 | `amount_cents` = ceiling | 100,000,000 = €1,000,000 | 201, value survives exactly | §4.3 amount > cap | P1 | PASS |
-| TC-API-026 | `amount_cents` = ceiling + 1 | 100 000 001 | 400 | §4.3 amount > cap | P1 | PASS |
-| TC-API-027 | Fractional amount | `12.5` | 400 — a fractional cent is a float that leaked in | §3 integer cents | P1 | PASS |
-| TC-API-028 | Amount as a string | `"1250"` | 400, no coercion | §4.3 not an integer | P2 | PASS |
-| TC-API-029 | Amount missing | No field | 400 | §4.3 missing | P2 | PASS |
-| TC-API-030 | Truncated JSON body | Body cut mid-object | **400, not 500**, body is JSON not HTML | §5 (500 unreachable) | P1 | PASS |
-| TC-API-031 | `spent_on` wrong format | `02/09/2026` | 400 | §4.3 spent_on format | P2 | PASS |
-| TC-API-032 | `spent_on` 30 days ahead | §4.3 allows at most one day | 400 | §4.3 future date | P2 | PASS |
-| TC-API-033 | Another user's `category_id` | Post with user B's category | **404, asserted not to be 403** | §4.3 (404 not 403) | P1 | PASS |
-| TC-API-034 | List defaults to this month | `GET /transactions` | 200 `{items,total}`, newest first | §5 defaults, §6.2 | P2 | PASS |
-| TC-API-035 | `limit=201` | One past the cap | 400 | §5 max limit 200 | P2 | PASS |
-| TC-API-036 | `limit=200` | The cap itself | 200 | §5 max limit 200 | P2 | PASS |
-| TC-API-037 | `from` later than `to` | Reversed range | 400 | §5 query params | P2 | PASS |
-| TC-API-038 | Filter by another user's category | `?category_id=<B's>` | 404, not 403 — filtering must not become a probe | §4.3 (404 not 403) | P1 | PASS |
-| TC-API-039 | Delete another user's row | `DELETE` as user B | 404, not 403 | §4.3 (404 not 403) | P1 | PASS |
-| TC-API-040 | Delete | Own row | 204, empty body | §5 (204) | P2 | PASS |
-| TC-API-041 | Delete again | Repeat TC-API-040 | 404 | §5 DELETE | P2 | PASS |
-| TC-API-042 | Non-numeric id | `/transactions/not-a-number` | 400 | §5 (400) | P3 | PASS |
+| TC-API-022 | Create an expense | Amount + category | 201, `spent_on` defaults to today, amount returned as the integer sent | [REQ-CORE-06](../../spec/core-requirements.md#req-core-06) | P1 | PASS |
+| TC-API-023 | `amount_cents` = 0 | Boundary | 400 | [REQ-CORE-06](../../spec/core-requirements.md#req-core-06) | P1 | PASS |
+| TC-API-024 | `amount_cents` = 1 | Smallest legal | 201 | [REQ-CORE-06](../../spec/core-requirements.md#req-core-06) | P1 | PASS |
+| TC-API-025 | `amount_cents` = ceiling | 100,000,000 = €1,000,000 | 201, value survives exactly | [REQ-CORE-06](../../spec/core-requirements.md#req-core-06) | P1 | PASS |
+| TC-API-026 | `amount_cents` = ceiling + 1 | 100 000 001 | 400 | [REQ-CORE-06](../../spec/core-requirements.md#req-core-06) | P1 | PASS |
+| TC-API-027 | Fractional amount | `12.5` | 400 — a fractional cent is a float that leaked in | [REQ-CORE-06](../../spec/core-requirements.md#req-core-06) | P1 | PASS |
+| TC-API-028 | Amount as a string | `"1250"` | 400, no coercion | [REQ-CORE-06](../../spec/core-requirements.md#req-core-06) | P2 | PASS |
+| TC-API-029 | Amount missing | No field | 400 | [REQ-CORE-06](../../spec/core-requirements.md#req-core-06) | P2 | PASS |
+| TC-API-030 | Truncated JSON body | Body cut mid-object | **400, not 500**, body is JSON not HTML | [REQ-CORE-16](../../spec/core-requirements.md#req-core-16) | P1 | PASS |
+| TC-API-031 | `spent_on` wrong format | `02/09/2026` | 400 | [REQ-CORE-07](../../spec/core-requirements.md#req-core-07) | P2 | PASS |
+| TC-API-032 | `spent_on` 30 days ahead | §4.3 allows at most one day | 400 | [REQ-CORE-07](../../spec/core-requirements.md#req-core-07) | P2 | PASS |
+| TC-API-033 | Another user's `category_id` | Post with user B's category | **404, asserted not to be 403** | [REQ-CORE-04](../../spec/core-requirements.md#req-core-04) | P1 | PASS |
+| TC-API-034 | List defaults to this month | `GET /transactions` | 200 `{items,total}`, newest first | [REQ-CORE-08](../../spec/core-requirements.md#req-core-08) | P2 | PASS |
+| TC-API-035 | `limit=201` | One past the cap | 400 | [REQ-CORE-08](../../spec/core-requirements.md#req-core-08) | P2 | PASS |
+| TC-API-036 | `limit=200` | The cap itself | 200 | [REQ-CORE-08](../../spec/core-requirements.md#req-core-08) | P2 | PASS |
+| TC-API-037 | `from` later than `to` | Reversed range | 400 | [REQ-CORE-08](../../spec/core-requirements.md#req-core-08) | P2 | PASS |
+| TC-API-038 | Filter by another user's category | `?category_id=<B's>` | 404, not 403 — filtering must not become a probe | [REQ-CORE-04](../../spec/core-requirements.md#req-core-04) | P1 | PASS |
+| TC-API-039 | Delete another user's row | `DELETE` as user B | 404, not 403 | [REQ-CORE-04](../../spec/core-requirements.md#req-core-04) | P1 | PASS |
+| TC-API-040 | Delete | Own row | 204, empty body | [REQ-CORE-09](../../spec/core-requirements.md#req-core-09) | P2 | PASS |
+| TC-API-041 | Delete again | Repeat TC-API-040 | 404 | [REQ-CORE-09](../../spec/core-requirements.md#req-core-09) | P2 | PASS |
+| TC-API-042 | Non-numeric id | `/transactions/not-a-number` | 400 | [REQ-CORE-16](../../spec/core-requirements.md#req-core-16) | P3 | PASS |
 
 ## API · Schedules and loans
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-API-043 | Create a subscription | No `total_count` | 201, `total_count`/`remaining_*` all null | §3, §5 remaining_* null | P1 | PASS |
-| TC-API-044 | `day_of_month` = 0 | Boundary | 400 | §4.3 day outside 1–31 | P2 | PASS |
-| TC-API-045 | `day_of_month` = 1 | Lowest legal | 201, `next_due` on the 1st | §4.1 | P2 | PASS |
-| TC-API-046 | `day_of_month` = 28 | Exists in every month | 201, `next_due` on the 28th | §4.1 | P2 | PASS |
-| TC-API-047 | `day_of_month` = 31 starting in February | The case that breaks naive implementations | 201, `next_due` is the **last day of that February** (29 in a leap year) — clamped, not skipped | §4.1 clamp table | P1 | PASS |
-| TC-API-048 | `day_of_month` = 32 | Boundary | 400 | §4.3 day outside 1–31 | P2 | PASS |
-| TC-API-049 | `total_count` = 0 | Boundary | 400 | §4.3 total_count ≤ 0 | P2 | PASS |
-| TC-API-050 | `starts_on` = `2026-13-45` | Date-shaped, not a date | 400 | §4.3 date format | P2 | PASS |
-| TC-API-051 | Create a loan | `total_count` 2 | 201, `paid_count` 0, `remaining_count` 2, `remaining_cents` = 2 × amount | §4.2 countdown | P1 | PASS |
-| TC-API-052 | List sorted and consistent | `GET /schedules` | Sorted by `next_due` ascending; on every loan `remaining_cents` = `remaining_count` × `amount_cents` | §5 sorted, §4.2 | P1 | PASS |
-| TC-API-053 | Active filter | `?active=1` | Every row has `active` 1 | §5 active filter | P2 | PASS |
-| TC-API-054 | Pay an instalment | `PATCH /:id/pay` | 200, `paid_count` 1, `remaining_count` 1, `finished` false | §4.2 | P1 | PASS |
-| TC-API-055 | The payment created a transaction | Read back the returned id | Row exists, `schedule_id` links it, amount is the instalment | §4.2 (row with schedule_id) | P1 | PASS |
-| TC-API-056 | Pay the last instalment | `PATCH` again | 200, `remaining_count` 0, `finished` **true** | §4.2 finished | P1 | PASS |
-| TC-API-057 | Pay a closed loan | `PATCH` once more | **409, asserted not to be 400** — a state transition, not bad input | §4.2 (409) | P1 | PASS |
-| TC-API-058 | Closed loan leaves the active list | `?active=1` | Its id is absent | §4.2 `active = 0` | P2 | PASS |
-| TC-API-059 | Pay another user's schedule | `PATCH` as user B | 404, not 403 | §4.3 (404 not 403) | P1 | PASS |
-| TC-API-060 | Pay a schedule that does not exist | `/schedules/99999999/pay` | 404 | §5 (404) | P2 | PASS |
-| TC-API-109 | The largest loan the app supports | 1200 instalments at the amount ceiling | 201; `remaining_cents` is exactly 99 999 999 × 1200 and still a safe integer | **BUG-018**, D-046 | P1 | PASS |
-| TC-API-110 | One instalment too many | `total_count` 1201 | 400 `VALIDATION_FAILED` | **BUG-018**, D-046 | P1 | PASS |
-| TC-API-111 | The loan from the defect report | 99 999 999 instalments of 99 999 999 cents | 400. Before the fix: 201, with `remaining_cents` one cent below the exact product | **BUG-018**, D-046 | P1 | PASS |
-| TC-API-112 | A number that is not a count | `total_count` 1e30 | 400. `Number.isInteger(1e30)` is true, which is why it used to be stored | **BUG-018**, D-046 | P2 | PASS |
-| TC-API-113 | The ceiling holds on edit | `PATCH` raising `total_count` to 1201 | 400 — create and edit apply the same rule to the pair | **BUG-018**, D-046 | P1 | PASS |
+| TC-API-043 | Create a subscription | No `total_count` | 201, `total_count`/`remaining_*` all null | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11) | P1 | PASS |
+| TC-API-044 | `day_of_month` = 0 | Boundary | 400 | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11) | P2 | PASS |
+| TC-API-045 | `day_of_month` = 1 | Lowest legal | 201, `next_due` on the 1st | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11) | P2 | PASS |
+| TC-API-046 | `day_of_month` = 28 | Exists in every month | 201, `next_due` on the 28th | [REQ-CORE-12](../../spec/core-requirements.md#req-core-12) | P2 | PASS |
+| TC-API-047 | `day_of_month` = 31 starting in February | The case that breaks naive implementations | 201, `next_due` is the **last day of that February** (29 in a leap year) — clamped, not skipped | [REQ-CORE-12](../../spec/core-requirements.md#req-core-12) | P1 | PASS |
+| TC-API-048 | `day_of_month` = 32 | Boundary | 400 | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11) | P2 | PASS |
+| TC-API-049 | `total_count` = 0 | Boundary | 400 | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11) | P2 | PASS |
+| TC-API-050 | `starts_on` = `2026-13-45` | Date-shaped, not a date | 400 | [REQ-CORE-07](../../spec/core-requirements.md#req-core-07) | P2 | PASS |
+| TC-API-051 | Create a loan | `total_count` 2 | 201, `paid_count` 0, `remaining_count` 2, `remaining_cents` = 2 × amount | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11) | P1 | PASS |
+| TC-API-052 | List sorted and consistent | `GET /schedules` | Sorted by `next_due` ascending; on every loan `remaining_cents` = `remaining_count` × `amount_cents` | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11); [REQ-CORE-12](../../spec/core-requirements.md#req-core-12) | P1 | PASS |
+| TC-API-053 | Active filter | `?active=1` | Every row has `active` 1 | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11) | P2 | PASS |
+| TC-API-054 | Pay an instalment | `PATCH /:id/pay` | 200, `paid_count` 1, `remaining_count` 1, `finished` false | [REQ-CORE-13](../../spec/core-requirements.md#req-core-13) | P1 | PASS |
+| TC-API-055 | The payment created a transaction | Read back the returned id | Row exists, `schedule_id` links it, amount is the instalment | [REQ-CORE-13](../../spec/core-requirements.md#req-core-13) | P1 | PASS |
+| TC-API-056 | Pay the last instalment | `PATCH` again | 200, `remaining_count` 0, `finished` **true** | [REQ-CORE-13](../../spec/core-requirements.md#req-core-13) | P1 | PASS |
+| TC-API-057 | Pay a closed loan | `PATCH` once more | **409, asserted not to be 400** — a state transition, not bad input | [REQ-CORE-13](../../spec/core-requirements.md#req-core-13); [REQ-CORE-16](../../spec/core-requirements.md#req-core-16) | P1 | PASS |
+| TC-API-058 | Closed loan leaves the active list | `?active=1` | Its id is absent | [REQ-CORE-13](../../spec/core-requirements.md#req-core-13) | P2 | PASS |
+| TC-API-059 | Pay another user's schedule | `PATCH` as user B | 404, not 403 | [REQ-CORE-04](../../spec/core-requirements.md#req-core-04) | P1 | PASS |
+| TC-API-060 | Pay a schedule that does not exist | `/schedules/99999999/pay` | 404 | [REQ-CORE-16](../../spec/core-requirements.md#req-core-16) | P2 | PASS |
+| TC-API-109 | The largest loan the app supports | 1200 instalments at the amount ceiling | 201; `remaining_cents` is exactly 99 999 999 × 1200 and still a safe integer | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11); [BUG-018](../../log/BUGS.md) | P1 | PASS |
+| TC-API-110 | One instalment too many | `total_count` 1201 | 400 `VALIDATION_FAILED` | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11); [BUG-018](../../log/BUGS.md) | P1 | PASS |
+| TC-API-111 | The loan from the defect report | 99 999 999 instalments of 99 999 999 cents | 400. Before the fix: 201, with `remaining_cents` one cent below the exact product | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11); [BUG-018](../../log/BUGS.md) | P1 | PASS |
+| TC-API-112 | A number that is not a count | `total_count` 1e30 | 400. `Number.isInteger(1e30)` is true, which is why it used to be stored | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11); [BUG-018](../../log/BUGS.md) | P2 | PASS |
+| TC-API-113 | The ceiling holds on edit | `PATCH` raising `total_count` to 1201 | 400 — create and edit apply the same rule to the pair | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11); [BUG-018](../../log/BUGS.md) | P1 | PASS |
 
 ## API · Summary and contract edges
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-API-061 | Month summary | `GET /summary` | 200; per-category totals **add up to** the month total; month defaults to the current one | §5 summary | P1 | PASS |
-| TC-API-062 | Explicit month | `?month=2026-01` | 200, answers for that month | §5 summary | P2 | PASS |
-| TC-API-063 | Malformed month | `?month=January` | 400 | §5 summary param | P2 | PASS |
-| TC-API-064 | Summary is per user | As user B while A has spent | 200, total 0, empty breakdown | §4.3 ownership | P1 | PASS |
-| TC-API-065 | Unknown `/api` path | `GET /api/nope-<run>` | 404 in JSON, no `<html` in the body | §5 (404), §5 JSON contract | P2 | PASS |
-| TC-API-066 | 403 is unreachable | Cross-user read from the opposite direction | 404, asserted not to be 403. §5 lists 403, but this application answers 404 for everything a user may not see, so the property that replaced it is what is asserted | §4.3, §5 (403 row) | P1 | PASS |
+| TC-API-061 | Month summary | `GET /summary` | 200; per-category totals **add up to** the month total; month defaults to the current one | [REQ-CORE-15](../../spec/core-requirements.md#req-core-15) | P1 | PASS |
+| TC-API-062 | Explicit month | `?month=2026-01` | 200, answers for that month | [REQ-CORE-15](../../spec/core-requirements.md#req-core-15) | P2 | PASS |
+| TC-API-063 | Malformed month | `?month=January` | 400 | [REQ-CORE-07](../../spec/core-requirements.md#req-core-07); [REQ-CORE-16](../../spec/core-requirements.md#req-core-16) | P2 | PASS |
+| TC-API-064 | Summary is per user | As user B while A has spent | 200, total 0, empty breakdown | [REQ-CORE-04](../../spec/core-requirements.md#req-core-04) | P1 | PASS |
+| TC-API-065 | Unknown `/api` path | `GET /api/nope-<run>` | 404 in JSON, no `<html` in the body | [REQ-CORE-16](../../spec/core-requirements.md#req-core-16) | P2 | PASS |
+| TC-API-066 | 403 is unreachable | Cross-user read from the opposite direction | 404, asserted not to be 403. §5 lists 403, but this application answers 404 for everything a user may not see, so the property that replaced it is what is asserted | [REQ-CORE-04](../../spec/core-requirements.md#req-core-04); [REQ-CORE-16](../../spec/core-requirements.md#req-core-16) | P1 | PASS |
 
 ## API · Login rate limiting · folder `09`
 
@@ -146,13 +148,13 @@ tested without letting the schedule run.
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-API-067 | A failure inside the allowance | Wait out the window, then one wrong password | 401, explicitly **not** 429 | §5 (429), D-016 | P1 | PASS |
-| TC-API-068 | Up to one below the limit | Repeat until the last allowed attempt is used | Every one is 401 with the error schema; loops on the configured limit, not on a literal 5 | §5 (429), D-016 | P1 | PASS |
-| TC-API-069 | One past the limit | One more wrong password | **429** `RATE_LIMITED`, `Retry-After` present and above zero | §5 (429), **BUG-004** | P1 | PASS |
-| TC-API-070 | The block does not leak account existence | Read the 429 message | Says nothing about the password or whether the account exists | §5 (401 wording), D-016 | P1 | PASS |
-| TC-API-071 | The correct password while blocked | Send the real password during the block | Still 429 — being right must not lift it, or it protects nothing | D-016 | P1 | PASS |
-| TC-API-072 | The window lifts by itself | Wait out the window, try again | 401 — no administrator, no reset endpoint. Otherwise anyone knowing an e-mail could lock its owner out | D-016 (rejected: account lockout) | P1 | PASS |
-| TC-API-073 | A successful login clears the counter | Sign in correctly after failures | 200; the earlier failures do not block it | D-016 | P2 | PASS |
+| TC-API-067 | A failure inside the allowance | Wait out the window, then one wrong password | 401, explicitly **not** 429 | [REQ-CORE-17](../../spec/core-requirements.md#req-core-17) | P1 | PASS |
+| TC-API-068 | Up to one below the limit | Repeat until the last allowed attempt is used | Every one is 401 with the error schema; loops on the configured limit, not on a literal 5 | [REQ-CORE-17](../../spec/core-requirements.md#req-core-17) | P1 | PASS |
+| TC-API-069 | One past the limit | One more wrong password | **429** `RATE_LIMITED`, `Retry-After` present and above zero | [REQ-CORE-17](../../spec/core-requirements.md#req-core-17); [BUG-004](../../log/BUGS.md) | P1 | PASS |
+| TC-API-070 | The block does not leak account existence | Read the 429 message | Says nothing about the password or whether the account exists | [REQ-CORE-17](../../spec/core-requirements.md#req-core-17) | P1 | PASS |
+| TC-API-071 | The correct password while blocked | Send the real password during the block | Still 429 — being right must not lift it, or it protects nothing | [REQ-CORE-17](../../spec/core-requirements.md#req-core-17) | P1 | PASS |
+| TC-API-072 | The window lifts by itself | Wait out the window, try again | 401 — no administrator, no reset endpoint. Otherwise anyone knowing an e-mail could lock its owner out | [REQ-CORE-17](../../spec/core-requirements.md#req-core-17) | P1 | PASS |
+| TC-API-073 | A successful login clears the counter | Sign in correctly after failures | 200; the earlier failures do not block it | [REQ-CORE-17](../../spec/core-requirements.md#req-core-17) | P2 | PASS |
 
 ## API · Settings and the month balance · folder `08`
 
@@ -161,23 +163,23 @@ negative income, so zero cannot mean anything else.
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-API-074 | Fresh account | `GET /settings` before anything is set | 200, `monthly_income_cents` is 0 — not a 404 | §5 settings, D-021 | P2 | PASS |
-| TC-API-075 | Set an income | `PUT` 150000 | 200, echoes the figure | §5 settings | P1 | PASS |
-| TC-API-076 | A second write replaces the first | `PUT` 200000 | 200, reads back 200000 — upsert, not a second row | §3 (PRIMARY KEY) | P1 | PASS |
-| TC-API-077 | Zero is legal | `PUT` 0 | 200 — zero means "not set" | §3 CHECK ≥ 0 | P2 | PASS |
-| TC-API-078 | Negative | `PUT` −1 | 400 | §3 CHECK ≥ 0 | P1 | PASS |
-| TC-API-079 | Fractional | `PUT` 12.5 | 400 — a fractional cent is a float that leaked in | §3 integer cents | P1 | PASS |
-| TC-API-080 | As a string | `PUT` "150000" | 400, no coercion | §4.3 not an integer | P2 | PASS |
-| TC-API-081 | Missing field | `PUT {}` | 400 | §4.3 missing | P2 | PASS |
-| TC-API-082 | Above the ceiling | `PUT` 100000001 | 400 — same ceiling as amount_cents | §4.3 amount > cap | P2 | PASS |
-| TC-API-083 | No token | `GET /settings` with no header | 401 | §5 (401 row) | P1 | PASS |
-| TC-API-087 | Income = 1 | `PUT` 1 | 200 — the smallest income that means anything, since 0 means "not set" | test-design §2 | P2 | PASS |
-| TC-API-088 | Income = the ceiling exactly | `PUT` 100 000 000 | 200, survives exactly. Only ceiling+1 had a case; an off-by-one would have passed the old pair | test-design §2, §4.3 | P1 | PASS |
-| TC-API-089 | Income explicitly null | `PUT` null | 400 — a different path through the validator from "absent" | test-design §2 | P2 | PASS |
-| TC-API-090 | `PUT /settings` with no token | Write with no header | 401. Only `GET` had been asked; a write is the one worth being sure about | test-design §3 | P1 | PASS |
-| TC-API-084 | Summary carries the income | `GET /summary` | `income_cents` is the figure just written | §5 summary, D-021 | P1 | PASS |
-| TC-API-085 | Remaining is exact | Same response | `remaining_cents` = `income_cents` − `total_cents`, to the cent | §5 summary, D-021 | P1 | PASS |
-| TC-API-086 | Income does not leak between users | `GET /settings` as user B | 200, 0 — user B has their own | §4.3 ownership | P1 | PASS |
+| TC-API-074 | Fresh account | `GET /settings` before anything is set | 200, `monthly_income_cents` is 0 — not a 404 | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14) | P2 | PASS |
+| TC-API-075 | Set an income | `PUT` 150000 | 200, echoes the figure | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14) | P1 | PASS |
+| TC-API-076 | A second write replaces the first | `PUT` 200000 | 200, reads back 200000 — upsert, not a second row | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14) | P1 | PASS |
+| TC-API-077 | Zero is legal | `PUT` 0 | 200 — zero means "not set" | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14) | P2 | PASS |
+| TC-API-078 | Negative | `PUT` −1 | 400 | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14) | P1 | PASS |
+| TC-API-079 | Fractional | `PUT` 12.5 | 400 — a fractional cent is a float that leaked in | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14) | P1 | PASS |
+| TC-API-080 | As a string | `PUT` "150000" | 400, no coercion | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14) | P2 | PASS |
+| TC-API-081 | Missing field | `PUT {}` | 400 | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14) | P2 | PASS |
+| TC-API-082 | Above the ceiling | `PUT` 100000001 | 400 — same ceiling as amount_cents | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14) | P2 | PASS |
+| TC-API-083 | No token | `GET /settings` with no header | 401 | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02); [REQ-CORE-14](../../spec/core-requirements.md#req-core-14) | P1 | PASS |
+| TC-API-087 | Income = 1 | `PUT` 1 | 200 — the smallest income that means anything, since 0 means "not set" | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14) | P2 | PASS |
+| TC-API-088 | Income = the ceiling exactly | `PUT` 100 000 000 | 200, survives exactly. Only ceiling+1 had a case; an off-by-one would have passed the old pair | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14) | P1 | PASS |
+| TC-API-089 | Income explicitly null | `PUT` null | 400 — a different path through the validator from "absent" | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14) | P2 | PASS |
+| TC-API-090 | `PUT /settings` with no token | Write with no header | 401. Only `GET` had been asked; a write is the one worth being sure about | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02); [REQ-CORE-14](../../spec/core-requirements.md#req-core-14) | P1 | PASS |
+| TC-API-084 | Summary carries the income | `GET /summary` | `income_cents` is the figure just written | [REQ-CORE-15](../../spec/core-requirements.md#req-core-15) | P1 | PASS |
+| TC-API-085 | Remaining is exact | Same response | `remaining_cents` = `income_cents` − `total_cents`, to the cent | [REQ-CORE-15](../../spec/core-requirements.md#req-core-15) | P1 | PASS |
+| TC-API-086 | Income does not leak between users | `GET /settings` as user B | 200, 0 — user B has their own | [REQ-CORE-04](../../spec/core-requirements.md#req-core-04) | P1 | PASS |
 
 ## API · Monthly spending limit · folder `12`
 
@@ -188,21 +190,21 @@ the month total, `L` the limit.
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-API-091 | Set a limit | `PUT /settings` with `monthly_limit_cents` 12000 | 200, echoes 12000; a later `GET` returns it; the income is untouched | REQ-ML-01 | P1 | PASS |
-| TC-API-092 | Clear a limit | `PUT` with `monthly_limit_cents: null` | 200, then `GET` reports `null` — "no limit", not zero | REQ-ML-02, A3 | P1 | PASS |
-| TC-API-093 | Omission is not a change | `PUT` with the income only | 200, the stored limit is unchanged | REQ-ML-03 | P2 | PASS |
-| TC-API-094 | Summary carries limit, state and what is left | `GET /summary` with a limit set | `limit_cents`, `limit_status`, `limit_remaining_cents` = `L − T` to the cent, state per the table | REQ-ML-04 | P1 | PASS |
-| TC-API-095 | No limit → `not_set` (R1, R2) | `GET /summary` with no limit, on an empty month and on a month with spending | `not_set`, both money fields `null`, the month total unchanged | REQ-ML-05 R1–R2 | P1 | PASS |
-| TC-API-096 | Within the limit (R3, R4) | `L` above `T`, including `T = 0` | `within`, what is left is exactly `L − T` | REQ-ML-05 R3–R4 | P1 | PASS |
-| TC-API-097 | Exactly at the limit (R5) | `L = T` | `reached`, what is left is `0` — not `exceeded` | REQ-ML-05 R5, A4 | P1 | PASS |
-| TC-API-098 | One cent over (R6) | `L = T − 1` | `exceeded`, what is left is `−1` | REQ-ML-05 R6 | P1 | PASS |
-| TC-API-099 | A zero limit is a limit (R7, R8) | `L = 0` with `T = 0`, then with `T > 0` | `reached`, then `exceeded` with `−T` left | REQ-ML-05 R7–R8, A3 | P1 | PASS |
-| TC-API-100 | The smallest limit above zero | `L = 1` on an empty month | `within`, one cent left | boundary list §4 | P2 | PASS |
-| TC-API-101 | The limit never blocks a save | Create an expense while over the limit | 201; the total and the state both move; nothing is refused | REQ-ML-06, A1 | P1 | PASS |
-| TC-API-102 | Invalid limits | −1, 12.5, `"12000"`, `true`, ceiling + 1 | 400 `VALIDATION_FAILED` each; a following `GET` shows the limit unchanged | REQ-ML-07 | P1 | PASS |
-| TC-API-103 | The ceiling exactly | `L` = 100 000 000 | 200, stored exactly | REQ-ML-07 | P2 | PASS |
-| TC-API-104 | A limit belongs to one account | Second account sets its own limit | Each account reads its own; neither sees the other's | REQ-ML-08 | P1 | PASS |
-| TC-API-105 | No token | `GET` and `PUT /settings` with no header | 401 both | REQ-ML-08 | P1 | PASS |
+| TC-API-091 | Set a limit | `PUT /settings` with `monthly_limit_cents` 12000 | 200, echoes 12000; a later `GET` returns it; the income is untouched | [REQ-ML-01](analysis-monthly-limit.md#req-ml-01) | P1 | PASS |
+| TC-API-092 | Clear a limit | `PUT` with `monthly_limit_cents: null` | 200, then `GET` reports `null` — "no limit", not zero | [REQ-ML-02](analysis-monthly-limit.md#req-ml-02) | P1 | PASS |
+| TC-API-093 | Omission is not a change | `PUT` with the income only | 200, the stored limit is unchanged | [REQ-ML-03](analysis-monthly-limit.md#req-ml-03) | P2 | PASS |
+| TC-API-094 | Summary carries limit, state and what is left | `GET /summary` with a limit set | `limit_cents`, `limit_status`, `limit_remaining_cents` = `L − T` to the cent, state per the table | [REQ-ML-04](analysis-monthly-limit.md#req-ml-04) | P1 | PASS |
+| TC-API-095 | No limit → `not_set` (R1, R2) | `GET /summary` with no limit, on an empty month and on a month with spending | `not_set`, both money fields `null`, the month total unchanged | [REQ-ML-05](analysis-monthly-limit.md#req-ml-05) | P1 | PASS |
+| TC-API-096 | Within the limit (R3, R4) | `L` above `T`, including `T = 0` | `within`, what is left is exactly `L − T` | [REQ-ML-05](analysis-monthly-limit.md#req-ml-05) | P1 | PASS |
+| TC-API-097 | Exactly at the limit (R5) | `L = T` | `reached`, what is left is `0` — not `exceeded` | [REQ-ML-05](analysis-monthly-limit.md#req-ml-05) | P1 | PASS |
+| TC-API-098 | One cent over (R6) | `L = T − 1` | `exceeded`, what is left is `−1` | [REQ-ML-05](analysis-monthly-limit.md#req-ml-05) | P1 | PASS |
+| TC-API-099 | A zero limit is a limit (R7, R8) | `L = 0` with `T = 0`, then with `T > 0` | `reached`, then `exceeded` with `−T` left | [REQ-ML-05](analysis-monthly-limit.md#req-ml-05) | P1 | PASS |
+| TC-API-100 | The smallest limit above zero | `L = 1` on an empty month | `within`, one cent left | [REQ-ML-05](analysis-monthly-limit.md#req-ml-05) | P2 | PASS |
+| TC-API-101 | The limit never blocks a save | Create an expense while over the limit | 201; the total and the state both move; nothing is refused | [REQ-ML-06](analysis-monthly-limit.md#req-ml-06) | P1 | PASS |
+| TC-API-102 | Invalid limits | −1, 12.5, `"12000"`, `true`, ceiling + 1 | 400 `VALIDATION_FAILED` each; a following `GET` shows the limit unchanged | [REQ-ML-07](analysis-monthly-limit.md#req-ml-07) | P1 | PASS |
+| TC-API-103 | The ceiling exactly | `L` = 100 000 000 | 200, stored exactly | [REQ-ML-07](analysis-monthly-limit.md#req-ml-07) | P2 | PASS |
+| TC-API-104 | A limit belongs to one account | Second account sets its own limit | Each account reads its own; neither sees the other's | [REQ-ML-08](analysis-monthly-limit.md#req-ml-08) | P1 | PASS |
+| TC-API-105 | No token | `GET` and `PUT /settings` with no header | 401 both | [REQ-ML-08](analysis-monthly-limit.md#req-ml-08) | P1 | PASS |
 
 ## Database · The limit column migration · `qa/db/migration.test.js`
 
@@ -215,9 +217,9 @@ pre-limit shape and deletes it afterwards; none of them touches `data/`.
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-DB-001 | An old database gains the column | Build a database with the pre-limit `settings` table, one account and a stored income; boot the database layer against it | The column exists and is nullable; the income is unchanged; the limit reads `null` — "not set", not zero | RISK-ML-5, A3, change impact §6 | P1 | PASS |
-| TC-DB-002 | Booting again is safe | Boot, store a limit, boot twice more, clear the limit | The column is added once; the boot succeeds each time; the stored limit survives the next boot; clearing restores `null` | RISK-ML-5, REQ-ML-02 | P1 | PASS |
-| TC-DB-003 | Both paths end at the same table | Compare `table_info(settings)` of an upgraded database with one created fresh by the current schema | Identical columns, types and nullability | RISK-ML-5 | P2 | PASS |
+| TC-DB-001 | An old database gains the column | Build a database with the pre-limit `settings` table, one account and a stored income; boot the database layer against it | The column exists and is nullable; the income is unchanged; the limit reads `null` — "not set", not zero | [REQ-CORE-28](../../spec/core-requirements.md#req-core-28) | P1 | PASS |
+| TC-DB-002 | Booting again is safe | Boot, store a limit, boot twice more, clear the limit | The column is added once; the boot succeeds each time; the stored limit survives the next boot; clearing restores `null` | [REQ-CORE-28](../../spec/core-requirements.md#req-core-28) | P1 | PASS |
+| TC-DB-003 | Both paths end at the same table | Compare `table_info(settings)` of an upgraded database with one created fresh by the current schema | Identical columns, types and nullability | [REQ-CORE-28](../../spec/core-requirements.md#req-core-28) | P2 | PASS |
 
 ## Python API scenarios · `qa/python/test_api.py`
 
@@ -228,12 +230,12 @@ flows below.
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-PY-001 | Parameterized transaction validation | Send missing, negative, zero, fractional, string, boolean and malformed-date variants | Every class returns JSON 400, never INTERNAL | §4.3, test-design §2 | P1 | PASS |
-| TC-PY-002 | Malformed JSON stays contractual | Send an incomplete JSON body to transactions | JSON 400, not an HTML page or 500 | §5 JSON contract | P1 | PASS |
-| TC-PY-003 | Rejected token forms | Call a protected route with no, malformed, corrupted and genuinely expired token | Every form returns 401 | §5 (401), test-design §3 | P1 | PASS |
-| TC-PY-004 | Cross-user view and change isolation | Owner creates an expense; another user lists, patches and deletes it | Row is invisible in the list; PATCH and DELETE return 404, never 403 | §4.3 | P1 | PASS |
-| TC-PY-005 | Expense lifecycle | Set income; create, partially edit, read summary, then delete an expense | Edited cents appear in summary and remaining amount; delete restores total to zero | §5 transactions and summary, D-029 | P1 | PASS |
-| TC-PY-006 | Loan state lifecycle | Create a two-instalment loan; pay twice; try a third payment | Active → finished with count 0; third payment is 409 | §4.2 | P1 | PASS |
+| TC-PY-001 | Parameterized transaction validation | Send missing, negative, zero, fractional, string, boolean and malformed-date variants | Every class returns JSON 400, never INTERNAL | [REQ-CORE-06](../../spec/core-requirements.md#req-core-06); [REQ-CORE-07](../../spec/core-requirements.md#req-core-07) | P1 | PASS |
+| TC-PY-002 | Malformed JSON stays contractual | Send an incomplete JSON body to transactions | JSON 400, not an HTML page or 500 | [REQ-CORE-16](../../spec/core-requirements.md#req-core-16) | P1 | PASS |
+| TC-PY-003 | Rejected token forms | Call a protected route with no, malformed, corrupted and genuinely expired token | Every form returns 401 | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02) | P1 | PASS |
+| TC-PY-004 | Cross-user view and change isolation | Owner creates an expense; another user lists, patches and deletes it | Row is invisible in the list; PATCH and DELETE return 404, never 403 | [REQ-CORE-04](../../spec/core-requirements.md#req-core-04) | P1 | PASS |
+| TC-PY-005 | Expense lifecycle | Set income; create, partially edit, read summary, then delete an expense | Edited cents appear in summary and remaining amount; delete restores total to zero | [REQ-CORE-06](../../spec/core-requirements.md#req-core-06); [REQ-CORE-09](../../spec/core-requirements.md#req-core-09); [REQ-CORE-15](../../spec/core-requirements.md#req-core-15) | P1 | PASS |
+| TC-PY-006 | Loan state lifecycle | Create a two-instalment loan; pay twice; try a third payment | Active → finished with count 0; third payment is 409 | [REQ-CORE-13](../../spec/core-requirements.md#req-core-13) | P1 | PASS |
 
 ## Python · Request id and request log · `qa/python/test_request_log.py`
 
@@ -242,13 +244,13 @@ written to files, so every line it prints is read back (docs/support).
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-PY-007 | Every response carries a request id | 200, 400 malformed JSON, 401, 404 and a 503 from the switched-off AI | Each has an `X-Request-Id` that is a lowercase UUID, all different; every error body is still exactly `{error:{code,message}}` | support pack, §5 | P1 | PASS |
-| TC-PY-008 | A caller's id is kept only when it is a UUID | Send a valid id, then too short, too long, upper-case, spaced, markup and JSON-breaking values | The valid one is echoed; each other is replaced by a fresh UUID and never appears in the log | support pack | P1 | PASS |
-| TC-PY-009 | One line per request, naming the route | Create, edit and list expenses, call without a token, call an unknown path | One line each with time, level, request id, method, route pattern, status, duration and user id; `/api/transactions/:id`, never the row id or a query | support pack | P1 | PASS |
-| TC-PY-010 | No credential or content in the log | Register, sign in, fail a sign-in, save a note, send an AI description | None of the e-mail, passwords, tokens, note or description appears; no `Bearer`, no Authorization header | support pack | P1 | PASS |
-| TC-PY-011 | An unhandled error keeps its request id | Hold the database write lock from another connection, then save an expense | 500 with the unchanged INTERNAL body; one `UNHANDLED` line with the same request id, `SQLITE_BUSY` and a stack | support pack, §5 | P1 | PASS |
-| TC-PY-012 | The AI draft line uses the same id | Send a draft while AI is switched off | The `ai_draft` line and the request line carry the response's request id | support pack | P2 | PASS |
-| TC-PY-013 | The quiet switch | Start a server with `WALLET_REQUEST_LOG=off` and send requests | Every response still has its id; no request lines are written | support pack | P2 | PASS |
+| TC-PY-007 | Every response carries a request id | 200, 400 malformed JSON, 401, 404 and a 503 from the switched-off AI | Each has an `X-Request-Id` that is a lowercase UUID, all different; every error body is still exactly `{error:{code,message}}` | [REQ-CORE-24](../../spec/core-requirements.md#req-core-24) | P1 | PASS |
+| TC-PY-008 | A caller's id is kept only when it is a UUID | Send a valid id, then too short, too long, upper-case, spaced, markup and JSON-breaking values | The valid one is echoed; each other is replaced by a fresh UUID and never appears in the log | [REQ-CORE-24](../../spec/core-requirements.md#req-core-24) | P1 | PASS |
+| TC-PY-009 | One line per request, naming the route | Create, edit and list expenses, call without a token, call an unknown path | One line each with time, level, request id, method, route pattern, status, duration and user id; `/api/transactions/:id`, never the row id or a query | [REQ-CORE-24](../../spec/core-requirements.md#req-core-24) | P1 | PASS |
+| TC-PY-010 | No credential or content in the log | Register, sign in, fail a sign-in, save a note, send an AI description | None of the e-mail, passwords, tokens, note or description appears; no `Bearer`, no Authorization header | [REQ-CORE-24](../../spec/core-requirements.md#req-core-24) | P1 | PASS |
+| TC-PY-011 | An unhandled error keeps its request id | Hold the database write lock from another connection, then save an expense | 500 with the unchanged INTERNAL body; one `UNHANDLED` line with the same request id, `SQLITE_BUSY` and a stack | [REQ-CORE-24](../../spec/core-requirements.md#req-core-24) | P1 | PASS |
+| TC-PY-012 | The AI draft line uses the same id | Send a draft while AI is switched off | The `ai_draft` line and the request line carry the response's request id | [REQ-CORE-24](../../spec/core-requirements.md#req-core-24) | P2 | PASS |
+| TC-PY-013 | The quiet switch | Start a server with `WALLET_REQUEST_LOG=off` and send requests | Every response still has its id; no request lines are written | [REQ-CORE-24](../../spec/core-requirements.md#req-core-24) | P2 | PASS |
 
 ## Python · SQL diagnostics · `qa/python/test_sql_diagnostics.py`
 
@@ -257,9 +259,9 @@ read-only connection to the session server's database, written by the app.
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-PY-014 | Every documented query is safe to run | Run each block of the page on a connection that refuses writes | Each is one `SELECT` whose placeholders match its documented parameters, and returns exactly its documented columns | support pack | P1 | PASS |
-| TC-PY-015 | The month and limit queries agree with the summary | Ask for the user id by a messily typed e-mail; compare month total and limit state for three accounts | Same total and state as `GET /api/summary`; *no settings*, *no limit* and *a zero limit* read apart as the page's table says | support pack, REQ-ML-05 | P1 | PASS |
-| TC-PY-016 | Payments, keys and quota mean what the page says | A loan paid twice with one payment's expense deleted; a keyed save retried once and another deleted; AI off | 2 paid, 1 linked, 1 unlinked; one row per key, `live` and `tombstone`; no quota rows | support pack, D-035 | P2 | PASS |
+| TC-PY-014 | Every documented query is safe to run | Run each block of the page on a connection that refuses writes | Each is one `SELECT` whose placeholders match its documented parameters, and returns exactly its documented columns | [REQ-CORE-25](../../spec/core-requirements.md#req-core-25) | P1 | PASS |
+| TC-PY-015 | The month and limit queries agree with the summary | Ask for the user id by a messily typed e-mail; compare month total and limit state for three accounts | Same total and state as `GET /api/summary`; *no settings*, *no limit* and *a zero limit* read apart as the page's table says | [REQ-CORE-25](../../spec/core-requirements.md#req-core-25); [REQ-ML-05](analysis-monthly-limit.md#req-ml-05) | P1 | PASS |
+| TC-PY-016 | Payments, keys and quota mean what the page says | A loan paid twice with one payment's expense deleted; a keyed save retried once and another deleted; AI off | 2 paid, 1 linked, 1 unlinked; one row per key, `live` and `tombstone`; no quota rows | [REQ-CORE-25](../../spec/core-requirements.md#req-core-25); [REQ-CORE-10](../../spec/core-requirements.md#req-core-10); [REQ-CORE-13](../../spec/core-requirements.md#req-core-13) | P2 | PASS |
 
 ## Python · Log-reading exercise · `qa/python/test_log_exercise.py`
 
@@ -268,7 +270,7 @@ The worked answer in `docs/support/log-exercise.md` quotes a log that
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-PY-017 | The exercise quotes its log exactly | Read the page's quoted lines and the committed log | Every quoted line is a line of the log; the first question's reference is the log's only 500, which has its `UNHANDLED` line; no machine folder or e-mail address in the log | support pack | P2 | PASS |
+| TC-PY-017 | The exercise quotes its log exactly | Read the page's quoted lines and the committed log | Every quoted line is a line of the log; the first question's reference is the log's only 500, which has its `UNHANDLED` line; no machine folder or e-mail address in the log | [REQ-CORE-24](../../spec/core-requirements.md#req-core-24) | P2 | PASS |
 
 ## Selenium · browser checks · `qa/selenium/`
 
@@ -279,14 +281,14 @@ behaviour under test.
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-SEL-001 | Register through the form | Create an account on the sign-in screen | Signed in on the Add screen with the new account's categories; Month shows €0.00 and no rows | §6.1, TC-E2E-001 | P1 | PASS |
-| TC-SEL-002 | A wrong password shows its reference | Sign in with a wrong password | *E-mail or password is incorrect.* and an 8-character reference that is the start of the 401's `X-Request-Id`, read from Chrome's network log | support pack, §5 (401) | P1 | PASS |
-| TC-SEL-003 | An expense saved on the keypad joins the month | One expense through the API; type 7.40 on the keypad, pick Groceries, add a note, save | The total grows by exactly €7.40 and the new row shows the note, the category and the amount | §6.1, §6.2 | P1 | PASS |
-| TC-SEL-004 | The status box follows the limit | Within, exactly at and over the limit, one run each | A white outline and no fill with budget left; solid red with white text once used up; *Limit reached* at equality without the over class; the limit figure unframed | UAT-OBS-01, REQ-ML-05 R5 | P1 | PASS |
-| TC-SEL-005 | Clear the limit from the screen | Empty the limit field and save | *Set limit* is offered, the status box is gone, the limit figure is unframed and the API reports `null` | REQ-ML-10 | P2 | PASS |
-| TC-SEL-006 | BUG-015 through the screen | Edit only the note of an uncategorised expense | Saved; the row keeps *Uncategorised*; the API has the new note and a null category | **BUG-015** | P1 | PASS |
-| TC-SEL-007 | Pay a loan instalment | A loan of three instalments; pay once on Upcoming | *3 of 3 left · €150.00* becomes *2 of 3 left · €100.00*; the API counts 1 paid and 2 left | §4.2, §6.3 | P1 | PASS |
-| TC-SEL-008 | TC-SEL-003 at phone width | The same steps with the page emulated at 375 px | The same result | §6 phone-first | P2 | PASS |
+| TC-SEL-001 | Register through the form | Create an account on the sign-in screen | Signed in on the Add screen with the new account's categories; Month shows €0.00 and no rows | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02); [REQ-CORE-22](../../spec/core-requirements.md#req-core-22) | P1 | PASS |
+| TC-SEL-002 | A wrong password shows its reference | Sign in with a wrong password | *E-mail or password is incorrect.* and an 8-character reference that is the start of the 401's `X-Request-Id`, read from Chrome's network log | [REQ-CORE-24](../../spec/core-requirements.md#req-core-24) | P1 | PASS |
+| TC-SEL-003 | An expense saved on the keypad joins the month | One expense through the API; type 7.40 on the keypad, pick Groceries, add a note, save | The total grows by exactly €7.40 and the new row shows the note, the category and the amount | [REQ-CORE-18](../../spec/core-requirements.md#req-core-18); [REQ-CORE-19](../../spec/core-requirements.md#req-core-19) | P1 | PASS |
+| TC-SEL-004 | The status box follows the limit | Within, exactly at and over the limit, one run each | A white outline and no fill with budget left; solid red with white text once used up; *Limit reached* at equality without the over class; the limit figure unframed | [REQ-ML-05](analysis-monthly-limit.md#req-ml-05); [REQ-CORE-26](../../spec/core-requirements.md#req-core-26) | P1 | PASS |
+| TC-SEL-005 | Clear the limit from the screen | Empty the limit field and save | *Set limit* is offered, the status box is gone, the limit figure is unframed and the API reports `null` | [REQ-ML-10](analysis-monthly-limit.md#req-ml-10) | P2 | PASS |
+| TC-SEL-006 | BUG-015 through the screen | Edit only the note of an uncategorised expense | Saved; the row keeps *Uncategorised*; the API has the new note and a null category | [REQ-CORE-09](../../spec/core-requirements.md#req-core-09); [BUG-015](../../log/BUGS.md) | P1 | PASS |
+| TC-SEL-007 | Pay a loan instalment | A loan of three instalments; pay once on Upcoming | *3 of 3 left · €150.00* becomes *2 of 3 left · €100.00*; the API counts 1 paid and 2 left | [REQ-CORE-13](../../spec/core-requirements.md#req-core-13); [REQ-CORE-20](../../spec/core-requirements.md#req-core-20) | P1 | PASS |
+| TC-SEL-008 | TC-SEL-003 at phone width | The same steps with the page emulated at 375 px | The same result | [REQ-CORE-22](../../spec/core-requirements.md#req-core-22) | P2 | PASS |
 
 ## Load · `qa/load/`
 
@@ -295,36 +297,36 @@ under load, and the finding is the difference between them (R6).
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-LOAD-001 | Concurrent writes | 50 users writing expenses for 30 s | No 5xx, no `SQLITE_BUSY`, no lost write. Health stays under 250 ms at p95 | **LIMIT-001** | P1 | PASS |
-| TC-LOAD-002 | A burst of failed logins | 20 connections sending wrong passwords for 15 s | Health stays under 250 ms at p95 while the guessing happens | **BUG-004**, D-016 | P1 | PASS |
-| TC-LOAD-003 | The logins the limiter allows | 5 concurrent wrong passwords against a server with the limiter switched off | Health stays under 100 ms at p95 — the residual BUG-004 recorded, now discharged | **BUG-004** residual, D-024 | P1 | PASS |
+| TC-LOAD-001 | Concurrent writes | 50 users writing expenses for 30 s | No 5xx, no `SQLITE_BUSY`, no lost write. Health stays under 250 ms at p95 | [LIMIT-001](../../log/BUGS.md) | P1 | PASS |
+| TC-LOAD-002 | A burst of failed logins | 20 connections sending wrong passwords for 15 s | Health stays under 250 ms at p95 while the guessing happens | [REQ-CORE-17](../../spec/core-requirements.md#req-core-17); [BUG-004](../../log/BUGS.md) | P1 | PASS |
+| TC-LOAD-003 | The logins the limiter allows | 5 concurrent wrong passwords against a server with the limiter switched off | Health stays under 100 ms at p95 — the residual BUG-004 recorded, now discharged | [BUG-004](../../log/BUGS.md) | P1 | PASS |
 
 ## End-to-end · Authentication · `qa/e2e/auth.spec.js`
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-E2E-001 | Register through the form | Fill and submit in register mode | Lands on Add; seeded tiles and navigation visible | §6, §8 s.1 | P1 | PASS |
-| TC-E2E-002 | Sign in again | Clear the session, reload, sign in | Returns to the app | §6 | P1 | PASS |
-| TC-E2E-003 | Wrong password | Submit a wrong password | Error toast, still on sign-in, no session | §5 (401) | P1 | PASS |
-| TC-E2E-004 | Empty form | Submit with both fields blank | `Enter both an e-mail and a password`, nothing sent | §6 | P3 | PASS |
-| TC-E2E-005 | Stored session | Token in local storage, open `/` | The app opens directly | §6 | P2 | PASS |
-| TC-E2E-073 | An over-long password is refused in the browser | Register with 73 characters | The toast names the 72-byte limit and **no request is sent** | **BUG-017**, D-045 | P2 | PASS |
-| TC-E2E-074 | The browser counts bytes too | Register with 37 × `é` | Refused the same way, though the password is 37 characters — the client rule matches the server's | **BUG-017**, D-045 | P2 | PASS |
-| TC-E2E-083 | An input error has no reference | Submit the empty sign-in form | The message shows; no reference, because no request was made | support pack | P3 | PASS |
+| TC-E2E-001 | Register through the form | Fill and submit in register mode | Lands on Add; seeded tiles and navigation visible | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02); [REQ-CORE-22](../../spec/core-requirements.md#req-core-22) | P1 | PASS |
+| TC-E2E-002 | Sign in again | Clear the session, reload, sign in | Returns to the app | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02) | P1 | PASS |
+| TC-E2E-003 | Wrong password | Submit a wrong password | Error toast, still on sign-in, no session | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02); [REQ-CORE-16](../../spec/core-requirements.md#req-core-16) | P1 | PASS |
+| TC-E2E-004 | Empty form | Submit with both fields blank | `Enter both an e-mail and a password`, nothing sent | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02); [REQ-CORE-22](../../spec/core-requirements.md#req-core-22) | P3 | PASS |
+| TC-E2E-005 | Stored session | Token in local storage, open `/` | The app opens directly | [REQ-CORE-02](../../spec/core-requirements.md#req-core-02); [REQ-CORE-22](../../spec/core-requirements.md#req-core-22) | P2 | PASS |
+| TC-E2E-073 | An over-long password is refused in the browser | Register with 73 characters | The toast names the 72-byte limit and **no request is sent** | [REQ-CORE-03](../../spec/core-requirements.md#req-core-03); [BUG-017](../../log/BUGS.md) | P2 | PASS |
+| TC-E2E-074 | The browser counts bytes too | Register with 37 × `é` | Refused the same way, though the password is 37 characters — the client rule matches the server's | [REQ-CORE-03](../../spec/core-requirements.md#req-core-03); [BUG-017](../../log/BUGS.md) | P2 | PASS |
+| TC-E2E-083 | An input error has no reference | Submit the empty sign-in form | The message shows; no reference, because no request was made | [REQ-CORE-24](../../spec/core-requirements.md#req-core-24) | P3 | PASS |
 
 ## End-to-end · Adding an expense · `qa/e2e/add-expense.spec.js`
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-E2E-006 | **Definition of done** — two taps and a save | Type 1250, tap a category, tap Save, open Month | `€12.50`; success toast; amount and selection reset; month total `€12.50` with one row | **§8 session 4 DoD**, §6.1 | P1 | PASS |
-| TC-E2E-007 | Keypad and clear | Press 9, 9, 9 then C | `€0.09` → `€0.99` → `€9.99` → `€0.00` | §6.1 keypad | P2 | PASS |
-| TC-E2E-008 | Save with no amount | Tap a category, save | `Enter an amount` | §4.3 amount ≤ 0 | P2 | PASS |
-| TC-E2E-009 | Save with no category | Enter an amount, save | `Choose a category` | §6.1 two taps | P2 | PASS |
-| TC-E2E-010 | Two expenses, two categories | Add both, open Month | Total is the sum; two rows, two bars | §6.2 | P1 | PASS |
-| TC-E2E-039 | A note becomes the row title | Add €40 to Other with the note "new tyre" | The row reads `new tyre` with `Other` beneath — the point of D-020 | D-020 | P1 | PASS |
-| TC-E2E-040 | The note is cleared after saving | Save an expense with a note | The field is empty, so it cannot attach to the next expense | D-020 | P1 | PASS |
-| TC-E2E-041 | An expense with no note shows its category | Save without a note | The row falls back to its category name | D-020 | P2 | PASS |
-| TC-E2E-011 | Every tile has a readable name | Look each seeded category up by role and name | All found by role **and** by test id | D-012 | P2 | PASS |
+| TC-E2E-006 | **Definition of done** — two taps and a save | Type 1250, tap a category, tap Save, open Month | `€12.50`; success toast; amount and selection reset; month total `€12.50` with one row | [REQ-CORE-18](../../spec/core-requirements.md#req-core-18) | P1 | PASS |
+| TC-E2E-007 | Keypad and clear | Press 9, 9, 9 then C | `€0.09` → `€0.99` → `€9.99` → `€0.00` | [REQ-CORE-18](../../spec/core-requirements.md#req-core-18) | P2 | PASS |
+| TC-E2E-008 | Save with no amount | Tap a category, save | `Enter an amount` | [REQ-CORE-06](../../spec/core-requirements.md#req-core-06); [REQ-CORE-18](../../spec/core-requirements.md#req-core-18) | P2 | PASS |
+| TC-E2E-009 | Save with no category | Enter an amount, save | `Choose a category` | [REQ-CORE-18](../../spec/core-requirements.md#req-core-18) | P2 | PASS |
+| TC-E2E-010 | Two expenses, two categories | Add both, open Month | Total is the sum; two rows, two bars | [REQ-CORE-19](../../spec/core-requirements.md#req-core-19) | P1 | PASS |
+| TC-E2E-039 | A note becomes the row title | Add €40 to Other with the note "new tyre" | The row reads `new tyre` with `Other` beneath — the point of D-020 | [REQ-CORE-19](../../spec/core-requirements.md#req-core-19) | P1 | PASS |
+| TC-E2E-040 | The note is cleared after saving | Save an expense with a note | The field is empty, so it cannot attach to the next expense | [REQ-CORE-19](../../spec/core-requirements.md#req-core-19) | P1 | PASS |
+| TC-E2E-041 | An expense with no note shows its category | Save without a note | The row falls back to its category name | [REQ-CORE-19](../../spec/core-requirements.md#req-core-19) | P2 | PASS |
+| TC-E2E-011 | Every tile has a readable name | Look each seeded category up by role and name | All found by role **and** by test id | [REQ-CORE-22](../../spec/core-requirements.md#req-core-22) | P2 | PASS |
 
 ## End-to-end · Income and the donut · `qa/e2e/income.spec.js`
 
@@ -333,106 +335,106 @@ subtly wrong and hard to assert on; the numbers beside it are neither.
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-E2E-031 | A fresh account asks rather than invents | Open Month on a new account | `Set income`, and `—` where the remainder goes — not `€0.00 left` | D-021 | P1 | PASS |
-| TC-E2E-032 | Setting an income shows what is left | Set 1500.00 with €125.50 already spent | Income €1,500.00, spent €125.50, left €1,374.50 | §5 summary, D-021 | P1 | PASS |
-| TC-E2E-033 | The income is stored, not remembered | Set it, reload the page | Still there — it survives the browser | §3 settings table | P1 | PASS |
-| TC-E2E-034 | Overspending says Over | Spend €600 against €500 | The label reads `Over`, the figure is €100.00 | D-021 | P1 | PASS |
-| TC-E2E-035 | Cancelling changes nothing | Open the editor, type, cancel | The original figure is intact | D-021 | P2 | PASS |
-| TC-E2E-036 | A malformed income is refused | Type "a lot", save | Error toast, income unchanged | §4.3 | P2 | PASS |
-| TC-E2E-042 | Spending with no income set | Add an expense, open Month without setting an income | `Set income`, remainder `—`, and the donut still draws the spend | test-design §6 row 2 | P2 | PASS |
-| TC-E2E-043 | An income with nothing spent | Set an income on an empty month | Left is the whole income, no arcs | test-design §6 row 3 | P2 | PASS |
-| TC-E2E-044 | Spending **exactly** the income | Spend €500 against €500 | Label stays `Left`, figure is `€0.00` — not `Over €0.00`. The boundary between rows 4 and 6 | test-design §6 row 5 | P1 | PASS |
-| TC-E2E-037 | One arc per category | Two categories with spending | Two slices, each addressable by its category id | D-022 | P2 | PASS |
-| TC-E2E-038 | An empty month draws nothing | Open Month on a new account | The donut is present, zero slices, no crash | D-022 | P2 | PASS |
+| TC-E2E-031 | A fresh account asks rather than invents | Open Month on a new account | `Set income`, and `—` where the remainder goes — not `€0.00 left` | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14); [REQ-CORE-19](../../spec/core-requirements.md#req-core-19) | P1 | PASS |
+| TC-E2E-032 | Setting an income shows what is left | Set 1500.00 with €125.50 already spent | Income €1,500.00, spent €125.50, left €1,374.50 | [REQ-CORE-15](../../spec/core-requirements.md#req-core-15) | P1 | PASS |
+| TC-E2E-033 | The income is stored, not remembered | Set it, reload the page | Still there — it survives the browser | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14) | P1 | PASS |
+| TC-E2E-034 | Overspending says Over | Spend €600 against €500 | The label reads `Over`, the figure is €100.00 | [REQ-CORE-15](../../spec/core-requirements.md#req-core-15) | P1 | PASS |
+| TC-E2E-035 | Cancelling changes nothing | Open the editor, type, cancel | The original figure is intact | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14); [REQ-CORE-19](../../spec/core-requirements.md#req-core-19) | P2 | PASS |
+| TC-E2E-036 | A malformed income is refused | Type "a lot", save | Error toast, income unchanged | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14) | P2 | PASS |
+| TC-E2E-042 | Spending with no income set | Add an expense, open Month without setting an income | `Set income`, remainder `—`, and the donut still draws the spend | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14); [REQ-CORE-15](../../spec/core-requirements.md#req-core-15) | P2 | PASS |
+| TC-E2E-043 | An income with nothing spent | Set an income on an empty month | Left is the whole income, no arcs | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14); [REQ-CORE-15](../../spec/core-requirements.md#req-core-15) | P2 | PASS |
+| TC-E2E-044 | Spending **exactly** the income | Spend €500 against €500 | Label stays `Left`, figure is `€0.00` — not `Over €0.00`. The boundary between rows 4 and 6 | [REQ-CORE-14](../../spec/core-requirements.md#req-core-14); [REQ-CORE-15](../../spec/core-requirements.md#req-core-15) | P1 | PASS |
+| TC-E2E-037 | One arc per category | Two categories with spending | Two slices, each addressable by its category id | [REQ-CORE-19](../../spec/core-requirements.md#req-core-19) | P2 | PASS |
+| TC-E2E-038 | An empty month draws nothing | Open Month on a new account | The donut is present, zero slices, no crash | [REQ-CORE-19](../../spec/core-requirements.md#req-core-19) | P2 | PASS |
 
 ## End-to-end · This month · `qa/e2e/month.spec.js`
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-E2E-012 | Total, bars and list agree | Two expenses via API, open Month | Total is the sum; a row and a bar per category | §6.2 | P1 | PASS |
-| TC-E2E-013 | Bars carry their share | €75.00 and €25.00 | `75%` and `25%` in the bars' accessible names | §6.2, §9 (bars are divs) | P2 | PASS |
-| TC-E2E-014 | Delete an expense | Tap the delete control on one row | Row gone, other row stays, total drops by exactly that amount | §5 DELETE, §6.2 | P1 | PASS |
-| TC-E2E-015 | Empty month | Open Month on a new account | `€0.00`, no rows, no bars | §6.2 | P2 | PASS |
-| TC-E2E-016 | Another user's expenses are invisible | Swap the session to a second account | `€0.00`, no rows | §4.3 ownership | P1 | PASS |
-| TC-E2E-081 | The largest amount on a 320 px screen | An expense at the amount ceiling, viewport 320 × 568, open Month | The painted name and amount do not intersect; the amount reads `€1,000,000.00`, is not clipped and stays inside its row | layout contract, 320 px | P2 | PASS |
-| TC-E2E-065 | The limit and what is left are on the screen | Limit €200.00, spend €50.00, open Month | The limit reads €200.00; the state line says *Within limit* and €150.00 | REQ-ML-09 | P1 | PASS |
-| TC-E2E-066 | Over the limit is words, not only colour | Limit €100.00, spend €125.00 | The state line says *Over limit* with €25.00 and carries the over class | REQ-ML-09, RISK-ML-6 | P1 | PASS |
-| TC-E2E-067 | Set the limit from the screen | Type 60.00 into the limit editor and save | The limit and the state update without a reload; the API agrees | REQ-ML-10 | P1 | PASS |
-| TC-E2E-068 | Clear the limit from the screen | Empty the field and save | The screen offers to set one again, the state line is gone, the API reports `null` | REQ-ML-10, A3 | P2 | PASS |
-| TC-E2E-069 | A figure that is not a number | Type "not a number" and save | Error toast; the shown and stored limits are unchanged | REQ-ML-10 | P2 | PASS |
-| TC-E2E-076 | No limit, no box | No limit set, open Month | The status line is hidden and carries neither box class | UAT-OBS-01 | P2 | PASS |
-| TC-E2E-077 | Budget left: a white outline | Limit €200.00, spend €50.00 | No fill; a white outline, not the red, that clears 3:1 against both ends of the header gradient | UAT-OBS-01, WCAG 1.4.11 | P2 | PASS |
-| TC-E2E-078 | Exactly at the limit | Limit €100.00, spend €100.00 | The box is red with white text because nothing is left, while the words say *Limit reached* and carry no over class — equality is not overspending | UAT-OBS-01, REQ-ML-05 R5 | P1 | PASS |
-| TC-E2E-079 | Over the limit: white on solid red | Limit €100.00, spend €125.00 | A solid fill in the palette's red; white bold text at 4.5:1 or more on it; the over class | UAT-OBS-01, WCAG 1.4.3 | P1 | PASS |
-| TC-E2E-080 | The light palette | Withhold `theme.css` so `style.css`'s own palette renders; within, then over the limit | A white outline at 3:1 or more against the header, then white text at 4.5:1 or more on the red | UAT-OBS-01, WCAG 1.4.11, 1.4.3 | P2 | PASS |
-| TC-E2E-084 | The limit figure is never framed | One account taken from no limit through within, exactly at and over the limit | The limit figure has no border in any state, and the income, left and limit figures stay where they were | UAT-OBS-01 | P1 | PASS |
-| TC-E2E-085 | The box fits a phone | The largest limit untouched, then a zero limit with ten expenses at the amount ceiling; 320, 375 and 393 px | Each box stays inside the header, its text is not clipped and the page does not scroll sideways | UAT-OBS-01, layout contract | P2 | PASS |
+| TC-E2E-012 | Total, bars and list agree | Two expenses via API, open Month | Total is the sum; a row and a bar per category | [REQ-CORE-19](../../spec/core-requirements.md#req-core-19) | P1 | PASS |
+| TC-E2E-013 | Bars carry their share | €75.00 and €25.00 | `75%` and `25%` in the bars' accessible names | [REQ-CORE-19](../../spec/core-requirements.md#req-core-19) | P2 | PASS |
+| TC-E2E-014 | Delete an expense | Tap the delete control on one row | Row gone, other row stays, total drops by exactly that amount | [REQ-CORE-09](../../spec/core-requirements.md#req-core-09); [REQ-CORE-19](../../spec/core-requirements.md#req-core-19) | P1 | PASS |
+| TC-E2E-015 | Empty month | Open Month on a new account | `€0.00`, no rows, no bars | [REQ-CORE-19](../../spec/core-requirements.md#req-core-19) | P2 | PASS |
+| TC-E2E-016 | Another user's expenses are invisible | Swap the session to a second account | `€0.00`, no rows | [REQ-CORE-04](../../spec/core-requirements.md#req-core-04) | P1 | PASS |
+| TC-E2E-081 | The largest amount on a 320 px screen | An expense at the amount ceiling, viewport 320 × 568, open Month | The painted name and amount do not intersect; the amount reads `€1,000,000.00`, is not clipped and stays inside its row | [REQ-CORE-19](../../spec/core-requirements.md#req-core-19); [REQ-CORE-22](../../spec/core-requirements.md#req-core-22) | P2 | PASS |
+| TC-E2E-065 | The limit and what is left are on the screen | Limit €200.00, spend €50.00, open Month | The limit reads €200.00; the state line says *Within limit* and €150.00 | [REQ-ML-09](analysis-monthly-limit.md#req-ml-09) | P1 | PASS |
+| TC-E2E-066 | Over the limit is words, not only colour | Limit €100.00, spend €125.00 | The state line says *Over limit* with €25.00 and carries the over class | [REQ-ML-09](analysis-monthly-limit.md#req-ml-09); [REQ-CORE-26](../../spec/core-requirements.md#req-core-26) | P1 | PASS |
+| TC-E2E-067 | Set the limit from the screen | Type 60.00 into the limit editor and save | The limit and the state update without a reload; the API agrees | [REQ-ML-10](analysis-monthly-limit.md#req-ml-10) | P1 | PASS |
+| TC-E2E-068 | Clear the limit from the screen | Empty the field and save | The screen offers to set one again, the state line is gone, the API reports `null` | [REQ-ML-10](analysis-monthly-limit.md#req-ml-10) | P2 | PASS |
+| TC-E2E-069 | A figure that is not a number | Type "not a number" and save | Error toast; the shown and stored limits are unchanged | [REQ-ML-10](analysis-monthly-limit.md#req-ml-10) | P2 | PASS |
+| TC-E2E-076 | No limit, no box | No limit set, open Month | The status line is hidden and carries neither box class | [REQ-CORE-26](../../spec/core-requirements.md#req-core-26) | P2 | PASS |
+| TC-E2E-077 | Budget left: a white outline | Limit €200.00, spend €50.00 | No fill; a white outline, not the red, that clears 3:1 against both ends of the header gradient | [REQ-CORE-26](../../spec/core-requirements.md#req-core-26) | P2 | PASS |
+| TC-E2E-078 | Exactly at the limit | Limit €100.00, spend €100.00 | The box is red with white text because nothing is left, while the words say *Limit reached* and carry no over class — equality is not overspending | [REQ-CORE-26](../../spec/core-requirements.md#req-core-26); [REQ-ML-05](analysis-monthly-limit.md#req-ml-05) | P1 | PASS |
+| TC-E2E-079 | Over the limit: white on solid red | Limit €100.00, spend €125.00 | A solid fill in the palette's red; white bold text at 4.5:1 or more on it; the over class | [REQ-CORE-26](../../spec/core-requirements.md#req-core-26) | P1 | PASS |
+| TC-E2E-080 | The light palette | Withhold `theme.css` so `style.css`'s own palette renders; within, then over the limit | A white outline at 3:1 or more against the header, then white text at 4.5:1 or more on the red | [REQ-CORE-26](../../spec/core-requirements.md#req-core-26) | P2 | PASS |
+| TC-E2E-084 | The limit figure is never framed | One account taken from no limit through within, exactly at and over the limit | The limit figure has no border in any state, and the income, left and limit figures stay where they were | [REQ-CORE-26](../../spec/core-requirements.md#req-core-26) | P1 | PASS |
+| TC-E2E-085 | The box fits a phone | The largest limit untouched, then a zero limit with ten expenses at the amount ceiling; 320, 375 and 393 px | Each box stays inside the header, its text is not clipped and the page does not scroll sideways | [REQ-CORE-26](../../spec/core-requirements.md#req-core-26) | P2 | PASS |
 
 ## End-to-end · Schedules · `qa/e2e/schedules.spec.js`
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-E2E-017 | Create a subscription | Fill the form without ticking the box | Success toast, one row with the name | §6.4 | P2 | PASS |
-| TC-E2E-018 | The checkbox is the only branch | Tick and untick `Je to pôžička` | `total_count` hidden → shown → hidden | §6.4 | P2 | PASS |
-| TC-E2E-019 | A loan shows its countdown at once | Create a 10-instalment loan | `10 of 10 left · €1,000.00` | §4.2, §6.3 | P1 | PASS |
-| TC-E2E-020 | The 31st is accepted and explains itself | Enter day 12, then 31; save with a February start | Hint only for days past 28; next charge is the last day of February | §4.1, D-011 | P1 | PASS |
-| TC-E2E-021 | Malformed amount | `not a number` | `Amount must be a number, for example 15.00`, nothing created | §4.3 amount | P2 | PASS |
-| TC-E2E-022 | Day outside 1–31 | Day 32 | `Day of month must be between 1 and 31`, nothing created | §4.3 day | P2 | PASS |
-| TC-E2E-023 | A schedule created via API is displayed | Create with the API, open the screen | Name, amount and `Subscription` on its row | §5, §6.4 | P2 | PASS |
-| TC-E2E-075 | A loan longer than the app supports | Tick the loan box, ask for 1201 instalments | The toast names the 1200 ceiling, nothing is created and **no request is sent** | **BUG-018**, D-046 | P2 | PASS |
+| TC-E2E-017 | Create a subscription | Fill the form without ticking the box | Success toast, one row with the name | [REQ-CORE-21](../../spec/core-requirements.md#req-core-21) | P2 | PASS |
+| TC-E2E-018 | The checkbox is the only branch | Tick and untick `Je to pôžička` | `total_count` hidden → shown → hidden | [REQ-CORE-21](../../spec/core-requirements.md#req-core-21) | P2 | PASS |
+| TC-E2E-019 | A loan shows its countdown at once | Create a 10-instalment loan | `10 of 10 left · €1,000.00` | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11); [REQ-CORE-20](../../spec/core-requirements.md#req-core-20) | P1 | PASS |
+| TC-E2E-020 | The 31st is accepted and explains itself | Enter day 12, then 31; save with a February start | Hint only for days past 28; next charge is the last day of February | [REQ-CORE-12](../../spec/core-requirements.md#req-core-12); [REQ-CORE-21](../../spec/core-requirements.md#req-core-21) | P1 | PASS |
+| TC-E2E-021 | Malformed amount | `not a number` | `Amount must be a number, for example 15.00`, nothing created | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11); [REQ-CORE-21](../../spec/core-requirements.md#req-core-21) | P2 | PASS |
+| TC-E2E-022 | Day outside 1–31 | Day 32 | `Day of month must be between 1 and 31`, nothing created | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11); [REQ-CORE-21](../../spec/core-requirements.md#req-core-21) | P2 | PASS |
+| TC-E2E-023 | A schedule created via API is displayed | Create with the API, open the screen | Name, amount and `Subscription` on its row | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11); [REQ-CORE-21](../../spec/core-requirements.md#req-core-21) | P2 | PASS |
+| TC-E2E-075 | A loan longer than the app supports | Tick the loan box, ask for 1201 instalments | The toast names the 1200 ceiling, nothing is created and **no request is sent** | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11); [BUG-018](../../log/BUGS.md) | P2 | PASS |
 
 ## End-to-end · Upcoming and payment · `qa/e2e/upcoming.spec.js`
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-E2E-024 | A loan counts down and closes | Pay a 3-instalment loan three times | `3 of 3` → `2 of 3` → `1 of 3` → **`0 of 3`**; finished state; pay button gone | §4.2, §6.3 | P1 | PASS |
-| TC-E2E-025 | A subscription never finishes | Pay a subscription once | Still payable, still `Subscription`, no finished state | §3 (NULL = subscription) | P2 | PASS |
-| TC-E2E-026 | Paying records the expense | Pay, then open Month | Month total rises by the instalment; the row carries the schedule's name | §4.2 | P1 | PASS |
-| TC-E2E-027 | A closed loan leaves Upcoming | Close it, reload | Not listed | §4.2 `active = 0`, §6.3 | P2 | PASS |
-| TC-E2E-028 | Ordered by next charge | Two schedules, days 1 and 28 | Screen order matches the API's `next_due` order | §5 sorted, §6.3 | P2 | PASS |
-| TC-E2E-029 | The pay button says what it pays | Look it up by role and name | Found as `Pay Netflix` | §6.3, D-012 | P2 | PASS |
-| TC-E2E-082 | A refused payment shows its reference | Close a loan behind the screen's back, press Pay | The 409's `X-Request-Id` is read off the wire; the toast keeps its message and shows the id's first eight characters beside it | support pack | P1 | PASS |
+| TC-E2E-024 | A loan counts down and closes | Pay a 3-instalment loan three times | `3 of 3` → `2 of 3` → `1 of 3` → **`0 of 3`**; finished state; pay button gone | [REQ-CORE-13](../../spec/core-requirements.md#req-core-13); [REQ-CORE-20](../../spec/core-requirements.md#req-core-20) | P1 | PASS |
+| TC-E2E-025 | A subscription never finishes | Pay a subscription once | Still payable, still `Subscription`, no finished state | [REQ-CORE-11](../../spec/core-requirements.md#req-core-11); [REQ-CORE-20](../../spec/core-requirements.md#req-core-20) | P2 | PASS |
+| TC-E2E-026 | Paying records the expense | Pay, then open Month | Month total rises by the instalment; the row carries the schedule's name | [REQ-CORE-13](../../spec/core-requirements.md#req-core-13) | P1 | PASS |
+| TC-E2E-027 | A closed loan leaves Upcoming | Close it, reload | Not listed | [REQ-CORE-13](../../spec/core-requirements.md#req-core-13); [REQ-CORE-20](../../spec/core-requirements.md#req-core-20) | P2 | PASS |
+| TC-E2E-028 | Ordered by next charge | Two schedules, days 1 and 28 | Screen order matches the API's `next_due` order | [REQ-CORE-20](../../spec/core-requirements.md#req-core-20) | P2 | PASS |
+| TC-E2E-029 | The pay button says what it pays | Look it up by role and name | Found as `Pay Netflix` | [REQ-CORE-20](../../spec/core-requirements.md#req-core-20); [REQ-CORE-22](../../spec/core-requirements.md#req-core-22) | P2 | PASS |
+| TC-E2E-082 | A refused payment shows its reference | Close a loan behind the screen's back, press Pay | The 409's `X-Request-Id` is read off the wire; the toast keeps its message and shows the id's first eight characters beside it | [REQ-CORE-24](../../spec/core-requirements.md#req-core-24) | P1 | PASS |
 
 ## End-to-end · Double submission · `qa/e2e/double-submit.spec.js`
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-E2E-045 | Two fast expense saves | Tap Save twice before the first request completes | Exactly one expense exists; the control is disabled synchronously | LIMIT-002, D-030 | P1 | PASS |
-| TC-E2E-046 | Repeated schedule submit | Press Enter twice in the schedule form | Exactly one schedule exists | LIMIT-002, D-030 | P1 | PASS |
-| TC-E2E-047 | Intentional second expense | Save, wait for completion, then save again | Two rows exist — separate user actions must not be deduplicated | LIMIT-002 | P2 | PASS |
+| TC-E2E-045 | Two fast expense saves | Tap Save twice before the first request completes | Exactly one expense exists; the control is disabled synchronously | [REQ-CORE-27](../../spec/core-requirements.md#req-core-27); [LIMIT-002](../../log/BUGS.md) | P1 | PASS |
+| TC-E2E-046 | Repeated schedule submit | Press Enter twice in the schedule form | Exactly one schedule exists | [REQ-CORE-27](../../spec/core-requirements.md#req-core-27); [LIMIT-002](../../log/BUGS.md) | P1 | PASS |
+| TC-E2E-047 | Intentional second expense | Save, wait for completion, then save again | Two rows exist — separate user actions must not be deduplicated | [REQ-CORE-27](../../spec/core-requirements.md#req-core-27); [LIMIT-002](../../log/BUGS.md) | P2 | PASS |
 
 ## End-to-end · Editing · `qa/e2e/editing.spec.js`
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-E2E-048 | Edit amount updates all month views | Change an expense amount | Row, total and donut update consistently | D-029, §6.2 | P1 | PASS |
-| TC-E2E-049 | Partial edit preserves other fields | Change one value in the editor | Unchanged fields retain their previous values | D-029 PATCH | P1 | PASS |
-| TC-E2E-050 | Cancel edit | Open editor, change a value, cancel | Row remains unchanged | D-029 | P2 | PASS |
-| TC-E2E-051 | Deleted elsewhere while editing | Delete the row through the API before Save | UI reports the conflict and refreshes | D-029, §5 404 | P1 | PASS |
-| TC-E2E-052 | Rejected edit retains editor state | Send an amount the API refuses | Editor stays open and the stored row stays unchanged | D-029, §4.3 | P1 | PASS |
-| TC-E2E-053 | Keyboard opens editor | Focus a row and use the keyboard action | Same editor opens without a pointer | §6 accessibility | P2 | PASS |
-| TC-E2E-070 | A note-only edit of an uncategorised expense | Create an expense with no category; change only the note | The PATCH carries the note and no `category_id` at all; the row keeps *Uncategorised* | BUG-015, D-029 | P1 | PASS |
-| TC-E2E-071 | An unchanged save of an uncategorised expense | Open the editor and save without touching anything | The category select reads empty (*Uncategorised*) and **no request is sent** | BUG-015, D-029 | P2 | PASS |
-| TC-E2E-072 | A payment from an uncategorised schedule | Pay a schedule that has no category, then edit the note of the expense it created | Same as TC-E2E-070: no `category_id` in the PATCH | BUG-015 | P2 | PASS |
+| TC-E2E-048 | Edit amount updates all month views | Change an expense amount | Row, total and donut update consistently | [REQ-CORE-09](../../spec/core-requirements.md#req-core-09); [REQ-CORE-19](../../spec/core-requirements.md#req-core-19) | P1 | PASS |
+| TC-E2E-049 | Partial edit preserves other fields | Change one value in the editor | Unchanged fields retain their previous values | [REQ-CORE-09](../../spec/core-requirements.md#req-core-09); [REQ-CORE-19](../../spec/core-requirements.md#req-core-19) | P1 | PASS |
+| TC-E2E-050 | Cancel edit | Open editor, change a value, cancel | Row remains unchanged | [REQ-CORE-09](../../spec/core-requirements.md#req-core-09); [REQ-CORE-19](../../spec/core-requirements.md#req-core-19) | P2 | PASS |
+| TC-E2E-051 | Deleted elsewhere while editing | Delete the row through the API before Save | UI reports the conflict and refreshes | [REQ-CORE-09](../../spec/core-requirements.md#req-core-09); [REQ-CORE-16](../../spec/core-requirements.md#req-core-16) | P1 | PASS |
+| TC-E2E-052 | Rejected edit retains editor state | Send an amount the API refuses | Editor stays open and the stored row stays unchanged | [REQ-CORE-09](../../spec/core-requirements.md#req-core-09); [REQ-CORE-16](../../spec/core-requirements.md#req-core-16) | P1 | PASS |
+| TC-E2E-053 | Keyboard opens editor | Focus a row and use the keyboard action | Same editor opens without a pointer | [REQ-CORE-22](../../spec/core-requirements.md#req-core-22) | P2 | PASS |
+| TC-E2E-070 | A note-only edit of an uncategorised expense | Create an expense with no category; change only the note | The PATCH carries the note and no `category_id` at all; the row keeps *Uncategorised* | [REQ-CORE-09](../../spec/core-requirements.md#req-core-09); [REQ-CORE-19](../../spec/core-requirements.md#req-core-19); [BUG-015](../../log/BUGS.md) | P1 | PASS |
+| TC-E2E-071 | An unchanged save of an uncategorised expense | Open the editor and save without touching anything | The category select reads empty (*Uncategorised*) and **no request is sent** | [REQ-CORE-09](../../spec/core-requirements.md#req-core-09); [BUG-015](../../log/BUGS.md) | P2 | PASS |
+| TC-E2E-072 | A payment from an uncategorised schedule | Pay a schedule that has no category, then edit the note of the expense it created | Same as TC-E2E-070: no `category_id` in the PATCH | [REQ-CORE-09](../../spec/core-requirements.md#req-core-09); [REQ-CORE-13](../../spec/core-requirements.md#req-core-13); [BUG-015](../../log/BUGS.md) | P2 | PASS |
 
 ## End-to-end · Pagination · `qa/e2e/pagination.spec.js`
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-E2E-054 | One-page month | Create no more than 50 expenses | No paging controls are shown | D-031 | P2 | PASS |
-| TC-E2E-055 | One row past a page | Create 51 expenses | Show-more control and honest count appear | D-031 | P1 | PASS |
-| TC-E2E-056 | The old 200-row cap | Create 201 expenses and page through them | All rows are reachable and total agrees | D-031 | P1 | PASS |
-| TC-E2E-057 | Delete after paging | Load multiple pages, then delete one row | Count and remaining rows stay consistent | D-031 | P1 | PASS |
+| TC-E2E-054 | One-page month | Create no more than 50 expenses | No paging controls are shown | [REQ-CORE-08](../../spec/core-requirements.md#req-core-08) | P2 | PASS |
+| TC-E2E-055 | One row past a page | Create 51 expenses | Show-more control and honest count appear | [REQ-CORE-08](../../spec/core-requirements.md#req-core-08) | P1 | PASS |
+| TC-E2E-056 | The old 200-row cap | Create 201 expenses and page through them | All rows are reachable and total agrees | [REQ-CORE-08](../../spec/core-requirements.md#req-core-08) | P1 | PASS |
+| TC-E2E-057 | Delete after paging | Load multiple pages, then delete one row | Count and remaining rows stay consistent | [REQ-CORE-08](../../spec/core-requirements.md#req-core-08) | P1 | PASS |
 
 ## End-to-end · Free text safety · `qa/e2e/security.spec.js`
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-E2E-058 | Script-tag expense note | Save a note containing a script tag | Payload is rendered as text and does not run | XSS audit S16 | P1 | PASS |
-| TC-E2E-059 | Event-handler expense note | Save an image/onerror-style payload | Payload is rendered as text and does not run | XSS audit S16 | P1 | PASS |
-| TC-E2E-060 | Closing-tag expense note | Save a closing-tag/script payload | Payload is rendered as text and does not run | XSS audit S16 | P1 | PASS |
-| TC-E2E-061 | Script-tag schedule name | Save a schedule with a script payload | Name is rendered as text and does not run | XSS audit S16 | P1 | PASS |
-| TC-E2E-062 | Free text survives editing | Round-trip a payload through the editor | Stored text survives unchanged and never executes | XSS audit S16, D-029 | P1 | PASS |
+| TC-E2E-058 | Script-tag expense note | Save a note containing a script tag | Payload is rendered as text and does not run | [REQ-CORE-23](../../spec/core-requirements.md#req-core-23) | P1 | PASS |
+| TC-E2E-059 | Event-handler expense note | Save an image/onerror-style payload | Payload is rendered as text and does not run | [REQ-CORE-23](../../spec/core-requirements.md#req-core-23) | P1 | PASS |
+| TC-E2E-060 | Closing-tag expense note | Save a closing-tag/script payload | Payload is rendered as text and does not run | [REQ-CORE-23](../../spec/core-requirements.md#req-core-23) | P1 | PASS |
+| TC-E2E-061 | Script-tag schedule name | Save a schedule with a script payload | Name is rendered as text and does not run | [REQ-CORE-23](../../spec/core-requirements.md#req-core-23) | P1 | PASS |
+| TC-E2E-062 | Free text survives editing | Round-trip a payload through the editor | Stored text survives unchanged and never executes | [REQ-CORE-23](../../spec/core-requirements.md#req-core-23); [REQ-CORE-09](../../spec/core-requirements.md#req-core-09) | P1 | PASS |
 
 ## End-to-end · Regressions · `qa/e2e/regressions.spec.js`
 
@@ -441,9 +443,9 @@ fail when its defect is put back — see S05.
 
 | ID | Case | Steps | Expected | Traces to | Pri | Status |
 |---|---|---|---|---|---|---|
-| TC-REG-001 | The Save button is legible | Read the **computed** colour and the effective background of the save button; compute the WCAG ratio | Colours differ **and** contrast ≥ 4.5:1. `toBeVisible()` and `toHaveText()` are asserted first — those are what BUG-001 passed while the button was invisible | **BUG-001** | P1 | PASS |
-| TC-REG-002 | The counter reads zero after the last instalment | Pay a 2-instalment loan to the end | `0 of 2 left · €0.00`, finished state shown, pay button gone | **BUG-002**, §4.2 | P1 | PASS |
-| TC-REG-003 | The pay button recovers after a refusal | Close the loan behind the screen's back, then press Pay | Conflict toast; button back to `Pay`, enabled | **BUG-003**, §4.2 (409) | P1 | PASS |
+| TC-REG-001 | The Save button is legible | Read the **computed** colour and the effective background of the save button; compute the WCAG ratio | Colours differ **and** contrast ≥ 4.5:1. `toBeVisible()` and `toHaveText()` are asserted first — those are what BUG-001 passed while the button was invisible | [REQ-CORE-18](../../spec/core-requirements.md#req-core-18); [BUG-001](../../log/BUGS.md) | P1 | PASS |
+| TC-REG-002 | The counter reads zero after the last instalment | Pay a 2-instalment loan to the end | `0 of 2 left · €0.00`, finished state shown, pay button gone | [REQ-CORE-13](../../spec/core-requirements.md#req-core-13); [BUG-002](../../log/BUGS.md) | P1 | PASS |
+| TC-REG-003 | The pay button recovers after a refusal | Close the loan behind the screen's back, then press Pay | Conflict toast; button back to `Pay`, enabled | [REQ-CORE-20](../../spec/core-requirements.md#req-core-20); [BUG-003](../../log/BUGS.md) | P1 | PASS |
 
 ---
 
@@ -458,17 +460,17 @@ Results and the observed/unexercised status matrix are in the
 
 | ID | Requirement and check | Result |
 |---|---|---|
-| TC-CONTRACT-001 | REQ-CONTRACT-02/04: strict Ajv, formats, no mutation or inherited provider environment | Local PASS |
-| TC-CONTRACT-002 | REQ-CONTRACT-01/05: source/contract inventory; omitted/wrong-method and unsupported scanner controls | Local PASS |
-| TC-CONTRACT-003 | REQ-CONTRACT-03: health/request ID, registration, JSON errors and every protected operation's missing auth | Local PASS |
-| TC-CONTRACT-004 | REQ-CONTRACT-03: category trim/coercion, null/zero/bounds, strict PATCH and ownership | Local PASS |
-| TC-CONTRACT-005 | REQ-CONTRACT-03: settings and all four independent overall/category budget states | Local PASS |
-| TC-CONTRACT-006 | REQ-CONTRACT-03: expense/filter/edit, keyed replay/conflicts/snapshot and empty204 | Local PASS |
-| TC-CONTRACT-007 | REQ-CONTRACT-03: subscription/loan pay, finish/reopen, bounds and ownership | Local PASS |
-| TC-CONTRACT-008 | REQ-CONTRACT-03/04: AI off/demo, NFC/body/date boundaries, context/quota and no expense writes | Local PASS |
-| TC-CONTRACT-009 | REQ-CONTRACT-03: login success/denial/rate limit and Retry-After | Local PASS |
-| TC-CONTRACT-010 | REQ-CONTRACT-02/05: eight copied real-capture corruption controls, exact originals preserved | Local PASS |
-| TC-CONTRACT-011 | REQ-CONTRACT-04/06: observed2xx per source operation,401-only matrix control, truthful status sets and log privacy | Local PASS |
+| TC-CONTRACT-001 | [REQ-CONTRACT-02](../../docs/api/README.md#req-contract-02), [REQ-CONTRACT-04](../../docs/api/README.md#req-contract-04): strict Ajv, formats, no mutation or inherited provider environment | Local PASS |
+| TC-CONTRACT-002 | [REQ-CONTRACT-01](../../docs/api/README.md#req-contract-01), [REQ-CONTRACT-05](../../docs/api/README.md#req-contract-05): source/contract inventory; omitted/wrong-method and unsupported scanner controls | Local PASS |
+| TC-CONTRACT-003 | [REQ-CONTRACT-03](../../docs/api/README.md#req-contract-03): health/request ID, registration, JSON errors and every protected operation's missing auth | Local PASS |
+| TC-CONTRACT-004 | [REQ-CONTRACT-03](../../docs/api/README.md#req-contract-03): category trim/coercion, null/zero/bounds, strict PATCH and ownership | Local PASS |
+| TC-CONTRACT-005 | [REQ-CONTRACT-03](../../docs/api/README.md#req-contract-03): settings and all four independent overall/category budget states | Local PASS |
+| TC-CONTRACT-006 | [REQ-CONTRACT-03](../../docs/api/README.md#req-contract-03): expense/filter/edit, keyed replay/conflicts/snapshot and empty204 | Local PASS |
+| TC-CONTRACT-007 | [REQ-CONTRACT-03](../../docs/api/README.md#req-contract-03): subscription/loan pay, finish/reopen, bounds and ownership | Local PASS |
+| TC-CONTRACT-008 | [REQ-CONTRACT-03](../../docs/api/README.md#req-contract-03), [REQ-CONTRACT-04](../../docs/api/README.md#req-contract-04): AI off/demo, NFC/body/date boundaries, context/quota and no expense writes | Local PASS |
+| TC-CONTRACT-009 | [REQ-CONTRACT-03](../../docs/api/README.md#req-contract-03): login success/denial/rate limit and Retry-After | Local PASS |
+| TC-CONTRACT-010 | [REQ-CONTRACT-02](../../docs/api/README.md#req-contract-02), [REQ-CONTRACT-05](../../docs/api/README.md#req-contract-05): eight copied real-capture corruption controls, exact originals preserved | Local PASS |
+| TC-CONTRACT-011 | [REQ-CONTRACT-04](../../docs/api/README.md#req-contract-04), [REQ-CONTRACT-06](../../docs/api/README.md#req-contract-06): observed2xx per source operation,401-only matrix control, truthful status sets and log privacy | Local PASS |
 
 ## Totals
 
@@ -519,9 +521,15 @@ neither is a case without a row: a case may take several requests to arrange
 the state it then asserts, and TC-API-068 is one request executed once per
 allowed attempt.
 
-Traceability: cases cite the [architecture notes](../../spec/architecture.md),
-the [monthly limit analysis](analysis-monthly-limit.md), a recorded decision or
-a `BUG-###`. Twenty cases trace to defects. The three regression cases have
+Traceability: this catalogue's cells now cite the [public core-rule index](../../spec/core-requirements.md),
+the [monthly](analysis-monthly-limit.md) and
+[category](analysis-category-limits.md) analyses,
+[contract-check requirements](../../docs/api/README.md#requirements-for-the-contract-checks)
+or a named [defect/limit record](../../log/BUGS.md).
+The mapping does not establish semantic equivalence or execution coverage;
+the separate [AI register](ai-test-plan.md#4-case-register-tc-ai) and provisional
+[synthetic import](analysis-synthetic-import.md) are outside its bidirectional
+scope. The three regression cases have
 each been re-verified against the defect they guard. The fourteen written for
 BUG-015, BUG-017 and BUG-018 were run with their fix removed: the ones that
 reproduce a defect failed, and TC-API-106 and TC-API-109, which hold the
@@ -533,9 +541,9 @@ PASS locally on 2026-09-28, alongside the original three migration cases.
 
 | Case | Requirement | Expected result |
 |---|---|---|
-| TC-DB-004 | REQ-CL-13 | Old category rows retain id, owner, name and icon; new nullable limit is NULL |
-| TC-DB-005 | REQ-CL-13 | Repeated boot adds no duplicate column and preserves a stored zero |
-| TC-DB-006 | REQ-CL-13 | Fresh/upgraded columns match; negative raw SQL write rejected by CHECK |
+| TC-DB-004 | [REQ-CL-13](analysis-category-limits.md#req-cl-13) | Old category rows retain id, owner, name and icon; new nullable limit is NULL |
+| TC-DB-005 | [REQ-CL-13](analysis-category-limits.md#req-cl-13) | Repeated boot adds no duplicate column and preserves a stored zero |
+| TC-DB-006 | [REQ-CL-13](analysis-category-limits.md#req-cl-13) | Fresh/upgraded columns match; negative raw SQL write rejected by CHECK |
 
 ## Category-limit browser checks
 
@@ -546,14 +554,14 @@ Uncategorised, P2 for layout/keyboard/error presentation. The frozen
 
 | Case | Traces to | Expected |
 |---|---|---|
-| TC-E2E-086 | REQ-CL-01/02/10/12 | Editor converts 60.00 to 6000; prefill, clear, unrelated settings preserved |
-| TC-E2E-087 | REQ-CL-11; CR4/6/7/8 | Words, white outline, red fill and text contrast >=4.5; no box without limit |
-| TC-E2E-088 | REQ-CL-02/07/12; CR3/5/9 | Zero-spend budget visible; zero real; clear hides; no empty donut slice/NaN |
-| TC-E2E-089 | REQ-CL-04/12 | Invalid inputs and Cancel send nothing and preserve value |
-| TC-E2E-090 | REQ-CL-09; CR1 | Uncategorised contributes spending but offers no limit/editor |
-| TC-E2E-091 | REQ-CL-11/12 | 320px long names, maximum amounts, boxes and editor fit |
-| TC-E2E-092 | REQ-CL-12 | Input focus, keyboard containment, Escape restores opener |
-| TC-E2E-093 | REQ-CL-12 | Refused save stays open, value unchanged, no success toast |
+| TC-E2E-086 | [REQ-CL-01](analysis-category-limits.md#req-cl-01), [REQ-CL-02](analysis-category-limits.md#req-cl-02), [REQ-CL-10](analysis-category-limits.md#req-cl-10), [REQ-CL-12](analysis-category-limits.md#req-cl-12) | Editor converts 60.00 to 6000; prefill, clear, unrelated settings preserved |
+| TC-E2E-087 | [REQ-CL-11](analysis-category-limits.md#req-cl-11); CR4/6/7/8 | Words, white outline, red fill and text contrast >=4.5; no box without limit |
+| TC-E2E-088 | [REQ-CL-02](analysis-category-limits.md#req-cl-02), [REQ-CL-07](analysis-category-limits.md#req-cl-07), [REQ-CL-12](analysis-category-limits.md#req-cl-12); CR3/5/9 | Zero-spend budget visible; zero real; clear hides; no empty donut slice/NaN |
+| TC-E2E-089 | [REQ-CL-04](analysis-category-limits.md#req-cl-04), [REQ-CL-12](analysis-category-limits.md#req-cl-12) | Invalid inputs and Cancel send nothing and preserve value |
+| TC-E2E-090 | [REQ-CL-09](analysis-category-limits.md#req-cl-09); CR1 | Uncategorised contributes spending but offers no limit/editor |
+| TC-E2E-091 | [REQ-CL-11](analysis-category-limits.md#req-cl-11), [REQ-CL-12](analysis-category-limits.md#req-cl-12) | 320px long names, maximum amounts, boxes and editor fit |
+| TC-E2E-092 | [REQ-CL-12](analysis-category-limits.md#req-cl-12) | Input focus, keyboard containment, Escape restores opener |
+| TC-E2E-093 | [REQ-CL-12](analysis-category-limits.md#req-cl-12) | Refused save stays open, value unchanged, no success toast |
 
 ## Category-limit Selenium check
 
@@ -562,7 +570,7 @@ on 2026-09-28, with all eleven Selenium executions green.
 
 | Case | Traces to | Expected |
 |---|---|---|
-| TC-SEL-009 | REQ-CL-11/12 | Set 60.00, see reached, clear; stored cents and independent overall limit confirmed |
+| TC-SEL-009 | [REQ-CL-11](analysis-category-limits.md#req-cl-11), [REQ-CL-12](analysis-category-limits.md#req-cl-12) | Set 60.00, see reached, clear; stored cents and independent overall limit confirmed |
 
 ## Category-limit API contract and decisions
 
@@ -573,31 +581,31 @@ Priority P1 for money/ownership; P2 for malformed input and body/path boundaries
 
 | Case | Traces to | Expected |
 |---|---|---|
-| TC-API-114 | REQ-CL-06/07; CR2/3 | New categories have NULL; empty no-budget rows hidden |
-| TC-API-115 | REQ-CL-01 | Set 20000; GET returns limit and original name |
-| TC-API-116 | REQ-CL-01; CR5 | Replace current value; zero-spend within |
-| TC-API-117 | REQ-CL-01/10; CR9/10 | Zero is real, reached at zero and exceeded after valid save |
-| TC-API-118 | REQ-CL-02; CR4 | Explicit NULL clears and positive-spend row is not_set |
-| TC-API-119 | REQ-CL-03 | Empty, unknown and server-owned fields refused; no mutation |
-| TC-API-120 | REQ-CL-04 | Wrong types, negative, fractional and ceiling+1 refused |
-| TC-API-121 | REQ-CL-04 | Exact 100000000 ceiling accepted |
-| TC-API-122 | REQ-CL-04/05 | Bad path ids 400; missing category canonical 404 |
-| TC-API-123 | REQ-CL-05 | Missing auth 401 |
-| TC-API-124 | REQ-CL-05 | Foreign id same 404; owner value unchanged |
-| TC-API-125 | REQ-CL-05 | GET categories and summary isolated by owner |
-| TC-API-126 | REQ-CL-06; CR5/7/8 | L=1 with T=0/1/2 yields within/reached/exceeded |
-| TC-API-127 | REQ-CL-06; CR6/11 | L=100, T=1 yields within and 99 left |
-| TC-API-128 | REQ-CL-06; CR7 | Equality reached, zero left |
-| TC-API-129 | REQ-CL-06; CR8 | One cent over, negative remaining |
-| TC-API-130 | REQ-CL-06; CR10 | L=0 with positive spending is exceeded |
-| TC-API-131 | REQ-CL-07; CR5 | Limited zero rows present, sorted after spending; sum holds |
-| TC-API-132 | REQ-CL-08; CR13 | Unpaid schedule excluded |
-| TC-API-133 | REQ-CL-08; CR12 | Paid instalment included |
-| TC-API-134 | REQ-CL-09; CR1 | NULL category always not_set; contributes overall total |
-| TC-API-135 | REQ-CL-03/06/08/10; CR15 | Category sum over overall accepted; settings/writes independent |
-| TC-API-136 | REQ-CL-10 | Expense over both limits still saves with 201 |
-| TC-API-137 | REQ-CL-06; CR16 | Edit moves category spend; delete recomputes state |
-| TC-API-138 | REQ-CL-06; CR14 | Other month excluded; historical summary uses current limit |
-| TC-API-139 | REQ-CL-02/07; CR3/4 | Clear hides zero row, keeps positive row not_set |
-| TC-API-140 | REQ-CL-04 | Malformed and non-object JSON 400, not 500 |
-| TC-API-141 | REQ-CL-04 | Oversized body 413; refused bodies preserve value |
+| TC-API-114 | [REQ-CL-06](analysis-category-limits.md#req-cl-06), [REQ-CL-07](analysis-category-limits.md#req-cl-07); CR2/3 | New categories have NULL; empty no-budget rows hidden |
+| TC-API-115 | [REQ-CL-01](analysis-category-limits.md#req-cl-01) | Set 20000; GET returns limit and original name |
+| TC-API-116 | [REQ-CL-01](analysis-category-limits.md#req-cl-01); CR5 | Replace current value; zero-spend within |
+| TC-API-117 | [REQ-CL-01](analysis-category-limits.md#req-cl-01), [REQ-CL-10](analysis-category-limits.md#req-cl-10); CR9/10 | Zero is real, reached at zero and exceeded after valid save |
+| TC-API-118 | [REQ-CL-02](analysis-category-limits.md#req-cl-02); CR4 | Explicit NULL clears and positive-spend row is not_set |
+| TC-API-119 | [REQ-CL-03](analysis-category-limits.md#req-cl-03) | Empty, unknown and server-owned fields refused; no mutation |
+| TC-API-120 | [REQ-CL-04](analysis-category-limits.md#req-cl-04) | Wrong types, negative, fractional and ceiling+1 refused |
+| TC-API-121 | [REQ-CL-04](analysis-category-limits.md#req-cl-04) | Exact 100000000 ceiling accepted |
+| TC-API-122 | [REQ-CL-04](analysis-category-limits.md#req-cl-04), [REQ-CL-05](analysis-category-limits.md#req-cl-05) | Bad path ids 400; missing category canonical 404 |
+| TC-API-123 | [REQ-CL-05](analysis-category-limits.md#req-cl-05) | Missing auth 401 |
+| TC-API-124 | [REQ-CL-05](analysis-category-limits.md#req-cl-05) | Foreign id same 404; owner value unchanged |
+| TC-API-125 | [REQ-CL-05](analysis-category-limits.md#req-cl-05) | GET categories and summary isolated by owner |
+| TC-API-126 | [REQ-CL-06](analysis-category-limits.md#req-cl-06); CR5/7/8 | L=1 with T=0/1/2 yields within/reached/exceeded |
+| TC-API-127 | [REQ-CL-06](analysis-category-limits.md#req-cl-06); CR6/11 | L=100, T=1 yields within and 99 left |
+| TC-API-128 | [REQ-CL-06](analysis-category-limits.md#req-cl-06); CR7 | Equality reached, zero left |
+| TC-API-129 | [REQ-CL-06](analysis-category-limits.md#req-cl-06); CR8 | One cent over, negative remaining |
+| TC-API-130 | [REQ-CL-06](analysis-category-limits.md#req-cl-06); CR10 | L=0 with positive spending is exceeded |
+| TC-API-131 | [REQ-CL-07](analysis-category-limits.md#req-cl-07); CR5 | Limited zero rows present, sorted after spending; sum holds |
+| TC-API-132 | [REQ-CL-08](analysis-category-limits.md#req-cl-08); CR13 | Unpaid schedule excluded |
+| TC-API-133 | [REQ-CL-08](analysis-category-limits.md#req-cl-08); CR12 | Paid instalment included |
+| TC-API-134 | [REQ-CL-09](analysis-category-limits.md#req-cl-09); CR1 | NULL category always not_set; contributes overall total |
+| TC-API-135 | [REQ-CL-03](analysis-category-limits.md#req-cl-03), [REQ-CL-06](analysis-category-limits.md#req-cl-06), [REQ-CL-08](analysis-category-limits.md#req-cl-08), [REQ-CL-10](analysis-category-limits.md#req-cl-10); CR15 | Category sum over overall accepted; settings/writes independent |
+| TC-API-136 | [REQ-CL-10](analysis-category-limits.md#req-cl-10) | Expense over both limits still saves with 201 |
+| TC-API-137 | [REQ-CL-06](analysis-category-limits.md#req-cl-06); CR16 | Edit moves category spend; delete recomputes state |
+| TC-API-138 | [REQ-CL-06](analysis-category-limits.md#req-cl-06); CR14 | Other month excluded; historical summary uses current limit |
+| TC-API-139 | [REQ-CL-02](analysis-category-limits.md#req-cl-02), [REQ-CL-07](analysis-category-limits.md#req-cl-07); CR3/4 | Clear hides zero row, keeps positive row not_set |
+| TC-API-140 | [REQ-CL-04](analysis-category-limits.md#req-cl-04) | Malformed and non-object JSON 400, not 500 |
+| TC-API-141 | [REQ-CL-04](analysis-category-limits.md#req-cl-04) | Oversized body 413; refused bodies preserve value |

@@ -10781,8 +10781,10 @@
                   "const until = Date.now() + window + 1000;",
                   "while (Date.now() < until) { /* deliberate: see the folder description */ }",
                   "",
-                  "// A fresh address for this folder, so the per-e-mail counter is clean.",
-                  "pm.collectionVariables.set('rlEmail', 'rl-' + pm.collectionVariables.get('runId') + '@wallet.test');",
+                  "// Use the already registered A account: its correct password must be meaningful while blocked.",
+                  "const rlEmail = pm.collectionVariables.get('emailA');",
+                  "if (!rlEmail) throw new Error('registered emailA fixture is missing');",
+                  "pm.collectionVariables.set('rlEmail', pm.collectionVariables.get('emailA'));",
                   "pm.collectionVariables.set('rlFailures', 1);"
                 ]
               }
@@ -10994,7 +10996,9 @@
                   "// and are not affected by the failed logins in folder 01.",
                   "const window = Number(pm.variables.get('loginWindowMs') || 4000);",
                   "const until = Date.now() + window + 1000;",
-                  "while (Date.now() < until) { /* deliberate: see the folder description */ }"
+                  "while (Date.now() < until) { /* deliberate: see the folder description */ }",
+                  "// This is before the fresh 401, so the reset probe has a conservative window start.",
+                  "pm.collectionVariables.set('rlResetSeedStart', Date.now());"
                 ]
               }
             },
@@ -11029,7 +11033,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{emailA}}\",\n  \"password\": \"{{password}}\"\n}"
+              "raw": "{\n  \"email\": \"{{rlEmail}}\",\n  \"password\": \"{{password}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",
@@ -11051,9 +11055,36 @@
                 "exec": [
                   "eval(pm.collectionVariables.get('helpers'));",
                   "expectOk(200, 'token');",
-                  "pm.test('the failures counted a moment ago did not block this', function () {",
-                  "    pm.expect(pm.response.code).to.eql(200);",
-                  "});"
+                  "const rlEmail = String(pm.collectionVariables.get('rlEmail'));",
+                  "const mainEmail = JSON.parse(pm.variables.replaceIn(pm.request.body.raw)).email;",
+                  "const max = Number(pm.variables.get('loginMaxFailures'));",
+                  "const window = Number(pm.variables.get('loginWindowMs'));",
+                  "const seedStart = Number(pm.collectionVariables.get('rlResetSeedStart'));",
+                  "const deadline = seedStart + window - Math.max(1000, Math.ceil(window / 10));",
+                  "pm.test('reset probe uses the same registered account and a fresh window', function () {",
+                  "    pm.expect(rlEmail).to.eql(pm.collectionVariables.get('emailA'));",
+                  "    pm.expect(mainEmail).to.eql(rlEmail);",
+                  "    pm.expect(Number.isInteger(max) && max > 0).to.eql(true);",
+                  "    pm.expect(Number.isFinite(seedStart) && seedStart > 0).to.eql(true);",
+                  "    pm.expect(Date.now()).to.be.below(deadline);",
+                  "});",
+                  "if (pm.response.code === 200 && mainEmail === rlEmail && Date.now() < deadline) {",
+                  "    function observe(attempt) {",
+                  "        const body = JSON.stringify({ email: rlEmail, password: 'wrong-password-reset-probe' });",
+                  "        pm.sendRequest({ url: pm.variables.get('baseUrl') + '/api/auth/login', method: 'POST',",
+                  "            header: { 'Content-Type': 'application/json' }, body: { mode: 'raw', raw: body } },",
+                  "            function (error, response) {",
+                  "                pm.test('reset observation attempt ' + attempt + ' of ' + (max + 1), function () {",
+                  "                    pm.expect(Boolean(error)).to.eql(false);",
+                  "                    pm.expect(Date.now()).to.be.below(deadline);",
+                  "                    pm.expect(response && response.code).to.eql(attempt <= max ? 401 : 429);",
+                  "                    pm.expect(response && response.json().error.code).to.eql(attempt <= max ? 'UNAUTHORIZED' : 'RATE_LIMITED');",
+                  "                });",
+                  "                if (!error && response && attempt <= max) observe(attempt + 1);",
+                  "            });",
+                  "    }",
+                  "    observe(1);",
+                  "}"
                 ]
               }
             }

@@ -201,11 +201,16 @@ function patchFields(body, { allowed, serverOwned }) {
   return keys;
 }
 
+function numberInput(raw, field) {
+  try { return Number(raw); }
+  catch { throw badRequest(`${field} must be convertible to a number`); }
+}
+
 function positiveIntParam(raw, { fallback, max, field }) {
   if (raw === undefined || raw === '') return fallback;
-  const parsed = Number(raw);
-  if (!Number.isInteger(parsed) || parsed < 0) {
-    throw badRequest(`${field} must be a non-negative integer`);
+  const parsed = numberInput(raw, field);
+  if (!Number.isSafeInteger(parsed) || parsed < 0) {
+    throw badRequest(`${field} must be a non-negative safe integer`);
   }
   if (max !== undefined && parsed > max) throw badRequest(`${field} must not exceed ${max}`);
   return parsed;
@@ -213,9 +218,16 @@ function positiveIntParam(raw, { fallback, max, field }) {
 
 /** An id from a URL path or query string. */
 function id(raw, field) {
-  const parsed = Number(raw);
-  if (!Number.isInteger(parsed) || parsed <= 0) throw badRequest(`${field} must be a positive integer`);
+  const parsed = numberInput(raw, field);
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) throw badRequest(`${field} must be a positive safe integer`);
   return parsed;
+}
+
+/** Preserve String(value) for JSON inputs that can be converted safely. */
+function nullableText(raw, field) {
+  if (raw === undefined || raw === null) return null;
+  try { return String(raw); }
+  catch { throw badRequest(`${field} cannot be converted to text`); }
 }
 
 /**
@@ -254,6 +266,7 @@ module.exports = {
   patchFields,
   positiveIntParam,
   id,
+  nullableText,
   ownedCategoryId,
   MAX_AMOUNT_CENTS,
   MAX_NAME_LENGTH,

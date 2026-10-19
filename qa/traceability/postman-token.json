@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "scope": {
+    "folder": "02 · Token handling",
+    "catalogueSection": "## API · Token handling",
+    "collectionContextSha256": "45eff4491008e0071c47167e9847e3adb353ee43855b0d0cf6eef07a4afc439c"
+  },
+  "caseRowSha256": {
+    "TC-API-010": "ddfbaf964807447458f6a6da4d37e7b9d461c2dfbd66c1694758e0b36b8d653c",
+    "TC-API-011": "a81d725a43ac9e75d91b5b9a88223c43a68b97c225b0c816d2b3d6f50b03b390",
+    "TC-API-012": "e71edf5ff9faded14f4d3dfa5824bea17c306edf871c5e522adda2f191fb2e19",
+    "TC-API-013": "28fd4a60c46ea090af79d004dc9649ffd2968f40f25113652f3e984824f7ab75",
+    "TC-API-014": "d4707505fd239549c14f736685c8443bb8555ea65c66ea1fc1103e832131cbc3"
+  },
+  "edges": [
+    {"selector":{"folder":"02 · Token handling","name":"No token → 401","method":"GET","rawUrl":"{{baseUrl}}/api/categories"},"requestEventSha256":"ffd3f5b6fef836ceca257973d4e87770840db5da1ba69f9dc738da35ddc75537","caseIds":["TC-API-010"],"testMarker":"expectError(401, 'UNAUTHORIZED')","oracleReason":"The request overrides inherited bearer auth with noauth, sends no Authorization header and asserts 401/error shape."},
+    {"selector":{"folder":"02 · Token handling","name":"Malformed header (no Bearer scheme) → 401","method":"GET","rawUrl":"{{baseUrl}}/api/categories"},"requestEventSha256":"543c49fb08c63dad8aa85012a9454b1993a93d8f00d30d9b472ea7a42e451246","caseIds":["TC-API-011"],"testMarker":"expectError(401, 'UNAUTHORIZED')","oracleReason":"Explicit Authorization: Token placeholder lacks the Bearer scheme and asserts 401."},
+    {"selector":{"folder":"02 · Token handling","name":"Corrupted token → 401","method":"GET","rawUrl":"{{baseUrl}}/api/categories"},"requestEventSha256":"8a1d4c2fc10906db64ec0ff313a4a7649eab426301f02052019d2d1ab153eb2c","caseIds":["TC-API-012"],"testMarker":"the corrupted token differs only in its signature","oracleReason":"Prerequest flips the last signature character; test compares unchanged header/payload, changed signature and asserts 401."},
+    {"selector":{"folder":"02 · Token handling","name":"Expired token → 401","method":"GET","rawUrl":"{{baseUrl}}/api/categories"},"requestEventSha256":"e8f69ff222f85a71782cc9bf898eb74c21d8114706419c489926026c9da693d0","caseIds":["TC-API-013"],"testMarker":"to.be.below(Date.now())","oracleReason":"Test requires a JWT-shaped value with numeric exp before now, then asserts 401; runner creation is inspected separately, not fingerprinted here."},
+    {"selector":{"folder":"02 · Token handling","name":"Another user's token sees only their own rows","method":"GET","rawUrl":"{{baseUrl}}/api/transactions"},"requestEventSha256":"f90d607b047fa37e20320dfffa9c9087530d943cb72638eab39240294a86f3e3","caseIds":["TC-API-014"],"testMarker":"a freshly registered user has no transactions","oracleReason":"Fresh user B bearer token gets a 200 transaction list with total 0 and empty items; this does not exercise populated user A data."}
+  ]
+}

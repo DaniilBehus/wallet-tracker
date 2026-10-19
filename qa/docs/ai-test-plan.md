@@ -13,23 +13,23 @@ them, and the case register names which.
 
 | Risk | Rule | Where it is caught |
 |---|---|---|
-| A description creates an expense without Save | AI-R01 | integration (every branch counts rows), browser, evaluator |
-| A number, date or currency is invented or coerced | AI-R05, R06 | normaliser unit tests, evaluator, production-guard controls |
-| A foreign currency becomes a EUR expense | AI-R05 | scanner guard, evaluator control on `Lunch 10 USD` |
-| A retry saves twice, or resurrects a deleted expense | AI-R16 | idempotency tests, Newman, pytest, browser lost-response retry |
-| Two deliberate identical purchases collapse into one | AI-R17 | idempotency tests, unkeyed Newman/race D |
-| Another user's data reaches the provider or the response | AI-R08 | integration isolation, payload privacy test |
-| A key, prompt or provider body leaks into logs or errors | AI-R11 | integration log test, adapter tests |
-| Spending is unbounded: retries, parallel users, restarts | AI-R18 | limits unit tests, integration limits, restart test |
-| A test run reaches the internet | AI-R13 | network guard + its own fail-closed tests |
-| An old response lands on a new description or account | UI state machine | browser stale-response tests |
-| The feature makes manual Add worse | AI-R19, BUG-014 | layout tests at 320×568 / 375×667, main e2e suite |
+| A description creates an expense without Save | [AI-R01](../../spec/ai-expense-entry.md#ai-r01) | integration (every branch counts rows), browser, evaluator |
+| A number, date or currency is invented or coerced | [AI-R05](../../spec/ai-expense-entry.md#ai-r05), [AI-R06](../../spec/ai-expense-entry.md#ai-r06), [AI-R07](../../spec/ai-expense-entry.md#ai-r07), [AI-R08](../../spec/ai-expense-entry.md#ai-r08), [AI-R09](../../spec/ai-expense-entry.md#ai-r09) | normaliser unit tests, evaluator, production-guard controls |
+| A foreign currency becomes a EUR expense | [AI-R07](../../spec/ai-expense-entry.md#ai-r07) | scanner guard, evaluator control on `Lunch 10 USD` |
+| A retry saves twice, or resurrects a deleted expense | [AI-R16](../../spec/ai-expense-entry.md#ai-r16) | idempotency tests, Newman, pytest, browser lost-response retry |
+| Two deliberate identical purchases collapse into one | [AI-R17](../../spec/ai-expense-entry.md#ai-r17) | idempotency tests, unkeyed Newman/race D |
+| Another user's data reaches the provider or the response | [REQ-CORE-04](../../spec/core-requirements.md#req-core-04), [AI-R10](../../spec/ai-expense-entry.md#ai-r10) | integration isolation, payload privacy test; ownership beyond category suggestions is the core rule |
+| A key, prompt or provider body leaks into logs or errors | [AI-R12](../../spec/ai-expense-entry.md#ai-r12), [REQ-CORE-24](../../spec/core-requirements.md#req-core-24) | integration log test, adapter tests |
+| Spending is unbounded: retries, parallel users, restarts | [AI-R18](../../spec/ai-expense-entry.md#ai-r18) | limits unit tests, integration limits, restart test |
+| A test run reaches the internet | [AI-R13](../../spec/ai-expense-entry.md#ai-r13) | network guard + its own fail-closed tests |
+| An old response lands on a new description or account | [AI-R15](../../spec/ai-expense-entry.md#ai-r15) | browser stale-response tests |
+| The feature makes manual Add worse | [AI-R03](../../spec/ai-expense-entry.md#ai-r03), [AI-R19](../../spec/ai-expense-entry.md#ai-r19), [BUG-014](../../log/BUGS.md) | layout tests at 320×568 / 375×667, main e2e suite |
 
 ## 2. Layers
 
 | Command | What runs | Network |
 |---|---|---|
-| `npm run test:ai` | node:test — normaliser, contracts, config, adapter, limits, HTTP integration, idempotency, network guard, evaluator controls, live-evaluator safety (real evaluator process, fake provider): allowance, database identity, holdout ledger, content provenance, report rendering; provider selection and the Gemini evaluation adapter (D-040); UI state machine (component level), demo | guard preloaded; fake provider on loopback; synthetic databases and disposable source copies in the OS temp directory |
+| `npm run test:ai` | node:test — normaliser, contracts, config, adapter, limits, HTTP integration, idempotency, network guard, evaluator controls, live-evaluator safety (real evaluator process, fake provider): allowance, database identity, holdout ledger, content provenance, report rendering; provider selection and the Gemini evaluation adapter (D-040); [AI-R15](../../spec/ai-expense-entry.md#ai-r15) (component level), demo | guard preloaded; fake provider on loopback; synthetic databases and disposable source copies in the OS temp directory |
 | `npm run eval:ai` | fixture evaluation of 116 corpus rows through the production service; report carries the content manifest | guard loaded |
 | `npm run eval:ai:live -- --dry-run` | corpus + config validation, planned calls, manifest; reads an existing evaluation database read-only | zero calls, zero writes |
 | `npm run test:ai:e2e` | Playwright, live-mode server with fake provider + demo server | loopback only |

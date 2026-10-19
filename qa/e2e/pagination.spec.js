@@ -40,7 +40,7 @@ test.describe('Paging the month list', () => {
   test('one row past the page size brings the control out', testCase('TC-E2E-055'), async ({ signedIn, api }) => {
     const month = new MonthPage(signedIn);
     const [groceries] = await api.categories();
-    await api.addExpenses(51, { amount_cents: 100, category_id: groceries.id });
+    const made = await api.addExpenses(51, { amount_cents: 100, category_id: groceries.id });
 
     await month.goToMonth();
 
@@ -48,12 +48,19 @@ test.describe('Paging the month list', () => {
     await expect(month.count).toHaveText('Showing 50 of 51');
     await expect(month.loadMore).toBeVisible();
 
+    // A second client inserts ahead of the cursor while this screen is open.
+    const inserted = await api.addExpense({ amount_cents: 100, category_id: groceries.id });
+    await month.loadMore.click();
+    await expect(month.count).toHaveText('Showing 50 of 52');
     await month.loadMore.click();
 
-    await expect(month.rows).toHaveCount(51);
-    await expect(month.count).toHaveText('Showing 51 of 51');
+    await expect(month.rows).toHaveCount(52);
+    await expect(month.count).toHaveText('Showing 52 of 52');
     await expect(month.loadMore).toBeHidden();
-    await expect(month.total).toHaveText(eurPattern(5100));
+    expect((await month.visibleIds()).sort((a, b) => a - b)).toEqual(
+      [...made.map(row => row.id), inserted.id].sort((a, b) => a - b)
+    );
+    await expect(month.total).toHaveText(eurPattern(5200));
   });
 
   test('201 expenses — the old cap — all reachable, and the total agrees', testCase('TC-E2E-056'), async ({
@@ -90,10 +97,10 @@ test.describe('Paging the month list', () => {
   test('the count stays honest after a row is deleted', testCase('TC-E2E-057'), async ({ signedIn, api }) => {
     const month = new MonthPage(signedIn);
     const [groceries] = await api.categories();
-    const made = await api.addExpenses(51, { amount_cents: 100, category_id: groceries.id });
+    const made = await api.addExpenses(52, { amount_cents: 100, category_id: groceries.id });
 
     await month.goToMonth();
-    await expect(month.count).toHaveText('Showing 50 of 51');
+    await expect(month.count).toHaveText('Showing 50 of 52');
 
     // The LAST row created, not the first. The list is newest first
     // (`spent_on DESC, id DESC`), so the first row created is the one at the
@@ -102,13 +109,19 @@ test.describe('Paging the month list', () => {
     // reason about paging.
     const onScreen = made[made.length - 1];
 
-    // Deleting reloads the month from the first page, so the offset cannot
-    // drift past a row nobody has seen — which is why the offset is taken from
-    // how many rows are loaded rather than from a page counter.
+    // The app's own deletion reloads the first page. Then a second client
+    // deletes another seen row before continuation; the remaining unseen row
+    // must not disappear behind the shifted offset.
     await month.deleteButton(onScreen.id).click();
 
     await expect(month.rows).toHaveCount(50);
+    await expect(month.count).toHaveText('Showing 50 of 51');
+    await api.deleteExpense(made[made.length - 2].id);
+    await month.loadMore.click();
     await expect(month.count).toBeHidden();
+    expect((await month.visibleIds()).sort((a, b) => a - b)).toEqual(
+      made.slice(0, -2).map(row => row.id).sort((a, b) => a - b)
+    );
     await expect(month.total).toHaveText(eurPattern(5000));
   });
 });

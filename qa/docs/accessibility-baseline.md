@@ -1,5 +1,12 @@
 # Accessibility baseline — local evidence, not a WCAG certification
 
+> **Current-state pointer (2026-10-13):** the workflow and Escape/focus-restoration
+> changes described below are present in local committed HEAD `b270355`.
+> The dated baseline text below is preserved as recorded; its earlier
+> "not committed" statement is historical, not today's source status.
+> See [current QA status](../../docs/qa-status.md) for unresolved focus,
+> contrast, CI and release limits.
+
 [← Back to README](../../README.md) · [State scans and keyboard tests](../a11y/baseline.spec.js) · [Rendered contrast evidence](../a11y/contrast-evidence.spec.js) · [Next: UI test plan →](test-plan.md)
 
 First recorded 2026-10-07; strict regression follow-up 2026-10-08 on uncommitted changes above `47636553ba622e336aebcabbd00d2ba7e8950d89`. Run `npm run test:a11y` to create a fresh ignored Playwright HTML report at `qa/reports/playwright-a11y/`; each reached state has a full machine-readable axe JSON attachment, including all violations and inconclusive outcomes. The suite uses a disposable local AI demo database and a no-network guard. It does not call a real AI provider, use a real account or measure live service accessibility. The workflow now schedules this command after the normal E2E suite, but this workflow change has **not** been committed, pushed or verified on GitHub Actions.
@@ -39,3 +46,20 @@ No ratio was assigned to text over the auth pseudo-element, Add or Month gradien
 The AI CI job now offers an on-failure, seven-day upload limited to `qa/reports/playwright-ai/` and `test-results/ai/`. A disposable local browser failure after the auth screen rendered produced nonempty HTML (518,211 bytes), screenshot (189,702 bytes) and trace (250,046 bytes) in those ignored locations; its temporary failing spec was removed. A normal subsequent AI browser run passed 50/50. A failure before browser startup may have no screenshot or trace, and `if-no-files-found: ignore` handles that case. **Local artifact generation is not proof of an upload on GitHub Actions**; remote verification awaits CI after a separately authorized commit and push.
 
 Read-only `npm audit` reports 26 advisories in the current full dependency tree (9 moderate, 15 high, 2 critical), including one critical advisory with dev dependencies omitted. Neither newly added exact-pinned package (`@axe-core/playwright@4.13.0` nor `axe-core@4.13.0`) has an advisory in that report. Lockfile comparison to the base commit found only these two added dev packages, no removed or version-changed existing package, and unchanged root production dependencies. Broad dependency remediation is separate work; no audit fix or unrelated upgrade was run.
+
+## 2026-10-16 local expense-modal follow-up
+
+The earlier sheet observations and 140 incomplete contrast nodes above are
+historical results, not a fresh reclassification. A focused offline rerun at
+320×568 and 1280×800 now uses a named native expense dialog. A measured
+pre-fix Shift+Tab moved focus from Amount to browser chrome (`BODY`,
+`document.hasFocus() === false`) while `open` and `:modal` stayed true; a
+background-nav focus attempt did not activate it. A small first/last boundary
+handler then kept focus on Cancel, with browser focus retained at both widths.
+The editor and its in-dialog validation-error state were axe-scanned with no
+confirmed WCAG-tagged violations; full evidence remains in ignored attachments.
+The focused checks also exercised background pointer refusal, three dismissals,
+pending/refused PATCH, no-op Save and session-expiry close. The separate
+[local report](test-report-modal-bind.md) gives commands and limits. This does
+not clear older contrast uncertainty, establish WCAG conformance, or constitute
+owner UAT or remote CI.

@@ -1,0 +1,13 @@
+# Transaction pagination consistency — F05 contract
+
+[← Back to README](../../README.md#qa-evidence) · [QA status](../../docs/qa-status.md)
+
+## Scope and wire contract — 2026-10-16
+
+The existing `GET /api/transactions` offset mode keeps its accepted query validation, `application/json` media type and exact two-field response `{ items, total }`. Cursor mode is opt-in with `paging=cursor`; an initial request has no `cursor`, and a continuation supplies the returned `cursor`. `offset` is invalid in cursor mode, even when zero. A `cursor` without `paging=cursor` is invalid. Both modes retain `limit` 0–200 (default 50), account ownership and the existing date/category filters. Cursor responses use `application/vnd.wallet.cursor+json` and add only `next_cursor`, a string when another page exists or `null` at the end. Distinct media types keep both OpenAPI response shapes strict without changing the existing validator. A zero limit and an empty list terminate with `next_cursor: null`.
+
+Order is `spent_on DESC, id DESC`. The continuation predicate is `(spent_on < boundaryDate OR (spent_on = boundaryDate AND id < boundaryId))`, with the ordinary account/date/category predicates always applied independently. The boundary row need not still exist. The opaque-to-the-client token is a canonical, bounded base64url JSON tuple of version, account ID, normalized `from`/`to`, category context (`all`, `none` for an explicitly empty filter, or an owned numeric ID), boundary date and positive safe boundary ID. It carries no credential or authority. Decode rejects malformed/overlong/noncanonical data, unsupported versions, invalid dates/IDs, another account or changed filters with 400 `VALIDATION_FAILED`; SQL values remain parameters.
+
+For unchanged surviving unseen rows, insertion or deletion of earlier rows alone cannot skip or repeat one during continuation. This is **not** an immutable snapshot. Newly inserted rows ahead of the cursor appear after an explicit Month refresh; an edit that moves a row across the boundary, same-total external mutations and already cached rows are outside the guarantee. `total` describes the current matching row count, not a snapshot size.
+
+Month uses cursor mode. If a continuation's `total` differs from the displayed total, the current user action performs at most one bounded restart from the first page, discarding the old items/cursor before rendering. It does not append a shifted page or display an impossible `shown > total` count. A user may explicitly revisit Month to refresh; there is no background polling or endless automatic retry. A stable post-mutation data set can then be paged to completion.

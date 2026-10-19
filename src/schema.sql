@@ -89,7 +89,8 @@ CREATE TABLE IF NOT EXISTS ai_quota (
   PRIMARY KEY (period, scope, user_id)
 );
 
--- Keyed saves (D-035). One row per successful keyed POST /api/transactions.
+-- One row per successful keyed expense save or keyed schedule Pay. The shared
+-- account-scoped key space rejects reuse across operation types by payload hash.
 -- transaction_id deliberately has NO foreign key: when the expense is deleted
 -- the row stays as a tombstone, so a late retry of the same key answers 409
 -- instead of silently recreating the expense. Kept for the life of the account.

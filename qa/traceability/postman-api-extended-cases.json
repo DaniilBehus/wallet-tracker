@@ -1,0 +1,403 @@
+{
+  "schemaVersion": 1,
+  "status": "SOURCE_DECLARATIONS_NOT_OWNER_APPROVED",
+  "note": "Local source-only identities for Postman Editing, AI/keyed-save and provisional import requests outside the 141-row TC-API catalogue; not owner acceptance or personal skill evidence.",
+  "records": [
+    {
+      "id": "SRC-API-EDIT-1A98CAB913E5",
+      "kind": "extended",
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /transactions/:id 200, only the field sent changes",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{editTx}}"
+      },
+      "requestEventSha256": "1a98cab913e54e18ad64685018f38448312e6cd5946f8d9e70e3030d45bb24b7",
+      "oracleReason": "PATCH {{baseUrl}}/api/transactions/{{editTx}}; auth=inherited bearer; body={ \"amount_cents\": 2500 }; checks=expectOk(200, 'transaction'); assertions=the amount changed / the note was NOT touched, because PATCH is partial (D-029)."
+    },
+    {
+      "id": "SRC-API-EDIT-4233BDB93506",
+      "kind": "extended",
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /transactions/:id note null clears it",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{editTx}}"
+      },
+      "requestEventSha256": "4233bdb93506c335625d7a8c4133a06b8aeef35bf72f443e7b1093bc47bf26e1",
+      "oracleReason": "PATCH {{baseUrl}}/api/transactions/{{editTx}}; auth=inherited bearer; body={ \"note\": null }; checks=expectOk(200, 'transaction'); assertions=the note is null, and null is a legal value for it / the amount survived a patch that did not mention it."
+    },
+    {
+      "id": "SRC-API-EDIT-849844FD356B",
+      "kind": "extended",
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /transactions/:id an empty body is 400, not a 200 that did nothing",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{editTx}}"
+      },
+      "requestEventSha256": "849844fd356b11fa89379a5e9892921e23a9868344d20c5d3dd9e84b07ceed2e",
+      "oracleReason": "PATCH {{baseUrl}}/api/transactions/{{editTx}}; auth=inherited bearer; body={}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=the message says a field is needed."
+    },
+    {
+      "id": "SRC-API-EDIT-EC6CA2C58FB1",
+      "kind": "extended",
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /transactions/:id a server-owned field is rejected, not ignored",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{editTx}}"
+      },
+      "requestEventSha256": "ec6ca2c58fb1206b6d8873071583bef6a274e727f09a0d3d6fe176afff0ab9eb",
+      "oracleReason": "PATCH {{baseUrl}}/api/transactions/{{editTx}}; auth=inherited bearer; body={ \"schedule_id\": 1 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=it names the field rather than silently dropping it (D-029)."
+    },
+    {
+      "id": "SRC-API-EDIT-9DD25FCDB818",
+      "kind": "extended",
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /transactions/:id an unknown field is rejected",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{editTx}}"
+      },
+      "requestEventSha256": "9dd25fcdb8185177f3c95132397bd704e833433cc8191a76889f67f9178749ab",
+      "oracleReason": "PATCH {{baseUrl}}/api/transactions/{{editTx}}; auth=inherited bearer; body={ \"colour\": \"red\" }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "id": "SRC-API-EDIT-470AE31DD3E3",
+      "kind": "extended",
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /transactions/:id the create-path validators still apply",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{editTx}}"
+      },
+      "requestEventSha256": "470ae31dd3e3ce11c7e25f3c734b6fe7de3874f412d35cbe279dbc08fa10bb81",
+      "oracleReason": "PATCH {{baseUrl}}/api/transactions/{{editTx}}; auth=inherited bearer; body={ \"amount_cents\": 0 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=zero is refused on edit exactly as on create."
+    },
+    {
+      "id": "SRC-API-EDIT-3771B5217BE1",
+      "kind": "extended",
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /transactions/:id another user gets 404, never 403",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{editTx}}"
+      },
+      "requestEventSha256": "3771b5217be18033d7b09e609025ef84c5c47133e1ff15131adacc83f333fb73",
+      "oracleReason": "PATCH {{baseUrl}}/api/transactions/{{editTx}}; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body={ \"amount_cents\": 100 }; checks=expectError(404, 'NOT_FOUND'), expectNotForbidden(); assertions=status/schema only."
+    },
+    {
+      "id": "SRC-API-EDIT-9A0F7905BE70",
+      "kind": "extended",
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /transactions/:id a row that does not exist is 404",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/transactions/99999999"
+      },
+      "requestEventSha256": "9a0f7905be70ec53ca8fafb9e36348e75bdc63a543b5d8d3a5ac65ed59583b66",
+      "oracleReason": "PATCH {{baseUrl}}/api/transactions/99999999; auth=inherited bearer; body={ \"amount_cents\": 100 }; checks=expectError(404, 'NOT_FOUND'); assertions=status/schema only."
+    },
+    {
+      "id": "SRC-API-EDIT-AFD2CA77902B",
+      "kind": "extended",
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id 200, renames and re-prices",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}"
+      },
+      "requestEventSha256": "afd2ca77902ba64d6f26bd739fc30a44bcade22e6ff2edd2e14b7be505e5b828",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}; auth=inherited bearer; body={ \"name\": \"Renamed loan\", \"amount_cents\": 20000 }; checks=expectOk(200, 'schedule'); assertions=name and amount changed together / remaining_cents is recomputed from the new amount, never stored."
+    },
+    {
+      "id": "SRC-API-EDIT-BCB0A8759345",
+      "kind": "extended",
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id paid_count is refused",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}"
+      },
+      "requestEventSha256": "bcb0a8759345bbc4ee184e8cc6fbcf139c72765296485f7a416bb19843bd685b",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}; auth=inherited bearer; body={ \"paid_count\": 99 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=a counter cannot be set by hand (D-029)."
+    },
+    {
+      "id": "SRC-API-EDIT-6A4F5FEEE983",
+      "kind": "extended",
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id active is refused",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}"
+      },
+      "requestEventSha256": "6a4f5feee983cb559f5bd012a65fc1b339c14f981b45a97f1ded0e9b91fdfba2",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}; auth=inherited bearer; body={ \"active\": 0 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "id": "SRC-API-EDIT-FF8762A7A10B",
+      "kind": "extended",
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id total_count 0 is bad input, before state is considered",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}"
+      },
+      "requestEventSha256": "ff8762a7a10be3cc064dc272df24b7cfc4951d43726077c757507353f15aebc0",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}; auth=inherited bearer; body={ \"total_count\": 0 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=zero is refused as INPUT, so it never reaches the state check."
+    },
+    {
+      "id": "SRC-API-EDIT-E9E3672999F0",
+      "kind": "extended",
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id raising total_count reopens a finished loan",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}"
+      },
+      "requestEventSha256": "e9e3672999f02d079f9c3b26be976c2fbd7f88dac870d1db5983cfc973a3de86",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}; auth=inherited bearer; body={ \"total_count\": 6 }; checks=expectOk(200, 'schedule'); assertions=active is DERIVED from the counts, not preserved (D-029)."
+    },
+    {
+      "id": "SRC-API-EDIT-47FD85C284AB",
+      "kind": "extended",
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id total_count below paid_count is 409, not 400",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}"
+      },
+      "requestEventSha256": "47fd85c284ab09ae7d5e9b8c3df3a7cee21b761f369962ac775c22aedd5fc3ad",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}; auth=inherited bearer; body={ \"total_count\": 1 }; checks=expectError(409, 'CONFLICT'); assertions=a valid integer that conflicts with state is 409, not 400."
+    },
+    {
+      "id": "SRC-API-EDIT-350B2A7A5448",
+      "kind": "extended",
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id total_count equal to paid_count finishes it",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}"
+      },
+      "requestEventSha256": "350b2a7a5448325efd1f00a1daa45421d1924e601e8fe01c65146db0cd16bf42",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}; auth=inherited bearer; body={ \"total_count\": 3 }; checks=expectOk(200, 'schedule'); assertions=finished, reached from the other direction than the last payment."
+    },
+    {
+      "id": "SRC-API-EDIT-878E8ECA9EAB",
+      "kind": "extended",
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id/pay a loan finished by editing cannot be paid",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}/pay"
+      },
+      "requestEventSha256": "878e8eca9eab6684e4903ca43f88816b332267abb9505a57e15b8016f891ebc0",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}/pay; auth=inherited bearer; body=none; checks=expectError(409, 'CONFLICT'); assertions=the state machine does not care how it reached finished."
+    },
+    {
+      "id": "SRC-API-EDIT-D4BDD4178D3E",
+      "kind": "extended",
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id day_of_month 32 is refused on edit too",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}"
+      },
+      "requestEventSha256": "d4bdd4178d3e91541ce64e6418adf8f66ab74b7e8c7f93caa3769de7e3f6cd9a",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}; auth=inherited bearer; body={ \"day_of_month\": 32 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "id": "SRC-API-EDIT-F5D4F1B7CF34",
+      "kind": "extended",
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id another user gets 404, never 403",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}"
+      },
+      "requestEventSha256": "f5d4f1b7cf3467c66c12df926ff272b24eeb0a12065a4c02e2d8ef77ccb81899",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body={ \"name\": \"stolen\" }; checks=expectError(404, 'NOT_FOUND'), expectNotForbidden(); assertions=status/schema only."
+    },
+    {
+      "id": "SRC-API-AI-F52637484C15",
+      "kind": "extended",
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "GET /ai/capabilities (off) → 200, disabled, nothing secret",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/ai/capabilities"
+      },
+      "requestEventSha256": "f52637484c1538389fdc45dafed49f49f79996fbfcf41cb293f49df582c4155c",
+      "oracleReason": "GET {{baseUrl}}/api/ai/capabilities; auth=inherited bearer; body=none; checks=expectStatus(200); assertions=the off-mode capability shape, exactly."
+    },
+    {
+      "id": "SRC-API-AI-24AAB6DBB7E2",
+      "kind": "extended",
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /ai/expense-draft without a token → 401",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/ai/expense-draft"
+      },
+      "requestEventSha256": "24aab6dbb7e24808573b5dac58f8cadbcb376b0208b911b7af2d1fdcd7af8206",
+      "oracleReason": "POST {{baseUrl}}/api/ai/expense-draft; auth={\"type\":\"noauth\"}; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"}]; body={ \"text\": \"Lunch 9 EUR\", \"reference_date\": \"{{aiToday}}\", \"locale\": \"auto\" }; prerequest=// The server compares reference_date and keyed spent_on with its own local day. const d = new Date(); const p = (n) => String(n).padStart(2, '0'); pm.collectionVariables.set('aiTo; checks=expectError(401, 'UNAUTHORIZED'); assertions=status/schema only."
+    },
+    {
+      "id": "SRC-API-AI-56313949BC61",
+      "kind": "extended",
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /ai/expense-draft with an unknown field → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/ai/expense-draft"
+      },
+      "requestEventSha256": "56313949bc61fe0a0473d7146c8df283601382811aa41acc468ebe6799099ce4",
+      "oracleReason": "POST {{baseUrl}}/api/ai/expense-draft; auth=inherited bearer; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"}]; body={ \"text\": \"Lunch 9 EUR\", \"reference_date\": \"{{aiToday}}\", \"locale\": \"auto\", \"provider\": \"demo\" }; prerequest=// The server compares reference_date and keyed spent_on with its own local day. const d = new Date(); const p = (n) => String(n).padStart(2, '0'); pm.collectionVariables.set('aiTo; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "id": "SRC-API-AI-BE6B0E4C14F5",
+      "kind": "extended",
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /ai/expense-draft (off) → 503 AI_UNAVAILABLE",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/ai/expense-draft"
+      },
+      "requestEventSha256": "be6b0e4c14f5385241ce002317358f82b934c48ab88ee3086d7624acc55c1d2e",
+      "oracleReason": "POST {{baseUrl}}/api/ai/expense-draft; auth=inherited bearer; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"}]; body={ \"text\": \"Lunch 9 EUR\", \"reference_date\": \"{{aiToday}}\", \"locale\": \"auto\", \"consent_to_external_processing\": true }; prerequest=// The server compares reference_date and keyed spent_on with its own local day. const d = new Date(); const p = (n) => String(n).padStart(2, '0'); pm.collectionVariables.set('aiTo; checks=expectError(503, 'AI_UNAVAILABLE'); assertions=the message points to manual entry."
+    },
+    {
+      "id": "SRC-API-AI-3DE6BC99CDCF",
+      "kind": "extended",
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /transactions with Idempotency-Key → 201",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "3de6bc99cdcf47b533974a5a3ae260e5fcb16d23715ed8ba12f6b9cface08ce1",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"},{\"key\":\"Idempotency-Key\",\"value\":\"{{aiKey}}\"}]; body={ \"amount_cents\": 1800, \"category_id\": {{catA}}, \"spent_on\": \"{{aiToday}}\", \"note\": \"keyed lunch\" }; prerequest=// The server compares reference_date and keyed spent_on with its own local day. const d = new Date(); const p = (n) => String(n).padStart(2, '0'); pm.collectionVariables.set('aiTo; checks=expectOk(201, 'transaction'); assertions=a first save is not a replay."
+    },
+    {
+      "id": "SRC-API-AI-D82522C85456",
+      "kind": "extended",
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /transactions same key, same payload → 201 replay, same row",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "d82522c85456aeae85a7ffb155b5476d7f77a77cf0147019710af66aa20fe7d5",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"},{\"key\":\"Idempotency-Key\",\"value\":\"{{aiKey}}\"}]; body={ \"note\": \"keyed lunch\", \"spent_on\": \"{{aiToday}}\", \"category_id\": {{catA}}, \"amount_cents\": 1800 }; checks=expectOk(201, 'transaction'); assertions=marked as a replay / the same expense, not a second one."
+    },
+    {
+      "id": "SRC-API-AI-1A13FF463369",
+      "kind": "extended",
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /transactions same key, different amount → 409",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "1a13ff4633697cb2c237e8cb77f9f2b0ae6a8ce372a1ef0c27749dba431ca4d1",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"},{\"key\":\"Idempotency-Key\",\"value\":\"{{aiKey}}\"}]; body={ \"amount_cents\": 1900, \"category_id\": {{catA}}, \"spent_on\": \"{{aiToday}}\", \"note\": \"keyed lunch\" }; checks=expectError(409, 'IDEMPOTENCY_CONFLICT'); assertions=status/schema only."
+    },
+    {
+      "id": "SRC-API-AI-E9F3807726F0",
+      "kind": "extended",
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /transactions keyed without spent_on → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "e9f3807726f0a071fc8a22d7a3c3c04486451540918f24a8b118fec73bfe5af1",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"},{\"key\":\"Idempotency-Key\",\"value\":\"qa-no-date-{{runId}}\"}]; body={ \"amount_cents\": 1800, \"category_id\": {{catA}} }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "id": "SRC-API-AI-FA43DD0BC043",
+      "kind": "extended",
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /transactions with a malformed Idempotency-Key → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "fa43dd0bc0433f0d5b532a8c0b757e7da224a14f42864c4b2d0668654a436345",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"},{\"key\":\"Idempotency-Key\",\"value\":\"short\"}]; body={ \"amount_cents\": 1800, \"category_id\": {{catA}}, \"spent_on\": \"{{aiToday}}\", \"note\": \"keyed lunch\" }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "id": "SRC-API-AI-4B686DB55AD3",
+      "kind": "extended",
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "DELETE /transactions/:id the keyed expense → 204",
+        "method": "DELETE",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{aiKeyedTx}}"
+      },
+      "requestEventSha256": "4b686db55ad317cfb9e9d8335f4b4a11c617ffca7e982a3bd73fb5a816e40895",
+      "oracleReason": "DELETE {{baseUrl}}/api/transactions/{{aiKeyedTx}}; auth=inherited bearer; body=none; checks=expectStatus(204), expectNoBody(); assertions=status/schema only."
+    },
+    {
+      "id": "SRC-API-AI-1D867A0F8300",
+      "kind": "extended",
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /transactions replay of a deleted expense's key → 409, not resurrected",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "1d867a0f8300548c35e2604aff0345ea3cb73307ea99bd6bd330283c5af35a56",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"},{\"key\":\"Idempotency-Key\",\"value\":\"{{aiKey}}\"}]; body={ \"amount_cents\": 1800, \"category_id\": {{catA}}, \"spent_on\": \"{{aiToday}}\", \"note\": \"keyed lunch\" }; checks=expectError(409, 'IDEMPOTENCY_REPLAY_UNAVAILABLE'); assertions=status/schema only."
+    },
+    {
+      "id": "SRC-API-AI-E4709CFE7B5D",
+      "kind": "extended",
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /transactions with a body over the parser limit → 413, not 500 (BUG-019)",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "e4709cfe7b5de2af85c2357508a7d9a5c40ba372a2f74e6b6637ea91e26f4d96",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"}]; body={ \"amount_cents\": 1, \"note\": \"{{bigNote}}\" }; prerequest=pm.collectionVariables.set('bigNote', 'x'.repeat(120 * 1024));; checks=expectError(413, 'PAYLOAD_TOO_LARGE'); assertions=status/schema only."
+    },
+    {
+      "id": "SRC-API-IMPORT-F721F64DB7CF",
+      "kind": "provisional",
+      "selector": {
+        "folder": "Synthetic batch import (offline caller-supplied records)",
+        "name": "POST /imports/preview is read-only",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/imports/preview"
+      },
+      "requestEventSha256": "f721f64db7cf7a0f075a5fb7021a4f954e99ed51f410605627d85a5f04478a1d",
+      "oracleReason": "POST {{baseUrl}}/api/imports/preview; auth=inherited bearer; body={\"source\":\"synthetic-demo-v1\",\"records\":[{\"external_id\":\"newman-{{runId}}\",\"amount_cents\":3500,\"spent_on\":\"{{importToday}}\",\"category_name\":\"{{catAName}}\",\"note\":\"Synthetic example\"}]}; checks=expectStatus(200); assertions=new record is only previewed."
+    },
+    {
+      "id": "SRC-API-IMPORT-09B3B7C49E2B",
+      "kind": "provisional",
+      "selector": {
+        "folder": "Synthetic batch import (offline caller-supplied records)",
+        "name": "POST /imports/confirm saves one expense",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/imports/confirm"
+      },
+      "requestEventSha256": "09b3b7c49e2b417e8b856653b1f6b954d959ed4741c7c63640ea3b9fbd6885ac",
+      "oracleReason": "POST {{baseUrl}}/api/imports/confirm; auth=inherited bearer; body={\"source\":\"synthetic-demo-v1\",\"records\":[{\"external_id\":\"newman-{{runId}}\",\"amount_cents\":3500,\"spent_on\":\"{{importToday}}\",\"category_name\":\"{{catAName}}\",\"note\":\"Synthetic example\"}]}; checks=expectStatus(201); assertions=save returns a new transaction ID."
+    },
+    {
+      "id": "SRC-API-IMPORT-2CFE20CFBFD1",
+      "kind": "provisional",
+      "selector": {
+        "folder": "Synthetic batch import (offline caller-supplied records)",
+        "name": "POST /imports/confirm lost-response retry replays",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/imports/confirm"
+      },
+      "requestEventSha256": "2cfe20cfbfd1c94d36a57fff001fb027e14ef7346bcd070162876b13bf4d5ad0",
+      "oracleReason": "POST {{baseUrl}}/api/imports/confirm; auth=inherited bearer; body={\"source\":\"synthetic-demo-v1\",\"records\":[{\"external_id\":\"newman-{{runId}}\",\"amount_cents\":3500,\"spent_on\":\"{{importToday}}\",\"category_name\":\"{{catAName}}\",\"note\":\"Synthetic example\"}]}; checks=expectStatus(200); assertions=retry uses the same transaction."
+    }
+  ]
+}

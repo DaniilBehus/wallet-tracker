@@ -53,6 +53,12 @@
 <!-- ============================================================== APP ==== -->
 <main id="app" hidden>
 
+  <aside id="write-recovery" class="write-recovery" role="region"
+         aria-label="Unresolved financial action" hidden>
+    <p class="write-recovery__title">Check an unfinished action</p>
+    <div id="write-recovery-list" class="write-recovery__list" role="status" aria-live="polite"></div>
+  </aside>
+
   <!-- ---------------------------------------------------------- 6.1 Add -->
   <section id="screen-add" class="screen" aria-label="Add an expense">
     <header class="screen__head screen__head--add">
@@ -288,9 +294,9 @@
   <!-- Editing an expense (D-029). A dialog rather than an inline form: the
        row being edited can be anywhere in a long list, and an inline form
        would push the rest of the list under the reader's thumb. -->
-  <div class="sheet" id="tx-edit-sheet" hidden>
-    <form id="tx-edit-form" class="sheet__panel" aria-label="Edit expense">
-      <h2 class="sheet__title">Edit expense</h2>
+  <dialog class="sheet" id="tx-edit-sheet" aria-labelledby="tx-edit-title">
+    <form id="tx-edit-form" class="sheet__panel">
+      <h2 class="sheet__title" id="tx-edit-title">Edit expense</h2>
 
       <label class="field">
         <span class="field__label">Amount (€)</span>
@@ -314,12 +320,48 @@
                data-testid="tx-edit-note" autocomplete="off">
       </label>
 
+      <div class="tx-edit-error" id="tx-edit-error-box" role="alert" hidden>
+        <span id="tx-edit-error" data-testid="tx-edit-error"></span>
+        <span class="toast__ref" id="tx-edit-error-ref" hidden>Reference:
+          <code id="tx-edit-error-ref-code" data-testid="tx-edit-error-ref-code"></code>
+        </span>
+      </div>
+
       <div class="sheet__actions">
         <button type="submit" class="btn btn--primary" data-testid="tx-edit-save">Save</button>
         <button type="button" class="btn" id="tx-edit-cancel" data-testid="tx-edit-cancel">Cancel</button>
       </div>
     </form>
-  </div>
+  </dialog>
+
+  <dialog class="sheet schedule-edit-sheet" id="schedule-edit-dialog" aria-labelledby="schedule-edit-title">
+    <form id="schedule-edit-form" class="sheet__panel" novalidate>
+      <h2 class="sheet__title" id="schedule-edit-title">Edit schedule</h2>
+      <label class="field"><span class="field__label">Name</span>
+        <input id="schedule-edit-name" name="name" type="text" maxlength="60" data-testid="schedule-edit-name"></label>
+      <label class="field"><span class="field__label">Amount (€)</span>
+        <input id="schedule-edit-amount" name="amount" type="text" inputmode="decimal" data-testid="schedule-edit-amount"></label>
+      <label class="field"><span class="field__label">Category</span>
+        <select name="category_id" id="schedule-edit-category" data-testid="schedule-edit-category"></select></label>
+      <label class="field"><span class="field__label">Day of month</span>
+        <input id="schedule-edit-day" name="day_of_month" type="number" min="1" max="31" inputmode="numeric"
+               data-testid="schedule-edit-day"></label>
+      <label class="field"><span class="field__label">Starts on</span>
+        <input id="schedule-edit-starts-on" name="starts_on" type="date" data-testid="schedule-edit-starts-on"></label>
+      <label class="check"><input name="is_loan" id="schedule-edit-is-loan" type="checkbox"
+                                  data-testid="schedule-edit-is-loan"><span>This is a loan</span></label>
+      <label class="field" id="schedule-edit-count-field" hidden>
+        <span class="field__label">Number of instalments</span>
+        <input id="schedule-edit-total-count" name="total_count" type="number" min="1" max="1200" inputmode="numeric"
+               data-testid="schedule-edit-total-count"></label>
+      <p id="schedule-edit-error" class="tx-edit-error" role="alert"
+         data-testid="schedule-edit-error" hidden></p>
+      <div class="sheet__actions">
+        <button id="schedule-edit-save" type="submit" class="btn btn--primary" data-testid="schedule-edit-save">Save changes</button>
+        <button type="button" class="btn" id="schedule-edit-cancel" data-testid="schedule-edit-cancel">Cancel</button>
+      </div>
+    </form>
+  </dialog>
 
 <!-- ================================================== AI EXPENSE ENTRY ==== -->
   <!-- A category budget is edited where it is judged. Native modal focus and

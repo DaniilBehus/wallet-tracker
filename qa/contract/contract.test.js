@@ -6,6 +6,7 @@ const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
+const Database = require('better-sqlite3');
 const { ROOT, readDocument, sourceInventory, inventoryFromSources, assertInventory, validateDocument } = require('../../scripts/lib/openapi');
 const { createAjv, createResponseValidator, ContractError } = require('./response-validator');
 const { startServer, capture, localToday, isolatedEnv } = require('./support');
@@ -27,6 +28,19 @@ async function call(server, method, route, expected, options = {}) {
   if (!observed.has(key)) observed.set(key, new Set());
   observed.get(key).add(result.status); requests++;
   return result;
+}
+
+async function expectValidationProbe(method, route, options, failures, label) {
+  const key = validator.operationKey(method, new URL(route, off.baseUrl).pathname);
+  const result = await capture(off, method, route, auth(options));
+  if (!observed.has(key)) observed.set(key, new Set());
+  observed.get(key).add(result.status); requests++;
+  if (result.status === 400) {
+    validator.validate(key, result);
+    assert.equal(result.body.error.code, 'VALIDATION_FAILED', `${label}: wrong error code`);
+  } else {
+    failures.push(`${label}: HTTP ${result.status}, expected 400`);
+  }
 }
 
 async function user(server, label) {
@@ -230,6 +244,115 @@ test('TC-CONTRACT-006: expenses, filters, strict PATCH, keyed replay and empty20
   await call(off, 'DELETE', `/api/transactions/${id}`, 204, auth());
 });
 
+test('PAGING-CONTROL: legacy offset drift after insertion and deletion', async () => {
+  const category = await call(off, 'POST', '/api/categories', 201,
+    auth({ body: { name: `Offset witness ${crypto.randomUUID()}` } }));
+  const categoryId = category.body.id;
+  const created = [];
+  for (let i = 0; i < 4; i++) {
+    const row = await call(off, 'POST', '/api/transactions', 201,
+      auth({ body: { amount_cents: 1, category_id: categoryId, spent_on: localToday() } }));
+    created.push(row.body.id);
+  }
+  const route = `?limit=2&category_id=${categoryId}`;
+  const first = (await call(off, 'GET', `/api/transactions${route}`, 200, auth())).body;
+  assert.deepEqual(first.items.map(row => row.id), [created[3], created[2]]);
+  const inserted = await call(off, 'POST', '/api/transactions', 201,
+    auth({ body: { amount_cents: 1, category_id: categoryId, spent_on: localToday() } }));
+  const afterInsert = (await call(off, 'GET', `/api/transactions${route}&offset=2`, 200, auth())).body;
+  assert.deepEqual(afterInsert.items.map(row => row.id), [created[2], created[1]],
+    'old offset duplicates the already seen boundary after insertion');
+
+  const secondFirst = (await call(off, 'GET', `/api/transactions${route}`, 200, auth())).body;
+  assert.deepEqual(secondFirst.items.map(row => row.id), [inserted.body.id, created[3]]);
+  await call(off, 'DELETE', `/api/transactions/${inserted.body.id}`, 204, auth());
+  const afterDelete = (await call(off, 'GET', `/api/transactions${route}&offset=2`, 200, auth())).body;
+  assert.deepEqual(afterDelete.items.map(row => row.id), [created[1], created[0]],
+    'old offset skips the surviving unseen boundary after deletion');
+  assert.ok(!afterDelete.items.some(row => row.id === created[2]));
+});
+
+test('PAGING-CONTROL: cursor survives earlier mutations and rejects invalid contexts', async () => {
+  const category = await call(off, 'POST', '/api/categories', 201,
+    auth({ body: { name: `Cursor witness ${crypto.randomUUID()}` } }));
+  const categoryId = category.body.id;
+  const date = localToday();
+  const ids = [];
+  for (let i = 0; i < 6; i++) {
+    const row = await call(off, 'POST', '/api/transactions', 201,
+      auth({ body: { amount_cents: 1, category_id: categoryId, spent_on: date } }));
+    ids.push(row.body.id);
+  }
+  const base = `/api/transactions?paging=cursor&limit=2&from=${date}&to=${date}&category_id=${categoryId}`;
+  const page = async token => (await call(off, 'GET', base + (token ? `&cursor=${encodeURIComponent(token)}` : ''), 200, auth())).body;
+  const first = await page();
+  assert.deepEqual(first.items.map(row => row.id), [ids[5], ids[4]], 'same-date tie breaks by descending ID');
+  assert.equal(typeof first.next_cursor, 'string');
+  const stableSecond = await page(first.next_cursor);
+  const stableThird = await page(stableSecond.next_cursor);
+  assert.deepEqual(stableSecond.items.map(row => row.id), [ids[3], ids[2]]);
+  assert.deepEqual(stableThird.items.map(row => row.id), [ids[1], ids[0]]);
+  assert.equal(stableThird.next_cursor, null, 'the last full page terminates');
+
+  const inserted = await call(off, 'POST', '/api/transactions', 201,
+    auth({ body: { amount_cents: 1, category_id: categoryId, spent_on: date } }));
+  for (const id of [ids[5], ids[4], ids[3]]) {
+    await call(off, 'DELETE', `/api/transactions/${id}`, 204, auth());
+  }
+  const after = await page(first.next_cursor); // boundary row was deleted
+  assert.equal(after.total, 4);
+  assert.deepEqual(after.items.map(row => row.id), [ids[2], ids[1]]);
+  const final = await page(after.next_cursor);
+  assert.deepEqual(final.items.map(row => row.id), [ids[0]]);
+  assert.equal(final.next_cursor, null);
+  assert.deepEqual([ids[5], ids[4], ...after.items.map(row => row.id), ...final.items.map(row => row.id)].slice(2),
+    [ids[2], ids[1], ids[0]], 'surviving unseen IDs neither skip nor repeat');
+  assert.ok(!after.items.some(row => row.id === inserted.body.id), 'new before-cursor row waits for refresh');
+  const refreshed = await page();
+  assert.deepEqual(refreshed.items.map(row => row.id), [inserted.body.id, ids[2]]);
+
+  const empty = await call(off, 'POST', '/api/categories', 201,
+    auth({ body: { name: `Empty cursor ${crypto.randomUUID()}` } }));
+  const emptyPage = await call(off, 'GET', `${base.replace(`category_id=${categoryId}`, `category_id=${empty.body.id}`)}`, 200, auth());
+  assert.deepEqual(emptyPage.body, { items: [], total: 0, next_cursor: null });
+  const zero = await call(off, 'GET', base.replace('limit=2', 'limit=0'), 200, auth());
+  assert.deepEqual(zero.body, { items: [], total: 4, next_cursor: null });
+
+  const tokenBody = JSON.parse(Buffer.from(first.next_cursor, 'base64url').toString('utf8'));
+  const forged = change => Buffer.from(JSON.stringify(change(structuredClone(tokenBody)))).toString('base64url');
+  const invalid = [
+    `${base}&cursor=%25%25%25`, `${base}&cursor=${'A'.repeat(513)}`,
+    `${base}&cursor=${first.next_cursor}=`,
+    `${base}&cursor=${forged(body => ({ i: body.i, ...body }))}`,
+    `${base}&cursor=${forged(body => ({ ...body, d: '2026-02-30' }))}`,
+    `${base}&cursor=${forged(body => ({ ...body, i: 9007199254740992 }))}`,
+    `${base}&cursor=${forged(body => ({ ...body, v: 2 }))}`,
+    `${base}&cursor=${encodeURIComponent(first.next_cursor)}&offset=0`,
+    base.replace(`category_id=${categoryId}`, `category_id=${empty.body.id}`) + `&cursor=${encodeURIComponent(first.next_cursor)}`,
+    base.replace(`from=${date}`, 'from=0000-01-01') + `&cursor=${encodeURIComponent(first.next_cursor)}`,
+    `/api/transactions?cursor=${encodeURIComponent(first.next_cursor)}`,
+    '/api/transactions?paging=unknown',
+  ];
+  const dbRead = new Database(off.databasePath, { readonly: true });
+  const beforeRows = dbRead.prepare('SELECT id, amount_cents, spent_on FROM transactions WHERE category_id = ? ORDER BY id').all(categoryId);
+  try {
+    for (const route of invalid) await call(off, 'GET', route, 400, auth({ code: 'VALIDATION_FAILED' }));
+    const unfilteredRoute = `/api/transactions?paging=cursor&limit=1&from=${date}&to=${date}`;
+    const unfiltered = await call(off, 'GET', unfilteredRoute, 200, auth());
+    const otherCreated = await call(off, 'POST', '/api/transactions', 201,
+      { token: other.token, body: { amount_cents: 1, spent_on: date } });
+    const otherFirst = await call(off, 'GET', unfilteredRoute, 200, { token: other.token });
+    assert.deepEqual(otherFirst.body.items.map(row => row.id), [otherCreated.body.id],
+      'other account lists its own newest row, never an owner row');
+    await call(off, 'GET', `${unfilteredRoute}&cursor=${encodeURIComponent(unfiltered.body.next_cursor)}`, 400,
+      { token: other.token, code: 'VALIDATION_FAILED' });
+    const afterRows = dbRead.prepare('SELECT id, amount_cents, spent_on FROM transactions WHERE category_id = ? ORDER BY id').all(categoryId);
+    assert.deepEqual(afterRows, beforeRows, 'rejected cursors do not change expense rows');
+  } finally { dbRead.close(); }
+  const legacy = await call(off, 'GET', `/api/transactions?limit=0&category_id=${categoryId}`, 200, auth());
+  assert.deepEqual(Object.keys(legacy.body), ['items', 'total'], 'legacy response remains exact two fields');
+});
+
 test('TC-CONTRACT-007: schedules, subscriptions, loans, pay, reopen and ownership', async () => {
   const base = { name: 'Synthetic subscription', amount_cents: 10, day_of_month: 31, starts_on: localToday() };
   const sub = await call(off, 'POST', '/api/schedules', 201, auth({ body: base }));
@@ -266,6 +389,117 @@ test('TC-CONTRACT-007: schedules, subscriptions, loans, pay, reopen and ownershi
   }
   await call(off, 'PATCH', '/api/schedules/invalid/pay', 400, auth());
   await call(off, 'POST', '/api/schedules', 404, auth({ body: { ...base, category_id: other.categories[0].id } }));
+});
+
+test('support_control: keyed Pay replay, final closure, stale snapshot, ownership and tombstone', async () => {
+  const base = { name: 'Keyed final loan', amount_cents: 3700, day_of_month: 15,
+    starts_on: localToday(), total_count: 1 };
+  const loan = (await call(off, 'POST', '/api/schedules', 201, auth({ body: base }))).body;
+  const body = { expected_paid_count: 0, expected_amount_cents: 3700,
+    expected_category_id: null, expected_name: base.name,
+    expected_total_count: 1, spent_on: localToday() };
+  const route = `/api/schedules/${loan.id}/pay`;
+  const key = crypto.randomUUID();
+  const headers = { 'Idempotency-Key': key };
+  const first = await call(off, 'PATCH', route, 200, auth({ body, headers, replay: false }));
+  const replay = await call(off, 'PATCH', route, 200, auth({ body, headers, replay: true }));
+  assert.deepEqual(replay.body, first.body, 'final closed loan must replay its stored result');
+  assert.equal(first.body.finished, true);
+  await call(off, 'PATCH', route, 409, auth({ body: { ...body, expected_amount_cents: 3701 },
+    headers, code: 'IDEMPOTENCY_CONFLICT' }));
+  await call(off, 'POST', '/api/transactions', 409, auth({
+    body: { amount_cents: 3700, spent_on: localToday(), note: 'cross-kind' },
+    headers, code: 'IDEMPOTENCY_CONFLICT',
+  }));
+  await call(off, 'PATCH', route, 409, auth({ body, headers: { 'Idempotency-Key': crypto.randomUUID() },
+    code: 'CONFLICT' }));
+  await call(off, 'PATCH', route, 404, { token: other.token, body,
+    headers: { 'Idempotency-Key': crypto.randomUUID() }, code: 'NOT_FOUND' });
+
+  const db = new Database(off.databasePath);
+  try {
+    const count = () => db.prepare('SELECT COUNT(*) AS n FROM transactions WHERE schedule_id = ?')
+      .get(loan.id).n;
+    assert.equal(count(), 1);
+    assert.equal(db.prepare('SELECT paid_count FROM schedules WHERE id = ?').get(loan.id).paid_count, 1);
+  } finally { db.close(); }
+  await call(off, 'DELETE', `/api/transactions/${first.body.transaction_id}`, 204, auth());
+  await call(off, 'PATCH', route, 409, auth({ body, headers,
+    code: 'IDEMPOTENCY_REPLAY_UNAVAILABLE' }));
+
+  const subscription = (await call(off, 'POST', '/api/schedules', 201, auth({ body: {
+    ...base, name: 'Keyed subscription', total_count: null,
+  } }))).body;
+  const subRoute = `/api/schedules/${subscription.id}/pay`;
+  const subBody = { ...body, expected_name: 'Keyed subscription', expected_total_count: null };
+  const shared = { 'Idempotency-Key': crypto.randomUUID() };
+  const parallel = await Promise.all([
+    call(off, 'PATCH', subRoute, 200, auth({ body: subBody, headers: shared })),
+    call(off, 'PATCH', subRoute, 200, auth({ body: subBody, headers: shared })),
+  ]);
+  assert.deepEqual(parallel[0].body, parallel[1].body);
+  assert.deepEqual(parallel.map(item => item.headers['idempotency-replayed']).sort(), [undefined, 'true'].sort());
+  await call(off, 'PATCH', subRoute, 409, auth({ body: subBody,
+    headers: { 'Idempotency-Key': crypto.randomUUID() }, code: 'CONFLICT' }));
+  const next = await call(off, 'PATCH', subRoute, 200, auth({
+    body: { ...subBody, expected_paid_count: 1 },
+    headers: { 'Idempotency-Key': crypto.randomUUID() }, replay: false,
+  }));
+  assert.equal(next.body.paid_count, 2);
+  assert.notEqual(next.body.transaction_id, parallel[0].body.transaction_id);
+  await call(off, 'PATCH', subRoute, 400, auth({ body: {}, headers: {
+    'Idempotency-Key': crypto.randomUUID(),
+  }, code: 'VALIDATION_FAILED' }));
+});
+
+test('DATE-CONTROL: schedule boundary refuses overflow before writes and legacy rows fail explicitly', async () => {
+  const db = new Database(off.databasePath);
+  const failures = [];
+  const userId = db.prepare('SELECT id FROM users WHERE email = ?').get(owner.email).id;
+  const count = () => db.prepare('SELECT COUNT(*) AS n FROM schedules WHERE user_id = ?').get(userId).n;
+  const probe = async (method, route, body, expected, label) => {
+    const key = validator.operationKey(method, new URL(route, off.baseUrl).pathname);
+    const result = await capture(off, method, route, auth(body === undefined ? {} : { body }));
+    validator.validate(key, result);
+    if (!observed.has(key)) observed.set(key, new Set());
+    observed.get(key).add(result.status); requests++;
+    if (result.status !== expected) failures.push(`${label}: HTTP ${result.status}, expected ${expected}`);
+    if (expected === 400 && result.status === 400 && result.body.error.code !== 'VALIDATION_FAILED') {
+      failures.push(`${label}: expected VALIDATION_FAILED`);
+    }
+    return result;
+  };
+  try {
+    const invalid = { name: 'Date overflow probe', amount_cents: 10, day_of_month: 15, starts_on: '9999-12-31' };
+    const beforeCreate = count();
+    await probe('POST', '/api/schedules', invalid, 400, 'create overflow');
+    if (count() !== beforeCreate) failures.push('create overflow changed stored schedule count');
+    db.prepare('DELETE FROM schedules WHERE user_id = ? AND name = ?').run(userId, invalid.name);
+
+    const valid = await probe('POST', '/api/schedules',
+      { ...invalid, name: 'Date max valid', day_of_month: 31 }, 201, 'create max valid');
+    if (valid.status === 201) {
+      if (valid.body.next_due !== '9999-12-31') failures.push(`max valid next_due ${valid.body.next_due}`);
+      const beforePatch = db.prepare('SELECT day_of_month, starts_on FROM schedules WHERE id = ?').get(valid.body.id);
+      await probe('PATCH', `/api/schedules/${valid.body.id}`, { day_of_month: 15 }, 400, 'patch overflow');
+      const afterPatch = db.prepare('SELECT day_of_month, starts_on FROM schedules WHERE id = ?').get(valid.body.id);
+      if (JSON.stringify(afterPatch) !== JSON.stringify(beforePatch)) failures.push('patch overflow changed stored schedule');
+      db.prepare('UPDATE schedules SET day_of_month = 31 WHERE id = ?').run(valid.body.id);
+    }
+
+    const early = await probe('POST', '/api/schedules',
+      { ...invalid, name: 'Date year zero', day_of_month: 31, starts_on: '0000-02-29' }, 201, 'create year zero');
+    if (early.status === 201 && early.body.starts_on !== '0000-02-29') failures.push('year zero changed on save');
+
+    const legacy = db.prepare(`INSERT INTO schedules
+      (user_id, name, amount_cents, category_id, day_of_month, starts_on, total_count)
+      VALUES (?, ?, ?, NULL, ?, ?, NULL)`)
+      .run(userId, 'Legacy date edge', 10, 15, '9999-12-31');
+    try { await probe('GET', '/api/schedules', undefined, 400, 'legacy overflow list'); }
+    finally { db.prepare('DELETE FROM schedules WHERE id = ?').run(Number(legacy.lastInsertRowid)); }
+
+    assert.deepEqual(failures, []);
+  } finally { db.close(); }
 });
 
 test('TC-CONTRACT-008: AI off/demo, normalized bounds, statuses, quotas and no expense writes', async () => {
@@ -334,6 +568,120 @@ test('TC-CONTRACT-IMPORT: real offline preview, confirm, replay and conflict', a
   await call(off, 'POST', '/api/imports/confirm', 409, auth({ body: {
     ...body, records: [{ ...record, amount_cents: 3501 }],
   }, code: 'IDEMPOTENCY_CONFLICT' }));
+});
+
+test('VALIDATION-CONTROL: safe pagination and owned IDs reject unsafe magnitudes', async () => {
+  const failures = [];
+  const cat = owner.categories[0].id;
+  const before = await call(off, 'GET', '/api/transactions?limit=0', 200, auth());
+  const today = localToday();
+  const safeMax = String(Number.MAX_SAFE_INTEGER);
+  for (const query of ['offset=0', `offset=${safeMax}`, 'limit=0', 'limit=200']) {
+    await call(off, 'GET', `/api/transactions?${query}`, 200, auth());
+  }
+  for (const query of [
+    'offset=1e30', 'offset=9007199254740992', 'offset=-1', 'offset=1.5',
+    'limit=1e30', 'limit=-1', 'limit=1.5',
+  ]) await expectValidationProbe('GET', `/api/transactions?${query}`, {}, failures, query);
+
+  await call(off, 'DELETE', `/api/transactions/${safeMax}`, 404, auth());
+  await call(off, 'GET', `/api/transactions?category_id=${safeMax}`, 404, auth());
+  const unsafe = '9007199254740992';
+  await expectValidationProbe('DELETE', `/api/transactions/${unsafe}`, {}, failures, 'unsafe URL id');
+  await expectValidationProbe('PATCH', `/api/transactions/${unsafe}`, { body: { note: 'unchanged' } }, failures, 'unsafe PATCH id');
+  await expectValidationProbe('PATCH', `/api/categories/${unsafe}`, { body: { monthly_limit_cents: 0 } }, failures, 'unsafe category URL id');
+  await expectValidationProbe('GET', `/api/transactions?category_id=${unsafe}`, {}, failures, 'unsafe category filter');
+  await expectValidationProbe('POST', '/api/transactions', { body: { amount_cents: 1, category_id: Number(unsafe) } }, failures, 'unsafe owned category');
+  await expectValidationProbe('POST', '/api/transactions', { body: { amount_cents: 1, category_id: { toString: null } } }, failures, 'non-convertible owned category');
+  await expectValidationProbe('POST', '/api/transactions', {
+    body: { amount_cents: 1, category_id: Number(unsafe), spent_on: today },
+    headers: { 'Idempotency-Key': crypto.randomUUID() },
+  }, failures, 'unsafe keyed category');
+  await expectValidationProbe('POST', '/api/transactions', {
+    body: { amount_cents: 1, category_id: { toString: null }, spent_on: today },
+    headers: { 'Idempotency-Key': crypto.randomUUID() },
+  }, failures, 'non-convertible keyed category');
+  const after = await call(off, 'GET', '/api/transactions?limit=0', 200, auth());
+  assert.equal(after.body.total, before.body.total, 'invalid numeric writes changed the ledger');
+  const key = crypto.randomUUID();
+  const payload = { amount_cents: 1, category_id: cat, spent_on: today, note: 'same canonical category' };
+  const headers = { 'Idempotency-Key': key };
+  const created = await call(off, 'POST', '/api/transactions', 201, auth({ body: payload, headers, replay: false }));
+  for (const equivalent of [String(cat), [cat], [[cat]], ...(cat === 1 ? [true] : [])]) {
+    const replay = await call(off, 'POST', '/api/transactions', 201, auth({
+      body: { ...payload, category_id: equivalent }, headers, replay: true,
+    }));
+    assert.deepEqual(replay.body, created.body, 'safe category casts preserve canonical replay');
+  }
+  assert.deepEqual(failures, [], 'numeric validation failures (no response bodies printed)');
+});
+
+test('VALIDATION-CONTROL: nullable text coercion rejects only non-convertible JSON', async () => {
+  const failures = [];
+  const beforeTx = await call(off, 'GET', '/api/transactions?limit=0', 200, auth());
+  const beforeCategories = await call(off, 'GET', '/api/categories', 200, auth());
+  const target = await call(off, 'POST', '/api/transactions', 201, auth({ body: { amount_cents: 1, note: 'unchanged' } }));
+  const today = localToday();
+  let acceptedAfterInvalid = 0;
+  for (const [label, value] of [['shadowed method', { toString: null }], ['nested array', [{ toString: null }]]]) {
+    await expectValidationProbe('POST', '/api/transactions', { body: { amount_cents: 1, note: value } }, failures, `unkeyed note ${label}`);
+    const key = crypto.randomUUID();
+    await expectValidationProbe('POST', '/api/transactions', {
+      body: { amount_cents: 1, spent_on: today, note: value }, headers: { 'Idempotency-Key': key },
+    }, failures, `keyed note ${label}`);
+    await expectValidationProbe('PATCH', `/api/transactions/${target.body.id}`, { body: { note: value } }, failures, `PATCH note ${label}`);
+    await expectValidationProbe('POST', '/api/categories', {
+      body: { name: `Invalid icon ${label}`, icon: value },
+    }, failures, `category icon ${label}`);
+    const afterInvalid = await call(off, 'GET', '/api/transactions?limit=200', 200, auth());
+    const afterCategories = await call(off, 'GET', '/api/categories', 200, auth());
+    assert.equal(afterInvalid.body.total, beforeTx.body.total + 1 + acceptedAfterInvalid, 'invalid note inserted an expense');
+    assert.equal(afterCategories.body.length, beforeCategories.body.length, 'invalid icon inserted a category');
+    assert.equal(afterInvalid.body.items.find(row => row.id === target.body.id).note, 'unchanged', 'invalid PATCH changed note');
+    // The rejected keyed attempt must not reserve its key.
+    await call(off, 'POST', '/api/transactions', 201, auth({
+      body: { amount_cents: 1, spent_on: today, note: 'valid after rejected key' },
+      headers: { 'Idempotency-Key': key }, replay: false,
+    }));
+    acceptedAfterInvalid++;
+  }
+
+  const compatible = [
+    ['number', 123, '123'], ['boolean true', true, 'true'],
+    ['boolean false', false, 'false'],
+    ['object', { sample: true }, '[object Object]'], ['array', ['a', 1], 'a,1'],
+    ['null', null, null], ['string', 'ordinary note', 'ordinary note'],
+  ];
+  for (const [label, value, expected] of compatible) {
+    const unkeyed = await call(off, 'POST', '/api/transactions', 201, auth({ body: { amount_cents: 1, note: value } }));
+    assert.equal(unkeyed.body.note, expected, `unkeyed ${label}`);
+    const key = crypto.randomUUID();
+    const keyedBody = { amount_cents: 1, spent_on: today, note: value };
+    const headers = { 'Idempotency-Key': key };
+    const keyed = await call(off, 'POST', '/api/transactions', 201, auth({ body: keyedBody, headers, replay: false }));
+    assert.equal(keyed.body.note, expected, `keyed ${label}`);
+    const replay = await call(off, 'POST', '/api/transactions', 201, auth({ body: keyedBody, headers, replay: true }));
+    assert.deepEqual(replay.body, keyed.body, `keyed replay ${label}`);
+    if (label === 'null') {
+      const omittedReplay = await call(off, 'POST', '/api/transactions', 201, auth({
+        body: { amount_cents: 1, spent_on: today }, headers, replay: true,
+      }));
+      assert.deepEqual(omittedReplay.body, keyed.body, 'null and omitted note share canonical payload');
+    }
+    const edited = await call(off, 'PATCH', `/api/transactions/${target.body.id}`, 200, auth({ body: { note: value } }));
+    assert.equal(edited.body.note, expected, `PATCH ${label}`);
+    const category = await call(off, 'POST', '/api/categories', 201, auth({ body: { name: `Icon ${label}`, icon: value } }));
+    assert.equal(category.body.icon, expected, `icon ${label}`);
+  }
+  const omitted = await call(off, 'POST', '/api/transactions', 201, auth({ body: { amount_cents: 1 } }));
+  assert.equal(omitted.body.note, null);
+  const omittedIcon = await call(off, 'POST', '/api/categories', 201, auth({ body: { name: 'Icon omitted' } }));
+  assert.equal(omittedIcon.body.icon, null);
+  const clear = await call(off, 'PATCH', `/api/transactions/${target.body.id}`, 200, auth({ body: { note: null } }));
+  assert.equal(clear.body.note, null);
+  const unchanged = await call(off, 'PATCH', `/api/transactions/${target.body.id}`, 200, auth({ body: { amount_cents: 2 } }));
+  assert.equal(unchanged.body.note, null);
+  assert.deepEqual(failures, [], 'text validation failures (no response bodies printed)');
 });
 
 test('TC-CONTRACT-011: complete observed matrix, unexercised statuses and log privacy', () => {
