@@ -234,9 +234,14 @@ test('limits: parallel users cannot pass a global daily cap together', async () 
 });
 
 test('limits: a failed attempt keeps its reservation; the minute cap then refuses', async () => {
+  // The quota clock is pinned only in this disposable QA server. Real wall
+  // time can cross a minute between the 1 s timeout and the third request.
+  const quotaNow = new Date();
+  quotaNow.setSeconds(30, 0);
   const slow = await startWallet({
     mode: 'live', fakeUrl,
-    env: { ...GENEROUS, WALLET_AI_TIMEOUT_MS: '1000', WALLET_AI_USER_MINUTE_CALLS: '2' },
+    env: { ...GENEROUS, WALLET_AI_TIMEOUT_MS: '1000', WALLET_AI_USER_MINUTE_CALLS: '2',
+      AI_TEST_QUOTA_NOW: quotaNow.toISOString() },
   });
   try {
     const u = await registerUser(slow.baseUrl, 'slow');

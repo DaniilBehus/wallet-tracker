@@ -544,7 +544,7 @@
     },
     {
       "path": "qa/ai/support/test-server.js",
-      "sha256": "9d3356c6d9ddb4ea26bfb4dbda24fb27e8ecab888349451babd528baf9cd82ac",
+      "sha256": "a5dbc536d419790ce141bc6afbad7beefc5736e5ed4e636fc7ea8e9b068111ba",
       "role": "helper",
       "roleNote": "Shared fixture/page/support helper; not a case: qa/ai/support/test-server.js",
       "declarations": [],
@@ -647,7 +647,7 @@
     },
     {
       "path": "qa/ai/tests/demo.test.js",
-      "sha256": "894f0d42a353be9c3ac41f39ca137e33ba8c73f6fbf6325796ed3d9e96db130d",
+      "sha256": "960f5552d50f98f7d135a0c2b410638ff4c05205d38997e0ec3d98d947ffc5d8",
       "role": "separate_ai",
       "roleNote": "Separate AI source declarations, not owner catalogue: qa/ai/tests/demo.test.js",
       "declarations": [
@@ -1468,7 +1468,7 @@
     },
     {
       "path": "qa/ai/tests/integration.test.js",
-      "sha256": "d6bc8bed9abb99e313263da0bd64692e09ed5f30630210d3f7d575aa3f5f8d24",
+      "sha256": "c419c7faff256df0c78987ddbdcb8009e7043e11bbcaccab539eaaa4ce9bb555",
       "role": "separate_ai",
       "roleNote": "Separate AI source declarations, not owner catalogue: qa/ai/tests/integration.test.js",
       "declarations": [
