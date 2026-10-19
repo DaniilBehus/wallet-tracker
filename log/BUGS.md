@@ -1,13 +1,14 @@
 # Defect register
 
-<!-- F20-F21 current-status notice begin -->
-> **Current-state pointer (2026-10-13):** this register preserves original
-> findings, Fix-cell wording and dated run evidence. Read the
-> [current QA status](../docs/qa-status.md) before treating an old
-> "uncommitted" note as today's Git status or an OPEN bug as a release waiver.
-> The additive [correction below](#f20f21-status-correction--2026-10-13)
-> names the specific later source commits and residual BUG-022 work.
-<!-- F20-F21 current-status notice end -->
+<!-- Current-status notice begin -->
+> **Current disposition, 2026-10-19:** the register table and
+> [dated reconciliation below](#current-dispositions--2026-10-19) reflect the
+> published application `main` at `7b1cb328` and its exact-SHA 6/6 CI run.
+> Original observations, failed-before results and older "local/uncommitted"
+> text remain as history, not today's Git state. A green CI run closes only
+> defects with their own repair and relevant regression evidence; it does not
+> sign owner UAT or waive a remaining High defect. See [QA status](../docs/qa-status.md).
+<!-- Current-status notice end -->
 
 Written as real defect reports, not as notes. Reproduction steps, expected vs
 actual, root cause, fix, regression check — the same discipline as a tracker
@@ -41,25 +42,29 @@ State: `OPEN` · `IN PROGRESS` · `CLOSED` · `WONTFIX` (needs a reason).
 | BUG-011 | Two servers started at once on one database, and one dies at boot | Medium | CLOSED | S16 | fixed | R12 |
 | BUG-012 | Two processes writing one database answer 500 | High | CLOSED | S16 | fixed | R12 |
 | BUG-013 | The edit panel opened underneath the bottom navigation | Medium | CLOSED | S16 | fixed | R13 |
-| BUG-014 | Categories collapse to an 18 px strip on a short phone | High | CLOSED | S21 | S23 · uncommitted | R14 |
+| BUG-014 | Categories collapse to an 18 px strip on a short phone | High | CLOSED | S21 | published in `2face59` | R14 |
 | BUG-015 | Editing an uncategorised expense sends category zero | Medium | CLOSED | S21 | a399e79 | R14 |
 | BUG-016 | Concurrent registrations of the same email return 500 | High | CLOSED | S21 | e291ea9 | R14 |
 | BUG-017 | Password suffixes after 72 bytes are silently ignored | High | CLOSED | S21 | 53b310b | R14 |
 | BUG-018 | A large loan loses an integer cent in remaining money | Critical | CLOSED | S21 | bd516ac | R14 |
-| BUG-019 | Oversized JSON is reported as an internal server failure | Medium | CLOSED | S21 | S23 · uncommitted | R14 |
-| BUG-020 | Valid early-year dates produce malformed next dates | Medium | IN PROGRESS | S21 + 2026-10-10 controls | local, uncommitted | R14 |
-| BUG-021 | Schedules cannot be edited through the interface | High | IN PROGRESS | S21 | local repair, uncommitted | R14 |
-| BUG-022 | Expense overlay does not contain keyboard focus | Medium | IN PROGRESS | S21 | local repair, uncommitted | R14 |
-| BUG-023 | Registration-race violation was ignored by final verdict | High | IN PROGRESS | 2026-10-09 control | local, uncommitted | — |
-| BUG-024 | Required validator inputs could disappear with a green result | High | IN PROGRESS | 2026-10-09 control | local, uncommitted | — |
-| BUG-025 | Race cleanup could remove another run's database | Medium | IN PROGRESS | 2026-10-09 control | local, uncommitted | — |
-| BUG-026 | Unsafe pagination and IDs bypassed validation | High | IN PROGRESS | 2026-10-09 HTTP control | local, uncommitted | — |
-| BUG-027 | Non-convertible note/icon JSON returned internal errors | High | IN PROGRESS | 2026-10-09 HTTP control | local, uncommitted | — |
-| BUG-028 | Concurrent evaluator setup can abort before quota exercise | High | IN PROGRESS | 2026-10-10 controlled setup race | local, uncommitted | — |
-| BUG-029 | Concurrent evaluator reports can overwrite each other | High | IN PROGRESS | 2026-10-10 fixed-clock control | local, uncommitted | — |
-| BUG-033 | Main E2E reused one database between runs and ignored DB_PATH | Medium | IN PROGRESS | 2026-10-11 config/control audit | local, uncommitted | — |
-| BUG-034 | Declared Node 22 floor could load a SQLite binding requiring Node-API 10 | High | IN PROGRESS | 2026-10-11 runtime controls | local, uncommitted | — |
-| BUG-035 | Offset paging can duplicate or skip expenses after another client's write | Medium | IN PROGRESS | 2026-10-16 HTTP/browser controls | local, uncommitted | — |
+| BUG-019 | Oversized JSON is reported as an internal server failure | Medium | CLOSED | S21 | published in `2face59` | R14 |
+| BUG-020 | Valid early-year dates produce malformed next dates | Medium | CLOSED | S21 + 2026-10-10 controls | published · CI verified | R14 |
+| BUG-021 | Schedules cannot be edited through the interface | High | IN PROGRESS | S21 | published · owner UAT pending | R14 |
+| BUG-022 | Expense overlay does not contain keyboard focus | Medium | CLOSED | S21 | published · CI verified | R14 |
+| BUG-023 | Registration-race violation was ignored by final verdict | High | CLOSED | 2026-10-09 control | published · CI verified | — |
+| BUG-024 | Required validator inputs could disappear with a green result | High | CLOSED | 2026-10-09 control | published · CI verified | — |
+| BUG-025 | Race cleanup could remove another run's database | Medium | CLOSED | 2026-10-09 control | published · CI verified | — |
+| BUG-026 | Unsafe pagination and IDs bypassed validation | High | CLOSED | 2026-10-09 HTTP control | published · CI verified | — |
+| BUG-027 | Non-convertible note/icon JSON returned internal errors | High | CLOSED | 2026-10-09 HTTP control | published · CI verified | — |
+| BUG-028 | Concurrent evaluator setup can abort before quota exercise | High | CLOSED | 2026-10-10 controlled setup race | published · CI verified | — |
+| BUG-029 | Concurrent evaluator reports can overwrite each other | High | CLOSED | 2026-10-10 fixed-clock control | published · CI verified | — |
+| BUG-030 | Stale or redundant static-gate exceptions passed C9 | Medium | CLOSED | 2026-10-10 negative controls | published · CI verified | — |
+| BUG-031 | Static inventory gate wording overstated runtime coverage | Medium | CLOSED | 2026-10-10 evidence review | published · static wording verified | — |
+| BUG-032 | CI and local verification diverged; reports were not retained | Medium | CLOSED | 2026-10-10 plan controls | published · CI artifacts verified | — |
+| BUG-033 | Main E2E reused one database between runs and ignored DB_PATH | Medium | CLOSED | 2026-10-11 config/control audit | published · CI verified | — |
+| BUG-034 | Declared Node 22 floor could load a SQLite binding requiring Node-API 10 | High | CLOSED | 2026-10-11 runtime controls | published · CI verified | — |
+| BUG-035 | Offset paging can duplicate or skip expenses after another client's write | Medium | CLOSED | 2026-10-16 HTTP/browser controls | published · CI verified | — |
+| TRACE-AUDIT-001 | Public semantic traceability drift | — | CLOSED | 2026-10-12 F13 review | published · static links verified | — |
 | LIMIT-001 | Every request queues behind database work — 23× slower under write load | — | ACCEPTED | S07 | — | R6 |
 | LIMIT-002 | The same POST twice creates two expenses (unkeyed requests; keyed saves replay — D-035) | — | ACCEPTED | S16 | — | — |
 
@@ -67,8 +72,46 @@ State: `OPEN` · `IN PROGRESS` · `CLOSED` · `WONTFIX` (needs a reason).
 here because everything the load smoke found is recorded — and because
 a limit nobody wrote down gets rediscovered as a panic later.
 
-The **Fix** column says whether a defect is fixed. The commits themselves belong
-to the private development history and are not part of this public snapshot.
+The **Fix** column records current disposition; dated sections below retain
+their original local observations. The specific evidence and remaining limits
+are reconciled next. `CLOSED` is scoped to the stated defect, not a claim of
+general WCAG conformance, snapshot pagination, live AI quality or owner UAT.
+
+## Current dispositions — 2026-10-19
+
+The repairs below are included in published application `main` at
+[`7b1cb328`](https://github.com/DaniilBehus/wallet-tracker/commit/7b1cb328e1d90a52527b792fb3ef4d95cdd92948).
+The [exact-build CI run](https://github.com/DaniilBehus/wallet-tracker/actions/runs/39248991256)
+completed all six required jobs successfully. Each `CLOSED` decision combines
+that delivery proof with its **own** failed-before and regression evidence;
+CI green by itself did not decide unrelated defects. Original report wording
+such as “local and uncommitted” is retained below as a dated observation.
+
+| ID | Specific evidence and limit |
+|---|---|
+| BUG-005 · OPEN | [Original timeout report](../qa/docs/defects/BUG-005-e2e-timeout-on-slow-runs.md); the cause was not proved. Later green CI does not reclassify the earlier timeout. |
+| BUG-020 · CLOSED | [Date-boundary report](../qa/docs/test-report-date-boundaries.md) and date/contract tasks in the API CI group; only the stated four-digit domain is claimed. |
+| BUG-021 · IN PROGRESS | [Schedule-edit failed-before and local regression](../qa/docs/test-report-schedule-editing.md), now included in Playwright CI. Publication and automated gates are met, but the [owner's current-build schedule check](../qa/docs/uat-current-build.md) is **PENDING**. No risk exception is recorded; this High defect still blocks release acceptance. |
+| BUG-022 · CLOSED | [Modal/focus report](../qa/docs/test-report-modal-bind.md), published native dialog and browser/accessibility CI. This closes the specific containment defect, not a human accessibility audit or WCAG certification. |
+| BUG-023 · CLOSED | [E-only negative verdict and enforcing-scenario controls](../qa/docs/test-report-validator-controls.md); race task passed in current API CI. D remains measurement-only. |
+| BUG-024 · CLOSED | [Missing-input and empty-inventory controls](../qa/docs/test-report-validator-controls.md); required static gates passed in current API CI. Static declarations are not behavioral coverage. |
+| BUG-025 · CLOSED | [Other-run sentinel and owned-cleanup controls](../qa/docs/test-report-validator-controls.md); current race CI passed. No sweep of another run's database is authorized. |
+| BUG-026 · CLOSED | [Unsafe-number HTTP failures and repaired 400 regressions](../qa/docs/test-report-api-validation.md); contract CI passed. |
+| BUG-027 · CLOSED | [Non-convertible text/icon HTTP failures and repaired 400 regressions](../qa/docs/test-report-api-validation.md); contract CI passed. |
+| BUG-028 · CLOSED | [Synchronized evaluator setup control](../qa/docs/test-report-evaluator-concurrency.md); offline AI CI passed. This does not prove the separate historical W9 cause. |
+| BUG-029 · CLOSED | [Fixed-clock distinct-report and partial-write controls](../qa/docs/test-report-evaluator-concurrency.md); offline AI CI passed. Two-file publication is still not atomic. |
+| BUG-030 · CLOSED | [Stale/redundant exception negative controls](../qa/docs/test-report-static-gates.md); static-gate CI passed. The remaining `500` exception is explicit and unexercised, not a runtime waiver. |
+| BUG-031 · CLOSED | [Static wording and real-response boundary](../qa/docs/test-report-static-gates.md); current gate/contract CI passed. No per-branch execution is inferred from C6–C8. |
+| BUG-032 · CLOSED | [Shared-plan controls](../qa/docs/test-report-ci-verification.md) plus the [actual post-merge run and artifacts](https://github.com/DaniilBehus/wallet-tracker/actions/runs/39248991256): six uploaded artifacts; the API archive contains HTML, JUnit, race summary and run summary, and the Python archive contains JUnit and run summary. Timeout and privacy-screening limits in the dated report remain. |
+| BUG-033 · CLOSED | [Isolated database and sidecar negative controls](../qa/docs/test-report-e2e-isolation.md); E2E runner and Playwright CI passed. A forced kill or sidecar TOCTOU is not claimed solved. |
+| BUG-034 · CLOSED | [Version/Node-API guard controls](../qa/docs/test-report-runtime.md); current CI uses the declared Node 22.14.0 floor. Future runtime versions and the historical native crash mechanism are not proved. |
+| BUG-035 · CLOSED | [Insert/delete drift witnesses and cursor regressions](../qa/docs/test-report-pagination-consistency.md); contract and Playwright CI passed. Cursor continuation is not an immutable snapshot. |
+| TRACE-AUDIT-001 · CLOSED | [F13 semantic-link correction and negative controls](../qa/docs/test-report-traceability.md), scoped independent acceptance and current CI `f13-traceability` task. The checker cannot prove all case semantics; synthetic import remains provisional. |
+
+F23 (development/test dependency migration) remains an **open accepted-finding
+gap**, not a 25th executed test or a release-progress percentage. The
+[current QA status](../docs/qa-status.md)
+separates that gap, unresolved owner UAT and the historical signed monthly UAT.
 
 ## Report template
 

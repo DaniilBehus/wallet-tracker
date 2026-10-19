@@ -5,6 +5,8 @@
 **Not executed or signed by the owner.** Automated browser checks are not UAT.
 Use a disposable account and database, never personal records or `npm start`
 (which loads a local environment file and defaults to the real database).
+For the [current-build handoff](uat-current-build.md), use its existing server
+and synthetic database; do not start a second server on the same port.
 
 ## Safe setup
 
@@ -18,7 +20,7 @@ $env:PORT="3035"
 node src/server.js
 ```
 
-Use a database path that does not exist yet. Open `http://localhost:3035` and
+Use a database path that does not exist yet. Open `http://127.0.0.1:3035` and
 register a synthetic account such as `category-uat@example.test`. No provider key
 or external service is needed. Stop the server afterwards and close the terminal
 so these test-only environment variables cannot affect a later development run.
