@@ -22,11 +22,13 @@ if (mode === 'demo') {
   installProvider(createDemoProvider());
 }
 
-// Production app.listen(PORT) has no host argument. Bind this test process to
-// loopback only, without changing production source or choosing a real DB.
+// Assert the production host/port signature, then retain the loopback-only
+// contract boundary without choosing a real database.
 const listen = http.Server.prototype.listen;
-http.Server.prototype.listen = function contractListen(port, callback) {
+http.Server.prototype.listen = function contractListen(port, host, callback) {
   assert.equal(port, Number(process.env.PORT));
-  return listen.call(this, port, '127.0.0.1', callback);
+  assert.equal(host, '127.0.0.1');
+  assert.equal(typeof callback, 'function');
+  return listen.call(this, port, host, callback);
 };
 require('../../src/server');

@@ -207,14 +207,16 @@
         "operationId": "listTransactions",
         "tags": ["Transactions"],
         "summary": "List own expenses within an inclusive local-date range",
-        "description": "Defaults from/to independently to current server-local month's boundaries; real calendar dates required and from<=to. Sorted spent_on descending, then id descending. limit defaults50, accepts0-200 after Number conversion; offset defaults0, accepts nonnegative integers with no explicit ceiling. Empty limit/offset use defaults. Optional category_id uses ownership validation. Empty category_id maps null, but SQL category_id=null matches no rows; it is not an uncategorised filter. Unknown query keys ignored.",
+        "description": "Defaults from/to independently to current server-local month's boundaries; real calendar dates required and from<=to. Sorted spent_on descending, then id descending. limit defaults50, accepts0-200 after Number conversion. Legacy offset defaults0, accepts nonnegative safe integers through 9007199254740991; empty limit/offset use defaults and the response remains exactly {items,total}. Optional category_id uses ownership validation. Empty category_id maps null, but SQL category_id=null matches no rows; it is not an uncategorised filter. Opt-in paging=cursor returns next_cursor (string or null), using an account/filter-bound boundary independent of boundary-row existence; cursor and offset cannot be mixed. The cursor is not an authorization credential or snapshot. Unknown query keys ignored.",
         "parameters": [
           { "$ref": "#/components/parameters/RequestId" },
           { "name": "from", "in": "query", "schema": { "$ref": "#/components/schemas/LocalDate" }, "description": "Inclusive start, omitted=current month start." },
           { "name": "to", "in": "query", "schema": { "$ref": "#/components/schemas/LocalDate" }, "description": "Inclusive end, omitted=current month end." },
-          { "name": "category_id", "in": "query", "schema": { "type": "string" }, "description": "Number-converted owned positive integer ID; foreign/missing404, invalid400. Empty string mapsnull and matches no rows." },
-          { "name": "limit", "in": "query", "schema": { "type": "string", "default": "50" }, "description": "Number(value) must be integer0-200; empty string defaults50." },
-          { "name": "offset", "in": "query", "schema": { "type": "string", "default": "0" }, "description": "Number(value) must be nonnegative integer; empty string defaults0. No explicit upper ceiling." }
+          { "name": "category_id", "in": "query", "schema": { "type": "string" }, "description": "Number-converted owned positive safe integer ID through 9007199254740991; foreign/missing404, invalid400. Empty string mapsnull and matches no rows." },
+          { "name": "limit", "in": "query", "schema": { "type": "string", "default": "50" }, "description": "Number(value) must be a safe integer0-200; empty string defaults50." },
+          { "name": "offset", "in": "query", "schema": { "type": "string", "default": "0" }, "description": "Legacy only: Number(value) must be a nonnegative safe integer0-9007199254740991; empty string defaults0. Invalid with paging=cursor." },
+          { "name": "paging", "in": "query", "schema": { "type": "string", "enum": ["cursor"] }, "description": "Opt in to cursor continuation; omission retains legacy offset mode." },
+          { "name": "cursor", "in": "query", "schema": { "type": "string", "maxLength": 512 }, "description": "Only with paging=cursor. Omit for first page; later pass the exact next_cursor. Invalid/mismatched/noncanonical token returns400." }
         ],
         "responses": {
           "200": { "$ref": "#/components/responses/TransactionList" },
@@ -229,7 +231,7 @@
         "operationId": "createTransaction",
         "tags": ["Transactions"],
         "summary": "Save an expense, optionally with an account-scoped operation key",
-        "description": "Positive integer cents only. category_id uses Number conversion and own-category lookup; note uses String(non-null JSON). Omitted/null unkeyed spent_on defaults to server-local today. New expenses must use a real date no later than tomorrow; no explicit lower-year bound. Extra POST fields ignored. Budgets never block saving. With Idempotency-Key, spent_on must be explicit/non-null; canonical [amount,category-or-null,date,note-or-null] identifies the payload, independent of JSON key order and ignored extras. New keyed saves recheck ownership/date bound atomically. Same-key/same-payload replay returns original201 snapshot even after an edit, with Idempotency-Replayed=true; replay does not recheck current date bounds/category ownership. Changed payload409 IDEMPOTENCY_CONFLICT. Deleted original leaves a409 IDEMPOTENCY_REPLAY_UNAVAILABLE tombstone. Without a key, a repeated request can create duplicates. Keys are account-scoped and retained for the account lifetime.",
+        "description": "Positive integer cents only. category_id uses safe-integer Number conversion and own-category lookup; non-convertible/unsafe input returns400. Non-null note uses String(value) only when conversion succeeds; failed conversion returns400. Omitted/null unkeyed spent_on defaults to server-local today. New expenses must use a real date no later than tomorrow; no explicit lower-year bound. Extra POST fields ignored. Budgets never block saving. With Idempotency-Key, spent_on must be explicit/non-null; canonical [amount,category-or-null,date,note-or-null] identifies the payload, independent of JSON key order and ignored extras. New keyed saves recheck ownership/date bound atomically. Same-key/same-payload replay returns original201 snapshot even after an edit, with Idempotency-Replayed=true; replay does not recheck current date bounds/category ownership. Changed payload409 IDEMPOTENCY_CONFLICT. Deleted original leaves a409 IDEMPOTENCY_REPLAY_UNAVAILABLE tombstone. Without a key, a repeated request can create duplicates. Keys are account-scoped and retained for the account lifetime.",
         "parameters": [
           { "$ref": "#/components/parameters/RequestId" },
           { "$ref": "#/components/parameters/IdempotencyKey" }
@@ -261,7 +263,7 @@
         "operationId": "patchTransaction",
         "tags": ["Transactions"],
         "summary": "Edit only supplied expense fields",
-        "description": "Strict nonempty JSON object: amount_cents,category_id,spent_on,note only. Unknown or server-owned id/user_id/schedule_id/created_at fields refused400. Omitted fields unchanged. Explicit spent_on=null refused400 (not today's default); valid edited date cannot exceed tomorrow. category_id=null/empty string clears, other values Number-converted and ownership checked. note=null clears; other JSON values String-converted. Valid missing/foreign expense or categoryID404.",
+        "description": "Strict nonempty JSON object: amount_cents,category_id,spent_on,note only. Unknown or server-owned id/user_id/schedule_id/created_at fields refused400. Omitted fields unchanged. Explicit spent_on=null refused400 (not today's default); valid edited date cannot exceed tomorrow. category_id=null/empty string clears, other values Number-converted to positive safe integers and ownership checked. note=null clears; other JSON values String-converted when possible, failed conversion returns400. Valid missing/foreign expense or categoryID404.",
         "parameters": [{ "$ref": "#/components/parameters/RequestId" }, { "$ref": "#/components/parameters/Id" }],
         "requestBody": {
           "required": true,
@@ -339,7 +341,7 @@
         "operationId": "listSchedules",
         "tags": ["Schedules"],
         "summary": "List own subscriptions and loans",
-        "description": "Only exact query active=1 selects active rows; every other value or omission returns both active and inactive rows without validation error. Sorted by computed next_due. next_due is based on the later of server-local today and starts_on; day31 clamps to the last existing day in a short month. Loan remaining counts/cents are computed, not stored; subscriptions returnnull for these fields. No schedule DELETE endpoint exists.",
+        "description": "Only exact query active=1 selects active rows; every other value or omission returns both active and inactive rows without validation error. Sorted by computed next_due. next_due is based on the later of server-local today and starts_on; day31 clamps to the last existing day in a short month. A legacy row whose next due would exceed year9999 causes a controlled 400 VALIDATION_FAILED for the list, never an invalid date. Loan remaining counts/cents are computed, not stored; subscriptions returnnull for these fields. No schedule DELETE endpoint exists.",
         "parameters": [
           { "$ref": "#/components/parameters/RequestId" },
           { "name": "active", "in": "query", "schema": { "type": "string" }, "description": "Exactly1 filters active only. All other values/omission return all own rows." }
@@ -360,7 +362,7 @@
         "operationId": "createSchedule",
         "tags": ["Schedules"],
         "summary": "Create a subscription or finite loan",
-        "description": "Required trimmed name, positive integer amount_cents, day_of_month1-31 and real local starts_on. category_id omission/null/empty string means no category; otherwise Number-converted owned positive integer. total_count omission/null creates a subscription; integer1-1200 creates a loan. Amount times loan count must remain a safe integer. Unknown POST fields, including client counters/active, are ignored; initial paid_count=0,active=1. No past/future bound is imposed on starts_on beyond calendar validity.",
+        "description": "Required trimmed name, positive integer amount_cents, day_of_month1-31 and real local starts_on in years0000-9999. category_id omission/null/empty string means no category; otherwise Number-converted owned positive safe integer. total_count omission/null creates a subscription; integer1-1200 creates a loan. Amount times loan count must remain a safe integer. Unknown POST fields, including client counters/active, are ignored; initial paid_count=0,active=1. No relative past/future bound is imposed on starts_on, but a computed next_due beyond year9999 returns400 before insertion.",
         "parameters": [{ "$ref": "#/components/parameters/RequestId" }],
         "requestBody": {
           "required": true,
@@ -381,7 +383,7 @@
         "operationId": "patchSchedule",
         "tags": ["Schedules"],
         "summary": "Edit only supplied subscription or loan fields",
-        "description": "Strict nonempty JSON object of name,amount_cents,category_id,day_of_month,starts_on,total_count only. Unknown/server-owned id/user_id/paid_count/active fields refused400. Omitted fields unchanged; explicit total_count=null converts to subscription; category_id=null/empty clears. Updated amount*count pair is validated using the stored counterpart for a partial edit. A new non-null total_count below already paid_count returns409 CONFLICT. Equal to paid_count finishes the loan; increasing above paid_count or clearing count makes it active again. Ownership-scoped404 for missing/foreign schedule/category. Derived values returned from the edited row.",
+        "description": "Strict nonempty JSON object of name,amount_cents,category_id,day_of_month,starts_on,total_count only. Unknown/server-owned id/user_id/paid_count/active fields refused400. Omitted fields unchanged; explicit total_count=null converts to subscription; category_id=null/empty clears. Updated amount*count pair is validated using the stored counterpart for a partial edit. A computed next_due beyond year9999 returns400 without updating the row. A new non-null total_count below already paid_count returns409 CONFLICT. Equal to paid_count finishes the loan; increasing above paid_count or clearing count makes it active again. Ownership-scoped404 for missing/foreign schedule/category. Derived values returned from the edited row.",
         "parameters": [{ "$ref": "#/components/parameters/RequestId" }, { "$ref": "#/components/parameters/Id" }],
         "requestBody": {
           "required": true,
@@ -403,14 +405,20 @@
         "operationId": "paySchedule",
         "tags": ["Schedules"],
         "summary": "Pay one instalment and create its expense atomically",
-        "description": "PATCH, not POST. Handler ignores request body. Global malformed/oversized JSON checks still apply. A valid missing/foreign schedule returns404; inactive schedule409. Immediate transaction writes one expense dated today with the schedule name/category/amount and advances paid_count; final loan payment sets inactive and finished=true. Subscription remaining_count isnull. No due-date check, no idempotency key support on this endpoint: an unkeyed repeat can pay another instalment if the schedule remains active; do not promise duplicate protection.",
-        "parameters": [{ "$ref": "#/components/parameters/RequestId" }, { "$ref": "#/components/parameters/Id" }],
+        "description": "PATCH, not POST. Unkeyed requests keep the legacy ignored-body, server-today and repeat-payment behavior. With Idempotency-Key, exactly six frozen fields are required: expected_paid_count, expected_amount_cents, expected_category_id, expected_name, expected_total_count and spent_on. The account-scoped key and domain-separated canonical schedule ID/field hash persist atomically with the linked expense and counter. Same key and payload replay the original200 result, even after final loan closure, with Idempotency-Replayed=true. Changed or cross-kind key returns409 IDEMPOTENCY_CONFLICT; deleted original returns409 IDEMPOTENCY_REPLAY_UNAVAILABLE. A new key against changed displayed preconditions or inactive schedule returns409 CONFLICT. Keyed new payment date is bounded by server tomorrow; replay does not recheck the mutable schedule/date. Foreign/missing schedule returns404 for a new key. Neither branch checks due date.",
+        "parameters": [{ "$ref": "#/components/parameters/RequestId" }, { "$ref": "#/components/parameters/Id" }, { "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": false,
+          "description": "Unkeyed body is ignored and can contain arbitrary JSON. Only when Idempotency-Key is present, the handler requires exactly the six fields of KeyedPayRequest; OpenAPI cannot apply that schema conditionally to the header.",
+          "x-keyed-request-schema": { "$ref": "#/components/schemas/KeyedPayRequest" },
+          "content": { "application/json": { "schema": {} } }
+        },
         "responses": {
           "200": { "$ref": "#/components/responses/PaymentAccepted" },
           "400": { "$ref": "#/components/responses/InvalidRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" },
-          "409": { "$ref": "#/components/responses/Conflict" },
+          "409": { "$ref": "#/components/responses/PayConflict" },
           "413": { "$ref": "#/components/responses/PayloadTooLarge" },
           "500": { "$ref": "#/components/responses/InternalError" }
         }
@@ -670,6 +678,10 @@
         "type": "object", "additionalProperties": false, "required": ["error"],
         "properties": { "error": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["IDEMPOTENCY_CONFLICT", "IDEMPOTENCY_REPLAY_UNAVAILABLE"] }, "message": { "$ref": "#/components/schemas/ErrorMessage" } } } }
       },
+      "PayError409": {
+        "type": "object", "additionalProperties": false, "required": ["error"],
+        "properties": { "error": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["CONFLICT", "IDEMPOTENCY_CONFLICT", "IDEMPOTENCY_REPLAY_UNAVAILABLE"] }, "message": { "$ref": "#/components/schemas/ErrorMessage" } } } }
+      },
       "Error413": {
         "type": "object", "additionalProperties": false, "required": ["error"],
         "properties": { "error": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["PAYLOAD_TOO_LARGE"] }, "message": { "$ref": "#/components/schemas/ErrorMessage" } } } }
@@ -728,8 +740,8 @@
           "day_of_month": { "$ref": "#/components/schemas/DayOfMonth" },
           "starts_on": { "$ref": "#/components/schemas/LocalDate" },
           "next_due": {
-            "type": "string", "pattern": "^\\d{4,}-\\d{2}-\\d{2}$",
-            "description": "Computed local calendar date, normally YYYY-MM-DD; day clamps in short months. The pure helper can extend the year when rolling past a four-digit starts_on year (for example10000), so this output is not falsely restricted to an RFC3339 date. Source-level edge noted, not a new HTTP observation."
+            "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "Computed YYYY-MM-DD local calendar date in years0000-9999; day clamps in short months. An unavailable successor after year9999 is refused with400 VALIDATION_FAILED rather than returned as a five-digit date."
           },
           "total_count": { "$ref": "#/components/schemas/TotalCount" },
           "paid_count": { "type": "integer", "minimum": 0 },
@@ -750,11 +762,24 @@
           "transaction_id": { "type": "integer", "minimum": 1 }
         }
       },
+      "KeyedPayRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["expected_paid_count", "expected_amount_cents", "expected_category_id", "expected_name", "expected_total_count", "spent_on"],
+        "properties": {
+          "expected_paid_count": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+          "expected_amount_cents": { "$ref": "#/components/schemas/AmountCents" },
+          "expected_category_id": { "type": "integer", "nullable": true, "minimum": 1, "maximum": 9007199254740991 },
+          "expected_name": { "type": "string", "minLength": 1, "maxLength": 60 },
+          "expected_total_count": { "type": "integer", "nullable": true, "minimum": 1, "maximum": 1200 },
+          "spent_on": { "$ref": "#/components/schemas/LocalDate" }
+        },
+        "description": "Conditional keyed-Pay body only. The handler also requires expected_name to be trimmed, validates a real date and bounds a new spent_on by server tomorrow; replay uses its stored result."
+      },
       "LocalDate": {
         "type": "string",
         "format": "date",
         "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-        "description": "Real local calendar date YYYY-MM-DD, no timezone conversion. Source validates month/day including leap years and imposes no additional year ceiling within four digits."
+        "description": "Real local calendar date YYYY-MM-DD in the inclusive proleptic Gregorian year range0000-9999, including leap-year0000. No timezone conversion. A date at the upper boundary is valid input; arithmetic that needs a successor after year9999 is refused."
       },
       "AmountCents": {
         "type": "integer",
@@ -764,12 +789,12 @@
       },
       "CategoryIdInput": {
         "oneOf": [
-          { "type": "integer", "nullable": true, "minimum": 1 },
+          { "type": "integer", "nullable": true, "minimum": 1, "maximum": 9007199254740991 },
           { "type": "string" },
           { "type": "boolean", "enum": [true] },
           { "type": "array", "items": {} }
         ],
-        "description": "Omitted/null/empty string -> no category. Otherwise Number(value) must become a positive integer owned categoryID: foreign/missing404, invalidconversion400. Numeric strings, true (1), and numeric arrays such as [1] or nested single-element arrays can coerce. Array/string alternatives are broad because plain schema cannot express JavaScript Number conversion; this prose rule still applies. Objects, false, zero and invalid numeric conversions are not valid owned IDs."
+        "description": "Omitted/null/empty string -> no category. Otherwise Number(value) must become a positive safe integer owned categoryID (1-9007199254740991): foreign/missing404, invalid or throwing conversion400. Numeric strings, true (1), and numeric arrays such as [1] or nested single-element arrays can coerce. Array/string alternatives are broad because plain schema cannot express JavaScript Number conversion; this prose rule still applies. Objects, false, zero and invalid numeric conversions are not valid owned IDs."
       },
       "Transaction": {
         "type": "object",
@@ -814,7 +839,7 @@
           "spent_on": { "$ref": "#/components/schemas/LocalDate" },
           "note": { "$ref": "#/components/schemas/StringifiedInput" }
         },
-        "description": "Strict editable fields only; omission preserves, explicit null date invalid. Note null clears; other non-null JSON uses String(value). Edited date cannot exceed tomorrow."
+        "description": "Strict editable fields only; omission preserves, explicit null date invalid. Note null clears; other non-null JSON uses String(value) when conversion succeeds, otherwise400. Edited date cannot exceed tomorrow."
       },
       "TransactionList": {
         "type": "object",
@@ -822,7 +847,17 @@
         "required": ["items", "total"],
         "properties": {
           "items": { "type": "array", "items": { "$ref": "#/components/schemas/Transaction" } },
-          "total": { "type": "integer", "minimum": 0, "description": "Matching row count before limit/offset, not this page's length." }
+          "total": { "type": "integer", "minimum": 0, "description": "Current matching row count before limit/offset, not this page's length." }
+        }
+      },
+      "TransactionCursorList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items", "total", "next_cursor"],
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Transaction" } },
+          "total": { "type": "integer", "minimum": 0, "description": "Current matching row count; this is not a snapshot total." },
+          "next_cursor": { "type": "string", "nullable": true, "maxLength": 512, "description": "Continuation token, or null for zero limit/end of current list." }
         }
       },
       "BudgetLimit": {
@@ -853,7 +888,7 @@
         "description": "Application trims this string and requires the result to have 1-60 JavaScript UTF-16 code units. Empty/all-whitespace refused. Surrounding whitespace does not count toward the bound, so no raw-input maxLength is imposed here. This post-trim rule requires executable boundary checks."
       },
       "StringifiedInput": {
-        "description": "For category icon or transaction note: omitted/null -> null on creation. Any non-null JSON value becomes String(value), including booleans, numbers, arrays and objects; no length ceiling is enforced. PATCH omission leaves the field unchanged; explicitnull clears. Schemas enumerate JSON types rather than inventing string-only input validation.",
+        "description": "For category icon or transaction note: omitted/null -> null on creation. Non-null JSON values use String(value), including booleans, numbers, arrays and ordinary objects, if conversion succeeds; a throwing conversion returns400 VALIDATION_FAILED. No length ceiling is enforced. PATCH omission leaves the field unchanged; explicitnull clears. Schemas enumerate supported JSON classes rather than inventing string-only input validation.",
         "oneOf": [
           { "type": "string", "nullable": true },
           { "type": "number" },
@@ -998,14 +1033,14 @@
         "in": "path",
         "required": true,
         "schema": { "type": "string" },
-        "description": "Application uses Number(raw) and requires a positive integer, not a digits-only string. Numeric representations such as 1e0 can coerce. Invalid conversion ->400; valid but missing/foreign owned category, transaction or schedule ID ->404."
+        "description": "Application uses Number(raw) and requires a positive safe integer through 9007199254740991, not a digits-only string. Numeric representations such as 1e0 can coerce. Invalid/throwing conversion or unsafe magnitude ->400; valid but missing/foreign owned category, transaction or schedule ID ->404."
       },
       "IdempotencyKey": {
         "name": "Idempotency-Key",
         "in": "header",
         "required": false,
         "schema": { "type": "string", "pattern": "^[A-Za-z0-9-]{8,64}$" },
-        "description": "Only expense POST supports it. Account-scoped lifetime operation key. Explicit non-null spent_on required. Same canonical payload replays201, changed payload409, deleted original409. No key means no deduplication guarantee."
+        "description": "Opt-in on expense POST and schedule Pay PATCH. Account-scoped lifetime operation key. Expense saves require explicit spent_on; keyed Pay requires frozen preconditions. Same canonical operation replays its original result; changed/cross-kind payload409, deleted original409. No key means no deduplication guarantee."
       },
       "RequestId": {
         "name": "X-Request-Id",
@@ -1017,7 +1052,7 @@
     },
     "headers": {
       "IdempotencyReplayed": {
-        "description": "Present with value true only on a successful keyed expense replay; absent on a new save. Conditional presence must be tested by the runner, not treated as globally required.",
+        "description": "Present with value true only on a successful keyed expense or Pay replay; absent on a new write. Conditional presence must be tested by the runner, not treated as globally required.",
         "schema": { "type": "string", "enum": ["true"] }
       },
       "RequestId": {
@@ -1091,13 +1126,16 @@
       },
       "PaymentAccepted": {
         "description": "One instalment paid atomically; generated expense ID and updated counters returned.",
-        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" }, "Idempotency-Replayed": { "$ref": "#/components/headers/IdempotencyReplayed" } },
         "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Payment" } } }
       },
       "TransactionList": {
-        "description": "Own filtered expense page and total matching count.",
+        "description": "Own filtered expense page. Legacy application/json has exactly two fields; opt-in cursor mode uses application/vnd.wallet.cursor+json with a strict three-field shape.",
         "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
-        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TransactionList" } } }
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/TransactionList" } },
+          "application/vnd.wallet.cursor+json": { "schema": { "$ref": "#/components/schemas/TransactionCursorList" } }
+        }
       },
       "TransactionAccepted": {
         "description": "Edited own expense with persisted fields.",
@@ -1108,6 +1146,11 @@
         "description": "IDEMPOTENCY_CONFLICT for changed canonical payload or IDEMPOTENCY_REPLAY_UNAVAILABLE when the original expense was deleted.",
         "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
         "content": { "application/json": { "schema": { "$ref": "#/components/schemas/KeyedError409" } } }
+      },
+      "PayConflict": {
+        "description": "CONFLICT for inactive or changed schedule; IDEMPOTENCY_CONFLICT for changed/cross-kind key reuse; IDEMPOTENCY_REPLAY_UNAVAILABLE for a deleted original linked expense.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PayError409" } } }
       },
       "CategoryCreated": {
         "description": "Own category created, monthly_limit_cents is null; no posted budget was applied.",

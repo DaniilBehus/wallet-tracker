@@ -1,5 +1,14 @@
 # Defect register
 
+<!-- F20-F21 current-status notice begin -->
+> **Current-state pointer (2026-10-13):** this register preserves original
+> findings, Fix-cell wording and dated run evidence. Read the
+> [current QA status](../docs/qa-status.md) before treating an old
+> "uncommitted" note as today's Git status or an OPEN bug as a release waiver.
+> The additive [correction below](#f20f21-status-correction--2026-10-13)
+> names the specific later source commits and residual BUG-022 work.
+<!-- F20-F21 current-status notice end -->
+
 Written as real defect reports, not as notes. Reproduction steps, expected vs
 actual, root cause, fix, regression check — the same discipline as a tracker
 ticket, because a defect described as "date thing was broken, fixed it" is
@@ -38,9 +47,19 @@ State: `OPEN` · `IN PROGRESS` · `CLOSED` · `WONTFIX` (needs a reason).
 | BUG-017 | Password suffixes after 72 bytes are silently ignored | High | CLOSED | S21 | 53b310b | R14 |
 | BUG-018 | A large loan loses an integer cent in remaining money | Critical | CLOSED | S21 | bd516ac | R14 |
 | BUG-019 | Oversized JSON is reported as an internal server failure | Medium | CLOSED | S21 | S23 · uncommitted | R14 |
-| BUG-020 | Valid early-year dates produce malformed next dates | Medium | OPEN | S21 | — | R14 |
-| BUG-021 | Schedules cannot be edited through the interface | High | OPEN | S21 | — | R14 |
-| BUG-022 | Expense overlay does not contain keyboard focus | Medium | OPEN | S21 | — | R14 |
+| BUG-020 | Valid early-year dates produce malformed next dates | Medium | IN PROGRESS | S21 + 2026-10-10 controls | local, uncommitted | R14 |
+| BUG-021 | Schedules cannot be edited through the interface | High | IN PROGRESS | S21 | local repair, uncommitted | R14 |
+| BUG-022 | Expense overlay does not contain keyboard focus | Medium | IN PROGRESS | S21 | local repair, uncommitted | R14 |
+| BUG-023 | Registration-race violation was ignored by final verdict | High | IN PROGRESS | 2026-10-09 control | local, uncommitted | — |
+| BUG-024 | Required validator inputs could disappear with a green result | High | IN PROGRESS | 2026-10-09 control | local, uncommitted | — |
+| BUG-025 | Race cleanup could remove another run's database | Medium | IN PROGRESS | 2026-10-09 control | local, uncommitted | — |
+| BUG-026 | Unsafe pagination and IDs bypassed validation | High | IN PROGRESS | 2026-10-09 HTTP control | local, uncommitted | — |
+| BUG-027 | Non-convertible note/icon JSON returned internal errors | High | IN PROGRESS | 2026-10-09 HTTP control | local, uncommitted | — |
+| BUG-028 | Concurrent evaluator setup can abort before quota exercise | High | IN PROGRESS | 2026-10-10 controlled setup race | local, uncommitted | — |
+| BUG-029 | Concurrent evaluator reports can overwrite each other | High | IN PROGRESS | 2026-10-10 fixed-clock control | local, uncommitted | — |
+| BUG-033 | Main E2E reused one database between runs and ignored DB_PATH | Medium | IN PROGRESS | 2026-10-11 config/control audit | local, uncommitted | — |
+| BUG-034 | Declared Node 22 floor could load a SQLite binding requiring Node-API 10 | High | IN PROGRESS | 2026-10-11 runtime controls | local, uncommitted | — |
+| BUG-035 | Offset paging can duplicate or skip expenses after another client's write | Medium | IN PROGRESS | 2026-10-16 HTTP/browser controls | local, uncommitted | — |
 | LIMIT-001 | Every request queues behind database work — 23× slower under write load | — | ACCEPTED | S07 | — | R6 |
 | LIMIT-002 | The same POST twice creates two expenses (unkeyed requests; keyed saves replay — D-035) | — | ACCEPTED | S16 | — | — |
 
@@ -1355,7 +1374,7 @@ bodies over 8 KiB itself (400).
 Both assert status and code; the Newman helper also asserts "never a 500".
 **→ Rule R14.**
 
-### BUG-020 · Valid early-year dates produce malformed next dates · Medium · OPEN
+### BUG-020 · Valid early-year dates produce malformed next dates · Medium · IN PROGRESS
 
 | | |
 |---|---|
@@ -1365,21 +1384,33 @@ Both assert status and code; the Newman helper also asserts "never a 500".
 **Steps to reproduce:** call isValidDate('0001-01-31'), dayAfter for that date
 and nextDue(15, '0001-01-31').
 **Expected:** accepted dates retain YYYY-MM-DD; next due is not before input.
-**Actual:** true, '1-02-01', '1-01-15' respectively. The latter is also earlier.
-**Root cause:** a parsed numeric year is interpolated without four-digit padding;
-lexicographic comparisons then lose their fixed-width-date guarantee.
-**Fix:** not applied. Pad years or explicitly constrain the supported calendar
-range with an approved contract; include the upper-year boundary.
-**Regression:** issue reproduced; separate 2020–2032 matrix: 147219 checks,
+**Actual before repair:** true, '1-02-01', '1-01-15' respectively. The latter
+is earlier. At the opposite edge `9999-12-31` could become `10000-01-01`.
+The same defect let schedule POST/PATCH return success and persist a row whose
+computed next due was outside the declared four-digit domain.
+**Root cause:** a parsed numeric year was interpolated without four-digit padding;
+lexicographic comparisons then lost their fixed-width-date guarantee. The
+arithmetic also had no upper-domain refusal before schedule writes.
+**Fix:** local and uncommitted. Pure helpers preserve four-digit years0000–9999
+and throw a coded range error for an unavailable successor. Schedule create/edit
+validate computed next due before writing; a legacy edge row produces a
+controlled 400 on list. No stored row is migrated or deleted.
+**Regression:** initial pure controls 1/3, final 4/4; real disposable HTTP
+control failed before on POST/PATCH/GET and passed after. Full contract 15/15,
+340 validated responses. [Details](../qa/docs/test-report-date-boundaries.md).
+Separate historical 2020–2032 matrix: 147219 checks,
 0 mismatches. That matrix cannot certify years outside its range.
 **→ Rule R14.**
 
-### BUG-021 · Schedules cannot be edited through the interface · High · OPEN
+### BUG-021 · Schedules cannot be edited through the interface · High · IN PROGRESS
 
 | | |
 |---|---|
 | Found in | S21, spec-to-UI review and live Schedules inspection |
 | Component | `public/app.js` loadSchedules / submitSchedule; `public/index.html` |
+
+The steps, expected/actual result and "Fix: not applied" below preserve the
+original S21 pre-repair observation; the dated update follows.
 
 **Steps to reproduce:** create a schedule, open Schedules, try to change its
 name, amount or due day using the UI.
@@ -1393,7 +1424,19 @@ decision; do not rewrite the spec just to make the current code appear complete.
 **Regression:** source and browser confirmed; add an actual schedule-edit UI test.
 **→ Rule R14.**
 
-### BUG-022 · Expense overlay does not contain keyboard focus · Medium · OPEN
+**Local addendum, 2026-10-17:** the original observation and older §6.4
+reference above remain historical. A controlled browser check first failed on
+the missing Edit action. A local UI repair now provides an owned-row native
+modal and uses the existing PATCH endpoint. Its first broader run exposed a
+new missing-HTML-`id` implementation error; this was diagnosed from the
+retained page-error trace and corrected. The final [local F09 report](../qa/docs/test-report-schedule-editing.md)
+records persisted-field/lifecycle and keyboard controls plus a full managed
+browser run. Scoped independent agent review accepted F09 locally on
+2026-10-17. Status is **IN PROGRESS**, not CLOSED: combined-tree verification,
+exact-SHA remote CI, publication and owner UAT remain. No further known
+schedule-edit defect was established by that review.
+
+### BUG-022 · Expense overlay does not contain keyboard focus · Medium · IN PROGRESS
 
 | | |
 |---|---|
@@ -1411,3 +1454,353 @@ keyboard containment or an Escape handler.
 **Fix:** not applied. Add the appropriate dialog pattern and keyboard behaviour.
 **Regression:** reproduced in browser; add semantic and keyboard regressions.
 **→ Rule R14.**
+
+**2026-10-16 local update (original observation retained):** the editor is now a
+named native modal with an explicit first/last Tab wrap, in-dialog error alert,
+and checked Escape/Cancel/backdrop restoration. The focused local browser and
+axe evidence is in [the modal/bind report](../qa/docs/test-report-modal-bind.md).
+Independent local agent code/evidence review accepted the modal repair on
+2026-10-16. BUG-022 is **IN PROGRESS** pending publication and combined-tree
+verification, not because another focus failure is known. This dated update
+supersedes the 2026-10-13 OPEN status pointer below; the earlier “Fix: not
+applied” line records its original observation, not the current source state.
+No human accessibility audit, owner UAT, remote CI or release is inferred.
+
+### BUG-023 · Registration-race violation was ignored by final verdict · High · IN PROGRESS
+
+| Found in | 2026-10-09, in-memory race-runner negative control |
+| Component | `qa/race/run.js` |
+
+**Steps to reproduce:** make only scenario E receive 201 and 500; run the real
+runner orchestration with synthetic in-memory clients.
+**Expected:** E's recorded violation makes the command exit nonzero.
+**Actual before repair:** E recorded one violation, but the final sum omitted E,
+printed success and exited 0.
+**Root cause:** a second handwritten sum did not match the scenario report.
+**Fix:** local and uncommitted; one registry now drives report and enforcing
+verdict, validates pair evidence, and explicitly marks D measurement-only.
+**Regression:** E-only failure exits 1; each other enforcing failure exits 1;
+all-good enforcing cases with D duplicates exit 0; 23/23 validator controls pass.
+**→ No rule — one-off.**
+
+### BUG-024 · Required validator inputs could disappear with a green result · High · IN PROGRESS
+
+| Found in | 2026-10-09, in-memory filesystem negative control |
+| Component | `scripts/check.js`, `scripts/coverage-gates.js` |
+
+**Steps to reproduce:** make only `spec/architecture.md` unavailable to the
+actual check functions without touching the real file.
+**Expected:** missing required architecture/hash/source/UI/E2E/collection/page
+object inputs make the self-check fail.
+**Actual before repair:** C1 SKIP, then `OK — 7 pass, 1 skip, 0 fail`, exit 0.
+Empty source/UI inventories also passed by zero iteration.
+**Root cause:** scaffolding-era SKIP branches and vacuous collection loops.
+**Fix:** local and uncommitted; all established required inputs and nonempty
+inventories fail when absent. No production file was removed for the probes.
+**Regression:** focused missing/empty controls pass; normal check is 8 pass,
+0 skip, 0 fail; OpenAPI source inventory is 21/21.
+**→ No rule — one-off.**
+
+### BUG-025 · Race cleanup could remove another run's database · Medium · IN PROGRESS
+
+| Found in | 2026-10-09, in-memory other-run sentinel control |
+| Component | `qa/race/run.js` |
+
+**Steps to reproduce:** expose another run's `race-*` file to the runner's old
+cleanup seam. Do not use a real user or application database for this probe.
+**Expected:** only the current run's owned temporary directory may be removed.
+**Actual before repair:** the prefix sweep attempted to remove the sentinel.
+**Root cause:** cleanup selected every matching name under `data/`, not an owned path.
+**Fix:** local and uncommitted; allocate a unique canonical directory, validate
+its parent and name, and remove only it after both children stop. If shutdown or
+cleanup fails, retain the directory and return failure.
+**Regression:** in-memory sentinel untouched; real disposable fixture sentinel
+untouched; one real 120-pair-per-scenario run passed and removed its own directory.
+**→ No rule — one-off.**
+
+### BUG-026 · Unsafe pagination and IDs bypassed validation · High · IN PROGRESS
+
+| Found in | 2026-10-09, real disposable HTTP contract control |
+| Component | `src/validate.js`; transaction/category routes |
+
+**Steps to reproduce:** authenticated GET `/api/transactions?offset=1e30`,
+then try offset and owned IDs above `Number.MAX_SAFE_INTEGER`.
+**Expected:** unsafe integers and conversion failures return 400
+`VALIDATION_FAILED`; safe but absent owned IDs remain 404.
+**Actual before repair:** `offset=1e30` returned 500; `9007199254740992`
+returned 200 as offset and 404 as owned ID. A category object with a non-callable
+`toString` returned 500. No invalid write changed the ledger.
+**Root cause:** `Number.isInteger` accepts unsafe magnitudes, and `Number(raw)`
+can throw on user-controlled JSON objects.
+**Fix:** local and uncommitted; shared parsers require safe integers and map a
+throwing conversion to a field-specific 400, retaining the limit ceiling.
+**Regression:** focused before 0/2, after 2/2; full contract 14/14 and 335
+validated responses; safe offset maximum and compatible keyed category casts
+still pass. [Details](../qa/docs/test-report-api-validation.md).
+**→ No rule — one-off.**
+
+### BUG-027 · Non-convertible note/icon JSON returned internal errors · High · IN PROGRESS
+
+| Found in | 2026-10-09, real disposable HTTP contract control |
+| Component | `src/validate.js`; transaction/category routes |
+
+**Steps to reproduce:** send `{ "toString": null }` or an array containing it
+as expense note (unkeyed POST, keyed POST, PATCH) or category icon.
+**Expected:** 400 `VALIDATION_FAILED`, no write or key reservation.
+**Actual before repair:** all eight tested requests returned 500. Numeric,
+boolean, ordinary object/array, null and string values still converted normally.
+**Root cause:** direct `String(value)` could throw for a JSON value whose
+conversion method was shadowed by client input.
+**Fix:** local and uncommitted; one nullable text validator catches only failed
+conversion, used in both keyed canonicalization and save without changing the
+accepted payload/hash shape.
+**Regression:** eight invalid responses are now 400; accepted type partitions,
+keyed replay and null/omitted canonical equivalence pass. Full contract 14/14,
+335 validated responses. [Details](../qa/docs/test-report-api-validation.md).
+**→ No rule — one-off.**
+
+### BUG-028 · Concurrent evaluator setup can abort before quota exercise · High · IN PROGRESS
+
+| Found in | 2026-10-10, synchronized copied-evaluator control |
+| Component | `qa/ai/evaluate.js` synthetic-user factory |
+
+**Steps to reproduce:** start three guarded evaluator children on one disposable database, synchronized before their first get-or-create for the same synthetic email.
+**Expected:** one fully initialized user and category set; all children reach provider/quota work without setup errors.
+**Actual before repair:** two children reported `UNIQUE constraint failed: users.email` before provider dispatch. An injected post-seed failure separately left one user and ten categories.
+**Root cause:** lookup, insert and category initialization were not enclosed in one cross-process transaction.
+**Fix:** local and uncommitted; synchronous immediate transaction covers lookup through category read, and the cache receives only committed identity. Provider work remains outside it.
+**Regression:** four new concurrency/report controls passed; affected tests 25/25 and full offline AI 240 passed, one Windows privilege skip. W9's rolling quota assertions are unchanged and an aborted child now has a separate diagnostic. This proves the race mechanism, not the cause of the earlier full-suite W9 failure.
+**→ No rule — one-off.** [Details](../qa/docs/test-report-evaluator-concurrency.md).
+
+### BUG-029 · Concurrent evaluator reports can overwrite each other · High · IN PROGRESS
+
+| Found in | 2026-10-10, fixed-clock copied-evaluator control |
+| Component | `qa/ai/evaluate.js` report writer |
+
+**Steps to reproduce:** run two evaluators concurrently with the same start timestamp and inspect each printed JSON/Markdown report path.
+**Expected:** each run retains its own complete report pair; a convenience latest view identifies one completed report.
+**Actual before repair:** both runs printed the same path, allowing the later write to replace the earlier evidence.
+**Root cause:** the basename contained only mode and millisecond start time, and writes replaced existing files.
+**Fix:** local and uncommitted; add a random run identity, publish completed temporary files to exclusive final names, and make the latest view name the completed report it displays. A failed pair write cleans only its own files and does not announce success.
+**Regression:** fixed-clock runs retained distinct JSON/Markdown pairs; injected second-file failure left no partial pair or success line. Two-file publication is not an atomic transaction, and latest means last completed writer, not latest start.
+**→ No rule — one-off.** [Details](../qa/docs/test-report-evaluator-concurrency.md).
+
+### BUG-030 · Stale or redundant static-gate exceptions passed C9 · Medium · IN PROGRESS
+
+| Found in | 2026-10-10, in-memory exception negative controls |
+| Component | `scripts/coverage-gates.js`, `scripts/check-exceptions.json` |
+
+**Steps to reproduce:** add a valid-looking C6 route, C7 testid or C8 status exception that is absent from the current inventory; add an already-addressed or duplicate entry; try an invalid entry shape.
+**Expected:** C9 fails with a specific stale, redundant, duplicate or invalid-entry diagnostic; unavailable required inventories fail without false stale claims.
+**Actual before repair:** C9 checked reason length only. The initial control run had 23 passed and 6 failed; malformed data could throw outside the intended gate verdict.
+**Fix:** local and uncommitted; C9 uses the same current inventories as C6–C8, validates shape/reason/identity, and keeps malformed entries from crashing the other gates.
+**Regression:** final independent local `test:gates` 31/31 and `check` 8/8; original input hashes were unchanged by in-memory controls. The one current `500` exception remains an explicit unexercised static gap, not a runtime waiver.
+**→ No rule — one-off.** [Details](../qa/docs/test-report-static-gates.md).
+
+### BUG-031 · Static inventory gate wording overstated runtime coverage · Medium · IN PROGRESS
+
+| Found in | 2026-10-10, comparison of gate wording with real-response matrix |
+| Component | `scripts/check.js`, `scripts/coverage-gates.js`, QA documentation |
+
+**Problem:** C6–C8 scan source and test text. Their former names and messages could be read as proof that a request executed, a selector worked on a rendered page, or each operation/status branch was provoked. C8 in particular matches status assertions globally.
+**Expected:** static declaration checks and real execution evidence are named separately.
+**Fix:** local and uncommitted; gate names, diagnostics and current documentation now say STATIC. The observed contract operation/status matrix retains its NOT EXERCISED cells; no behavioral coverage is inferred from these gates.
+**Verification:** independent local `check` 8/8, plus contract tests 15/15 with 340 validated real HTTP responses. This does not turn all matrix cells into exercised cases.
+**→ No rule — one-off.** [Details](../qa/docs/test-report-static-gates.md).
+
+### BUG-032 · CI and local verification diverged; API/Python reports were not retained · Medium · IN PROGRESS
+
+| Found in | 2026-10-10, source comparison of workflow, package scripts and report producers |
+| Component | CI workflow, verification commands and QA evidence retention |
+
+**Problem:** the published baseline CI omitted the race layer, while `npm test` excluded several CI suites. An earlier local edit added race, but no shared plan kept local and CI groups aligned. Newman HTML/JUnit and Python JUnit were generated without CI upload steps.
+**Expected:** an explicit CI-equivalent plan with fail-closed prerequisites and retained allowlisted reports on success or failure.
+**Fix:** local and uncommitted; shared six-group/18-task inventory, fail-fast runner with `NOT_RUN` statuses and ignored compact identity summary, plus v4 upload steps for staged API/Python/race evidence. Existing browser failure traces and seven-day retention remain.
+**Verification:** nine focused controls pass. The isolated API group passed 10/10 tasks; Python passed 27/27 items. The default local plan failed at missing `gitleaks` and correctly left 17 tasks `NOT_RUN`. Full local/remote CI and actual upload behavior are **not verified**.
+**Review addendum:** the earlier nine-control suite could falsely accept E2E's wrong dependency by matching the next job and falsely reject an equivalent CRLF workflow. The first same-helper regressions observed 9 pass / 2 fail; the bounded job check now passes 12/12, including wrong-edge, CRLF and unsupported-form cases. The actual workflow was already correct; real groups were not rerun. Tracked deletions can fail identity before a summary, children have no wrapper timeout, provenance is invocation-only, local CI flags can differ, and privacy screening remains heuristic. This local repair does not establish remote artifact uploads or close this IN PROGRESS finding.
+**Line-ending fixture follow-up:** a full read-only virtual CRLF view exposed two LF-only mutation fixtures before helper invocation (10 pass / 2 fail). They now normalize before mutation and exercise both LF and CRLF forms without changing the workflow. Final selected controls pass 12/12 on actual LF and 12/12 on virtual CRLF; wrong-dependency and ambiguous-form negatives remain enforced. No real group or remote CI was rerun, so this finding stays IN PROGRESS.
+**→ No rule — one-off.** [Details](../qa/docs/test-report-ci-verification.md).
+
+### BUG-033 · Main E2E reused one database between runs and ignored DB_PATH · Medium · IN PROGRESS
+
+| Found in | 2026-10-11, main Playwright configuration and focused negative control |
+| Component | `playwright.config.js`, managed main E2E runner |
+
+**Problem:** the prior config always selected `data/e2e.db`, regardless of a
+caller-provided `DB_PATH`, so repeated suite invocations used a persistent
+database. No observed 429, measured growth or data loss is asserted here.
+**Expected:** a fresh default database for every main E2E invocation and a
+safe explicit override; cleanup only after the owned server stops.
+**Fix:** local and uncommitted. A parent runner outside browser specs owns both
+children and a unique temporary directory, refuses existing/protected override
+paths and external targets, and removes only its owned default after confirmed
+child closure. Explicit new files remain with the caller. No application or
+browser-spec assertions changed.
+**Regression:** initial 0/5 included one real fixed-path failure and four
+missing-runner harness failures; after the first implementation 4/5, with old
+wiring remaining. Final focused Node controls 24/24 and static check 8/8 after
+structural relocation and an actual retained-override control. One full local
+main E2E run passed 192/192 across
+phone and desktop, with confirmed server closure and owned-default cleanup;
+old DB length/mtime stayed the same and the app DB remained absent. Remote CI
+is not yet claimed. Forced parent termination may leave temporary data;
+fixed-port parallel commands remain unsupported by default.
+[Details](../qa/docs/test-report-e2e-isolation.md).
+**→ No rule — one-off.**
+
+**BUG-033 sidecar addendum, 2026-10-11:** the first explicit-path guard refused
+sidecar *names* as `DB_PATH` but accepted a new base next to an existing
+`-wal`, `-shm` or `-journal`. Disposable probes reproduced all three without
+opening SQLite. A failing-before control exposed `-wal`; the local correction
+now refuses all three via `lstat` before `wx`, with no base or child start and
+unchanged sidecar sentinel bytes/identity. Affected controls: 26 pass, 1
+optional dangling-symlink fixture skipped for Windows privilege, 0 fail;
+static check 8/8. The earlier full 192/192 browser result was **before** this
+guard, not a run of the newest tree. Concurrent sidecar creation after preflight
+remains a TOCTOU limit; remote CI is still unverified.
+
+### BUG-034 · Declared Node floor could load an incompatible native binding · High · IN PROGRESS
+
+| Found in | 2026-10-11 runtime compatibility controls |
+| Component | package engine, CI Node baseline, database bootstrap |
+
+**Problem:** `>=22` accepted Node 22.9 while the installed SQLite binding
+requires Node-API 10, first available in the 22 line at 22.14. The observed
+native crash is consistent with this mismatch; the exact native failure cause
+was not isolated.
+**Expected:** truthful metadata and CI floor, plus a clear error before loading
+the native binding or creating a data directory on an unsupported runtime.
+**Fix:** local and uncommitted; the package and lock root use
+`^22.14.0 || >=23.6.0`, CI pins 22.14.0, and the database bootstrap calls a
+built-in-only stable-version/Node-API guard first.
+**Regression:** focused [runtime controls](../qa/docs/test-report-runtime.md)
+failed before the fix and cover the version/API boundaries, workflow wiring
+and child-process import order. The exact final local results are in that
+report. Full remote CI and future-version compatibility remain unverified.
+**→ No rule — one-off.**
+
+### TRACE-AUDIT-001 · Public semantic traceability drift · IN PROGRESS
+
+| Found in | 2026-10-12, F13 read-only inventory and bounded local repair |
+| Component | Public architecture references, case catalogue, feature-rule anchors and AI risk table |
+
+**Observation:** the 280-row catalogue used retired architecture clause
+numbers, and some AI risk links pointed at real IDs with different meanings.
+Existence of an ID alone did not prove semantic traceability. The synthetic
+import analysis is still explicitly provisional.
+
+**Local repair:** a public core-rule migration index, stable anchors on
+existing feature-rule sources, corrected catalogue and AI-plan links, plus a
+standalone built-in-only static identity/link checker with negative controls.
+The two authorized architecture edits and paired SHA are reviewed in the
+[F13 report](../qa/docs/test-report-traceability.md). No historic case
+result was rerun or changed.
+
+**Verification:** local Node 22.14.0: 17/17 new static controls, 280 case
+IDs / 78 rule definitions in the standalone checker, and existing
+`scripts/check.js` 8/8. Static identity cannot establish case meaning,
+executed coverage, owner acceptance or a new CI result. Independent main/
+Critic review and publication remain pending. **Do not mark FIXED** from this
+local result.
+
+**ORD-087 independent-review addendum, 2026-10-12 — IN PROGRESS:** the
+ORD-086 review withheld local F13 acceptance for four semantically wrong
+monthly-limit links (TC-API-096–099) and a source-definition parser that
+accepted an extra anchored CORE-999. The four links now target REQ-ML-05.
+An in-memory CORE-999 control failed before the parser repair (17 pass /
+1 fail); bounded source-family, LF/CRLF and wrong-family controls were added
+without promoting repeated references to definitions. Latest focused
+results and artifact hashes are in the
+[F13 report](../qa/docs/test-report-traceability.md). This addendum does
+not change historical statuses, establish runtime behavior or close the
+audit; independent follow-up and publication remain pending.
+
+<!-- F20-F21 status addendum begin -->
+### F20/F21 status correction — 2026-10-13
+
+This is an additive current-state note, **not** a rewrite of the original
+observations or recorded outcomes above. The `S23 · uncommitted` Fix cells and
+paragraphs for BUG-014/019 describe their recording time. Local Git history
+places both fixes in the public-ready root `2face59`: the short-phone CSS is
+present in `public/style.css`, and `src/server.js` maps `entity.too.large` to
+413. The accessibility/Escape/focus-restoration source and CI workflow wiring
+are in later local committed HEAD `b270355`; no new full remote CI result for
+the **currently uncommitted combined tree** follows from either commit.
+
+BUG-022 stays **OPEN**: Escape dismissal and focus restoration now have bounded
+local browser checks in the [dated accessibility baseline](../qa/docs/accessibility-baseline.md),
+but a full modal focus-containment/semantics regression and owner review are
+not established. BUG-021 stays **High/OPEN** and blocks release without a
+recorded owner exception; other High findings marked IN PROGRESS are not
+automatically cleared by local repairs. BUG-005 stays Low/OPEN with unknown
+cause. A focused
+readiness retry did not establish the cause of the earlier failed check; see
+the [runtime report](../qa/docs/test-report-runtime.md). Developer regression,
+release and UAT gates are separate in the [test plan](../qa/docs/test-plan.md).
+The [current-state index](../docs/qa-status.md) distinguishes local proof,
+historical publication and pending acceptance. No statuses in the original
+register are changed by this note.
+<!-- F20-F21 status addendum end -->
+
+### F22 retry/busy assurance addendum — 2026-10-13
+
+The [focused local report](../qa/docs/test-report-retry-busy.md) records an
+uncommitted TC-E2E-045 test that holds the response to a real persisted POST,
+attempts a native second click while Save is busy, and verifies one request,
+one persisted expense and one Month row. A bounded browser-response mutation
+of both busy protections makes that assertion fail; the product file was not
+edited. TC-E2E-047 still verifies that a deliberate second Save creates a
+second row. CI's one retry is diagnostic only: a retry-only pass is flaky and
+nonzero, with a first-failure trace and a fresh JSON evidence identity. This
+does not prove BUG-005's cause, every possible concurrency failure, a new
+remote CI result, release acceptance or owner UAT. Historical observations
+and statuses above remain unchanged.
+
+### BUG-035 · Offset paging can duplicate or skip expenses after another client's write · Medium · IN PROGRESS
+
+**Found in:** 2026-10-16 disposable HTTP and two-viewport browser controls.
+**Steps:** read the first expense page; insert a newer row from a second client,
+then use `offset=2` for the next page. In a separate run, delete a seen row
+before continuing with the old offset.
+**Expected:** every surviving unseen expense appears once; a changed live total
+does not produce an impossible Month counter.
+**Actual before repair:** HTTP insertion repeated the already seen boundary ID;
+HTTP deletion skipped an unseen surviving ID. In the browser, insertion
+rendered 52 of 52 instead of restarting, while deletion showed a deleted row
+instead of the remaining unseen one. Both phone and desktop witnesses failed
+as expected.
+**Cause:** a numeric offset follows the shifted current list, not the last
+seen `(spent_on, id)` position.
+**Local repair:** optional cursor mode applies a parameterized keyset predicate
+with account/filter-bound, strictly checked tokens. Legacy offset callers keep
+their accepted response and behavior. Month uses cursor continuation and makes
+one first-page restart when the live total changes; it does not poll.
+**Regression:** focused synthetic HTTP controls 2/2, full local contract
+17/17, managed pagination browser 8/8, editing 18/18 and focused editor/a11y
+4/4 after a separate port-collision harness retry. This is not an immutable
+snapshot: edits moving sort position, same-total external mutations and cached
+rows remain limits. Independent agent code/evidence review accepted this
+bounded local repair on 2026-10-16; BUG-035 remains **IN PROGRESS** for
+combined-tree verification and publication, not because another known
+insertion/deletion failure remains. No human audit, owner UAT, remote CI or
+release is inferred. [Analysis](../qa/docs/analysis-pagination-consistency.md) ·
+[run report](../qa/docs/test-report-pagination-consistency.md).
+
+## F06/F10 local recovery and request-lifecycle addendum — 2026-10-17
+
+The bounded local batch reproduced three pre-repair browser failures: a real
+committed Save and Pay each lost its browser reply without same-key recovery,
+and an older Month response replaced a newer total. The opted-in keyed Pay
+server branch, ordinary Save recovery records, session/screen ownership and
+finite response-body deadline now have focused local controls. A separate
+auth-to-app busy-ownership regression found during the batch was repaired and
+tested. [Contract and exact results](../qa/docs/test-report-write-lifecycle.md).
+An earlier 210-test managed core run passed 204/210; Pay-refusal and app-start
+navigation regressions were repaired in focused checks, while one short-toast
+failure had no established cause. A later 218-test run passed 217/218 because
+one desktop fixture navigation aborted before its scenario; that scenario
+passed 2/2 separately. A final, separate full run passed 218/218 with four
+workers. Scoped independent agent review accepted F06 and F10 locally on
+2026-10-17: **23/25 (92% by finding count)**. This does not alter historical
+BUG states or prove the earlier failures flaky. Combined-tree verification,
+exact-SHA remote CI, publication and owner UAT remain open.

@@ -19,7 +19,7 @@ contract is in [`ai-expense-entry.md`](ai-expense-entry.md).
 
 | Area | Choice | Rationale |
 |---|---|---|
-| Runtime | Node.js 22+ with Express | Matches the existing package.json engine floor and SQLite dependency; no runtime upgrade introduced by the contract checks |
+| Runtime | Node.js with Express | The supported version/Node-API floor is maintained in [test setup](../docs/testing.md) and [package metadata](../package.json) |
 | Storage | SQLite through `better-sqlite3` | A single local database file suits a single-user app |
 | Authentication | JWT with HS256 | Stateless bearer authentication; the signing secret is configured outside Git |
 | Password storage | bcrypt | Passwords are never stored as plain text |
@@ -136,6 +136,9 @@ The repository treats testing as part of the product:
 The checksum gate records this architecture document deliberately. It protects
 important product assumptions from unnoticed changes; an intentional edit must
 update the recorded SHA-256 value in the same review.
+
+The [public core-rule index](core-requirements.md) gives stable semantic IDs for
+the existing architecture and points to the separate feature-rule sources.
 
 ## 7. Deliberate limits
 

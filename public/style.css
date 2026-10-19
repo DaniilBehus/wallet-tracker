@@ -160,6 +160,24 @@ button:focus-visible {
   margin: 0 auto;
 }
 
+.write-recovery {
+  flex: none;
+  width: min(100%, 660px);
+  max-height: 32vh;
+  overflow-y: auto;
+  margin: 8px auto 0;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+}
+.write-recovery__title { margin: 0 0 6px; font-weight: 700; }
+.write-recovery__item { border-top: 1px solid var(--line); padding: 8px 0; }
+.write-recovery__item p { margin: 0 0 8px; color: var(--muted); }
+.write-recovery__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.write-recovery__actions .btn { min-height: var(--tap); }
+
 .screen__head {
   padding: 16px 16px 10px;
   flex: none;
@@ -596,8 +614,19 @@ button:focus-visible {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgba(17, 20, 24, 0.45);
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  box-sizing: border-box;
+  color: var(--text);
+  background: transparent;
 }
+.sheet:not([open]) { display: none; }
+.sheet::backdrop { background: rgba(17, 20, 24, 0.45); }
 
 .sheet__panel {
   width: 100%;
@@ -608,6 +637,8 @@ button:focus-visible {
   box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.18);
   display: grid;
   gap: 14px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .sheet__title {
@@ -622,6 +653,23 @@ button:focus-visible {
 }
 
 .sheet__actions .btn { flex: 1; }
+
+/* Six editable schedule fields must remain reachable above the phone keyboard
+   and inside the viewport; the backdrop stays outside the scroll container. */
+.schedule-edit-sheet .sheet__panel {
+  max-height: calc(100dvh - 12px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.tx-edit-error {
+  padding: 12px;
+  border: 1px solid var(--danger);
+  border-radius: 10px;
+  background: var(--danger-bg);
+  color: var(--danger);
+  overflow-wrap: anywhere;
+}
 
 .sheet select,
 .sheet input[type="date"] {

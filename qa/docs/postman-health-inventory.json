@@ -1,0 +1,362 @@
+{
+  "schemaVersion": 1,
+  "status": "PARTIAL_STATIC_SOURCE_INVENTORY",
+  "execution": "NOT_RUN",
+  "otherLayers": "NOT_CHECKED",
+  "scope": {
+    "folder": "01 · Health and registration",
+    "catalogueSection": "## API · Health and registration · `qa/api/wallet.postman_collection.json`",
+    "note": "Only this reviewed Postman folder and matching catalogue section"
+  },
+  "counts": {
+    "requests": 12,
+    "cases": 12,
+    "edges": 12
+  },
+  "gaps": {
+    "declaredOnly": [],
+    "sourceOnly": []
+  },
+  "requests": [
+    {
+      "selector": {
+        "folder": "01 · Health and registration",
+        "name": "GET /health → 200",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/health"
+      },
+      "requestEventSha256": "30624c09e1d10914eb20f153d5db757eadfe84bf7b46a8ea32ff82cad23e2480",
+      "caseIds": [
+        "TC-API-001"
+      ],
+      "oracleReason": "Health asserts 200 and db ok without a user token.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "01 · Health and registration",
+        "name": "POST /auth/login correct → 200",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/login"
+      },
+      "requestEventSha256": "abf3b180ac334d93e811968eb984613cb123af67808d8c7d6e877895ae1ce34f",
+      "caseIds": [
+        "TC-API-007"
+      ],
+      "oracleReason": "Correct user A credentials assert 200 and token.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "01 · Health and registration",
+        "name": "POST /auth/login unknown e-mail → 401, same message",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/login"
+      },
+      "requestEventSha256": "8a1ed167d62f403641ba9b9cde7038e94d0f8bf513036561b9ee870709108941",
+      "caseIds": [
+        "TC-API-009"
+      ],
+      "oracleReason": "Unknown email asserts 401 and same error message as wrong password.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "01 · Health and registration",
+        "name": "POST /auth/login wrong password → 401",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/login"
+      },
+      "requestEventSha256": "68c7a35b1358d392bd45129393cede55c3bb0ef41707f13bc44b5b632af69a96",
+      "caseIds": [
+        "TC-API-008"
+      ],
+      "oracleReason": "Wrong password asserts 401 and saves error message for comparison.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "01 · Health and registration",
+        "name": "POST /auth/register 37 characters, 74 bytes → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/register"
+      },
+      "requestEventSha256": "c235f125998834dac1981d20c93c608ec8c5531332afaf3076815358700ea2dc",
+      "caseIds": [
+        "TC-API-108"
+      ],
+      "oracleReason": "Supplies 37 two-byte é characters and asserts byte-limit refusal.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "01 · Health and registration",
+        "name": "POST /auth/register 72-byte password → 201",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/register"
+      },
+      "requestEventSha256": "5a9f8c8932eff7b305e980ce227e25772564838419739da2b503282d917a7994",
+      "caseIds": [
+        "TC-API-106"
+      ],
+      "oracleReason": "Supplies exactly 72 ASCII password bytes and asserts 201/token.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "01 · Health and registration",
+        "name": "POST /auth/register 73-byte password → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/register"
+      },
+      "requestEventSha256": "cfe1a63790a9a932f149e2b678365542b585aa6010c433411c98bfd0776f24ee",
+      "caseIds": [
+        "TC-API-107"
+      ],
+      "oracleReason": "Supplies 73 ASCII password bytes and asserts 400 validation refusal.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "01 · Health and registration",
+        "name": "POST /auth/register duplicate e-mail → 409",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/register"
+      },
+      "requestEventSha256": "e5a342d657651d4863f70aa6dbb01be84dbc1621a570c0bd64ff38838054eadd",
+      "caseIds": [
+        "TC-API-004"
+      ],
+      "oracleReason": "Reuses user A email and asserts 409 CONFLICT.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "01 · Health and registration",
+        "name": "POST /auth/register missing password → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/register"
+      },
+      "requestEventSha256": "de7a1104c59b28cb936b21d6c7ce48094b1d32fc12bfac6c0ef3e16f068d865a",
+      "caseIds": [
+        "TC-API-006"
+      ],
+      "oracleReason": "Omits password field and asserts 400 validation failure.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "01 · Health and registration",
+        "name": "POST /auth/register password too short → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/register"
+      },
+      "requestEventSha256": "1d0416c31fb56e54aaad7d71b13a8179b7e8494489f4b2da48adfbb99aafaf46",
+      "caseIds": [
+        "TC-API-005"
+      ],
+      "oracleReason": "Sends password short and asserts 400 validation failure.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "01 · Health and registration",
+        "name": "POST /auth/register user A → 201",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/register"
+      },
+      "requestEventSha256": "15640b7a52b04a1c08d8d83b54b6b1334a4c08e96a3fdd736e7a193be4cbc14a",
+      "caseIds": [
+        "TC-API-002"
+      ],
+      "oracleReason": "Fresh user A registration asserts 201 and a token.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    },
+    {
+      "selector": {
+        "folder": "01 · Health and registration",
+        "name": "POST /auth/register user B → 201",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/register"
+      },
+      "requestEventSha256": "f594f060234a42df1751ba384b12e92e86edd2d0bf21c87d9052dc5eb97e2e0c",
+      "caseIds": [
+        "TC-API-003"
+      ],
+      "oracleReason": "Second user asserts 201/token and a different token from user A.",
+      "status": "SOURCE_LINK_DECLARED_ONLY"
+    }
+  ],
+  "cases": [
+    {
+      "id": "TC-API-001",
+      "rowSha256": "d6389125f741d9a2f2150f1e411289f5231a536a340cf45384df3cea9e851d61",
+      "requests": [
+        {
+          "folder": "01 · Health and registration",
+          "name": "GET /health → 200",
+          "method": "GET",
+          "rawUrl": "{{baseUrl}}/api/health"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-002",
+      "rowSha256": "7e5b7a66eab1d8e9c252982be5da13da35a569a893e93d04afebe9acaea99baf",
+      "requests": [
+        {
+          "folder": "01 · Health and registration",
+          "name": "POST /auth/register user A → 201",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/auth/register"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-003",
+      "rowSha256": "7b4612dab647b8ec07715dd003df2c3028ceffcca349d5d0fbef056b8d085828",
+      "requests": [
+        {
+          "folder": "01 · Health and registration",
+          "name": "POST /auth/register user B → 201",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/auth/register"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-004",
+      "rowSha256": "325a49ae38477156dfc1f5926868d015e516c135223e9ca7f5683e8959e84086",
+      "requests": [
+        {
+          "folder": "01 · Health and registration",
+          "name": "POST /auth/register duplicate e-mail → 409",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/auth/register"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-005",
+      "rowSha256": "c80bbb734fbc6cdf62d116ca28651134f3949efc32be098b2b9b6b6df0524938",
+      "requests": [
+        {
+          "folder": "01 · Health and registration",
+          "name": "POST /auth/register password too short → 400",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/auth/register"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-006",
+      "rowSha256": "79eeb70dfb09f67c086a4c89fd9375c99dd817e3b067d5d77aef8bde3bcc5cde",
+      "requests": [
+        {
+          "folder": "01 · Health and registration",
+          "name": "POST /auth/register missing password → 400",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/auth/register"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-007",
+      "rowSha256": "9a893898f0ccb4288caf5a69c71217750ce755019e8730359c18d6c90c360cb3",
+      "requests": [
+        {
+          "folder": "01 · Health and registration",
+          "name": "POST /auth/login correct → 200",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/auth/login"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-008",
+      "rowSha256": "870354836d16c6e16040d972f7c17a2573bb5a4ac5891d88b70833a5b24a19cc",
+      "requests": [
+        {
+          "folder": "01 · Health and registration",
+          "name": "POST /auth/login wrong password → 401",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/auth/login"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-009",
+      "rowSha256": "aa0111172b90cb2b92ab9816a4a243ff66619165a4bc39e8de04285acf19123a",
+      "requests": [
+        {
+          "folder": "01 · Health and registration",
+          "name": "POST /auth/login unknown e-mail → 401, same message",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/auth/login"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-106",
+      "rowSha256": "4d63a413005ef965f468f72e4d7411b161001e1862a3537a2aa58a172817412d",
+      "requests": [
+        {
+          "folder": "01 · Health and registration",
+          "name": "POST /auth/register 72-byte password → 201",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/auth/register"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-107",
+      "rowSha256": "3bb4de8b7507fe636df6459a2d93d6ef36039bd9873d9da3036a90d1bdf0497a",
+      "requests": [
+        {
+          "folder": "01 · Health and registration",
+          "name": "POST /auth/register 73-byte password → 400",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/auth/register"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    },
+    {
+      "id": "TC-API-108",
+      "rowSha256": "082d285db9dc2de5235c743f5e9addd5c3d2f5dcfc3916aee12db1c08f8c0e6a",
+      "requests": [
+        {
+          "folder": "01 · Health and registration",
+          "name": "POST /auth/register 37 characters, 74 bytes → 400",
+          "method": "POST",
+          "rawUrl": "{{baseUrl}}/api/auth/register"
+        }
+      ],
+      "status": "CATALOGUE_LINK_DECLARED_ONLY"
+    }
+  ],
+  "sources": {
+    "collection": {
+      "path": "qa/api/wallet.postman_collection.json",
+      "sha256": "fbda0cfd251bc0c8affea61ccd45f2d69f22680685186310a5ad107599a1446d"
+    },
+    "catalogue": {
+      "path": "qa/docs/test-cases.md",
+      "sha256": "a2d1ff0cb206113ac82ec8f6014a5d17d7627265a26602dd6cb81f52962b512d"
+    },
+    "mapping": {
+      "path": "qa/traceability/postman-health.json",
+      "sha256": "2e5471e432a1434ed0cfb6721cfbbcdc84ec39d9bfe2feefce96efcf2cd33dff"
+    }
+  }
+}

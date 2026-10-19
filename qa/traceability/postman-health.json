@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "scope": {
+    "folder": "01 · Health and registration",
+    "catalogueSection": "## API · Health and registration · `qa/api/wallet.postman_collection.json`",
+    "collectionContextSha256": "45eff4491008e0071c47167e9847e3adb353ee43855b0d0cf6eef07a4afc439c"
+  },
+  "caseRowSha256": {
+    "TC-API-001": "d6389125f741d9a2f2150f1e411289f5231a536a340cf45384df3cea9e851d61",
+    "TC-API-002": "7e5b7a66eab1d8e9c252982be5da13da35a569a893e93d04afebe9acaea99baf",
+    "TC-API-003": "7b4612dab647b8ec07715dd003df2c3028ceffcca349d5d0fbef056b8d085828",
+    "TC-API-004": "325a49ae38477156dfc1f5926868d015e516c135223e9ca7f5683e8959e84086",
+    "TC-API-005": "c80bbb734fbc6cdf62d116ca28651134f3949efc32be098b2b9b6b6df0524938",
+    "TC-API-006": "79eeb70dfb09f67c086a4c89fd9375c99dd817e3b067d5d77aef8bde3bcc5cde",
+    "TC-API-007": "9a893898f0ccb4288caf5a69c71217750ce755019e8730359c18d6c90c360cb3",
+    "TC-API-008": "870354836d16c6e16040d972f7c17a2573bb5a4ac5891d88b70833a5b24a19cc",
+    "TC-API-009": "aa0111172b90cb2b92ab9816a4a243ff66619165a4bc39e8de04285acf19123a",
+    "TC-API-106": "4d63a413005ef965f468f72e4d7411b161001e1862a3537a2aa58a172817412d",
+    "TC-API-107": "3bb4de8b7507fe636df6459a2d93d6ef36039bd9873d9da3036a90d1bdf0497a",
+    "TC-API-108": "082d285db9dc2de5235c743f5e9addd5c3d2f5dcfc3916aee12db1c08f8c0e6a"
+  },
+  "edges": [
+    {"selector":{"folder":"01 · Health and registration","name":"GET /health → 200","method":"GET","rawUrl":"{{baseUrl}}/api/health"},"requestEventSha256":"30624c09e1d10914eb20f153d5db757eadfe84bf7b46a8ea32ff82cad23e2480","caseIds":["TC-API-001"],"testMarker":"reports the database as reachable","oracleReason":"Health asserts 200 and db ok without a user token."},
+    {"selector":{"folder":"01 · Health and registration","name":"POST /auth/register user A → 201","method":"POST","rawUrl":"{{baseUrl}}/api/auth/register"},"requestEventSha256":"15640b7a52b04a1c08d8d83b54b6b1334a4c08e96a3fdd736e7a193be4cbc14a","caseIds":["TC-API-002"],"testMarker":"expectOk(201, 'token')","oracleReason":"Fresh user A registration asserts 201 and a token."},
+    {"selector":{"folder":"01 · Health and registration","name":"POST /auth/register user B → 201","method":"POST","rawUrl":"{{baseUrl}}/api/auth/register"},"requestEventSha256":"f594f060234a42df1751ba384b12e92e86edd2d0bf21c87d9052dc5eb97e2e0c","caseIds":["TC-API-003"],"testMarker":"the two users got different tokens","oracleReason":"Second user asserts 201/token and a different token from user A."},
+    {"selector":{"folder":"01 · Health and registration","name":"POST /auth/register duplicate e-mail → 409","method":"POST","rawUrl":"{{baseUrl}}/api/auth/register"},"requestEventSha256":"e5a342d657651d4863f70aa6dbb01be84dbc1621a570c0bd64ff38838054eadd","caseIds":["TC-API-004"],"testMarker":"expectError(409, 'CONFLICT')","oracleReason":"Reuses user A email and asserts 409 CONFLICT."},
+    {"selector":{"folder":"01 · Health and registration","name":"POST /auth/register password too short → 400","method":"POST","rawUrl":"{{baseUrl}}/api/auth/register"},"requestEventSha256":"1d0416c31fb56e54aaad7d71b13a8179b7e8494489f4b2da48adfbb99aafaf46","caseIds":["TC-API-005"],"testMarker":"expectError(400, 'VALIDATION_FAILED')","oracleReason":"Sends password short and asserts 400 validation failure."},
+    {"selector":{"folder":"01 · Health and registration","name":"POST /auth/register missing password → 400","method":"POST","rawUrl":"{{baseUrl}}/api/auth/register"},"requestEventSha256":"de7a1104c59b28cb936b21d6c7ce48094b1d32fc12bfac6c0ef3e16f068d865a","caseIds":["TC-API-006"],"testMarker":"expectError(400, 'VALIDATION_FAILED')","oracleReason":"Omits password field and asserts 400 validation failure."},
+    {"selector":{"folder":"01 · Health and registration","name":"POST /auth/register 72-byte password → 201","method":"POST","rawUrl":"{{baseUrl}}/api/auth/register"},"requestEventSha256":"5a9f8c8932eff7b305e980ce227e25772564838419739da2b503282d917a7994","caseIds":["TC-API-106"],"testMarker":"expectOk(201, 'token')","oracleReason":"Supplies exactly 72 ASCII password bytes and asserts 201/token."},
+    {"selector":{"folder":"01 · Health and registration","name":"POST /auth/register 73-byte password → 400","method":"POST","rawUrl":"{{baseUrl}}/api/auth/register"},"requestEventSha256":"cfe1a63790a9a932f149e2b678365542b585aa6010c433411c98bfd0776f24ee","caseIds":["TC-API-107"],"testMarker":"expectError(400, 'VALIDATION_FAILED')","oracleReason":"Supplies 73 ASCII password bytes and asserts 400 validation refusal."},
+    {"selector":{"folder":"01 · Health and registration","name":"POST /auth/register 37 characters, 74 bytes → 400","method":"POST","rawUrl":"{{baseUrl}}/api/auth/register"},"requestEventSha256":"c235f125998834dac1981d20c93c608ec8c5531332afaf3076815358700ea2dc","caseIds":["TC-API-108"],"testMarker":"expectError(400, 'VALIDATION_FAILED')","oracleReason":"Supplies 37 two-byte é characters and asserts byte-limit refusal."},
+    {"selector":{"folder":"01 · Health and registration","name":"POST /auth/login correct → 200","method":"POST","rawUrl":"{{baseUrl}}/api/auth/login"},"requestEventSha256":"abf3b180ac334d93e811968eb984613cb123af67808d8c7d6e877895ae1ce34f","caseIds":["TC-API-007"],"testMarker":"expectOk(200, 'token')","oracleReason":"Correct user A credentials assert 200 and token."},
+    {"selector":{"folder":"01 · Health and registration","name":"POST /auth/login wrong password → 401","method":"POST","rawUrl":"{{baseUrl}}/api/auth/login"},"requestEventSha256":"68c7a35b1358d392bd45129393cede55c3bb0ef41707f13bc44b5b632af69a96","caseIds":["TC-API-008"],"testMarker":"expectError(401, 'UNAUTHORIZED')","oracleReason":"Wrong password asserts 401 and saves error message for comparison."},
+    {"selector":{"folder":"01 · Health and registration","name":"POST /auth/login unknown e-mail → 401, same message","method":"POST","rawUrl":"{{baseUrl}}/api/auth/login"},"requestEventSha256":"8a1ed167d62f403641ba9b9cde7038e94d0f8bf513036561b9ee870709108941","caseIds":["TC-API-009"],"testMarker":"unknown e-mail is indistinguishable from a wrong password","oracleReason":"Unknown email asserts 401 and same error message as wrong password."}
+  ]
+}

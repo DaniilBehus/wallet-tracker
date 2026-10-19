@@ -1,0 +1,3789 @@
+{
+  "schemaVersion": 1,
+  "scope": "ALL_POSTMAN_API_SOURCES_STATIC_ONLY",
+  "acceptedMappings": [
+    {
+      "folder": "01 · Health and registration",
+      "contentSha256": "9aba20dfeeace674894c0dacfc241239051cb252c3c78ec6d69057b5110c78ef"
+    },
+    {
+      "folder": "02 · Token handling",
+      "contentSha256": "4054e193d7e6ec12c6a8e7e11c74cce0bd3c3bf8f17e9de0cc4992b029d55922"
+    },
+    {
+      "folder": "03 · Categories",
+      "contentSha256": "7c885cddec0ebed0e0717e87f55bdcb7f3ccfc5c0bcc8254c14b48771f791de4"
+    },
+    {
+      "folder": "04 · Transactions",
+      "contentSha256": "2807f36df3fab18c73fff13ceb302c2e5daaa173b980684afb148af0b292ba1d"
+    }
+  ],
+  "folders": [
+    {
+      "name": "05 · Schedules and loans",
+      "contextSha256": "45eff4491008e0071c47167e9847e3adb353ee43855b0d0cf6eef07a4afc439c"
+    },
+    {
+      "name": "06 · Summary",
+      "contextSha256": "45eff4491008e0071c47167e9847e3adb353ee43855b0d0cf6eef07a4afc439c"
+    },
+    {
+      "name": "07 · Contract edges",
+      "contextSha256": "45eff4491008e0071c47167e9847e3adb353ee43855b0d0cf6eef07a4afc439c"
+    },
+    {
+      "name": "08 · Settings and the month balance",
+      "contextSha256": "45eff4491008e0071c47167e9847e3adb353ee43855b0d0cf6eef07a4afc439c"
+    },
+    {
+      "name": "10 · Editing (D-029)",
+      "contextSha256": "45eff4491008e0071c47167e9847e3adb353ee43855b0d0cf6eef07a4afc439c"
+    },
+    {
+      "name": "11 · AI drafts and keyed saves (D-033–D-035)",
+      "contextSha256": "45eff4491008e0071c47167e9847e3adb353ee43855b0d0cf6eef07a4afc439c"
+    },
+    {
+      "name": "12 · Monthly spending limit",
+      "contextSha256": "45eff4491008e0071c47167e9847e3adb353ee43855b0d0cf6eef07a4afc439c"
+    },
+    {
+      "name": "13 · Category spending limits",
+      "contextSha256": "df59e2448022bb06b7497dad65e750ce5ae716f25b7d786d728e35c0b464bb95"
+    },
+    {
+      "name": "09 · Login rate limiting",
+      "contextSha256": "45eff4491008e0071c47167e9847e3adb353ee43855b0d0cf6eef07a4afc439c"
+    },
+    {
+      "name": "Synthetic batch import (offline caller-supplied records)",
+      "contextSha256": "8f50014ef02c74da7f2d7feeba7dc9d4b8a717690aa2a04a263bafa0e73cef64"
+    }
+  ],
+  "extendedContentSha256": "e2cb5ae1dc9e95074773684b2e39fa05dc179b9736228498e9e19642d925108b",
+  "reviewedClassificationsSha256": "0a91e36c204eb2c7928c02bcf0e99308b98d39a58dd3e3517a2c30972e89bee5",
+  "caseRowSha256": {
+    "TC-API-043": "ab2faef58433829aa2a390789feededa56778f0ef00a1d7c514535b7bafce71e",
+    "TC-API-044": "6ab97bc2278bd16e0eb4ade5fe7fe945bd4ca05350d7a4567226a8163d4b7c72",
+    "TC-API-045": "2978dcde1637e70d9c43babcbf5980736a0fe6fa725e6a636b1b48c7a6a00408",
+    "TC-API-046": "2b5a2c787c0955b81f0217acd709d5cc21d57a776933a62619612d0fc10e9b26",
+    "TC-API-047": "4626283d49a5d6646c609e59677202c2c23fdbec00cc97fe17ff7bf416ba8b73",
+    "TC-API-048": "d940b6e5403648064a330585ba06c9341dc14f79a20359056b92af715cfeb9ee",
+    "TC-API-049": "af99c4780797059e50ebe7e9e96098d0586926a16e4724b31e0058764f46f649",
+    "TC-API-050": "3c7b8b9fcf56ac42d5d728e58671398c8dfa715317be22c294c55f08bd08176d",
+    "TC-API-051": "11405a1185eb4ede79265458d0d4e166a3d579038705258e941fd940d7c1a599",
+    "TC-API-052": "73ec54893ddfa3393ab234a8cd40a2adf3d1765c5c88bf39b8750fa265d0c857",
+    "TC-API-053": "80263921abb0d8fbbf28ac29537cd43b86fbf5105bc4d0dc25cb15bdec0a2627",
+    "TC-API-054": "ccc4842f2690c7c55036d565b5be5a0da5bd4c1bb0e60ccb0f15b938fd882d1e",
+    "TC-API-055": "a21b36a44f37f6c8df5d2b9bd0fa493762576018e13081bbe827b7f6301caad2",
+    "TC-API-056": "563764934115eb055d0f93b85899a5844fe4e3b10e9e94292e862feb455ccb62",
+    "TC-API-057": "3aa86e67b0cfaf5096d2956432c0ec8e20f9c33cc5161ea3a9eefefa2036fb49",
+    "TC-API-058": "0966c87d2b27edb1d7c93e8e0b08293be577778c93a09eca5054bea13db46aaa",
+    "TC-API-059": "635b4f9b8a3cd83465340684b8f6836a5350fab14283d06fc13b5401f69545f5",
+    "TC-API-060": "fa8a0a65877b2b67eec8f1906f7ab815f67a9e90e62502bfa7159a87525315de",
+    "TC-API-109": "6134e2482c1492a582f66700574021057fc55be0e47db790895013804b4bfabe",
+    "TC-API-110": "f6fb7197ff90345e5656497fcc39e53801f8041f5ff2d8a4faa03a233dd28466",
+    "TC-API-111": "26ceec45871a236ced51a7d194687ec61edbbfdd56e77f3ef6c85e12be0a7a53",
+    "TC-API-112": "4ddd36bd65d3c9a2b8d523a665ddd7cc80b9531870759a74c44a69403928604b",
+    "TC-API-113": "926274eddac092d5c1be4a11d0b0c535494dfa2ba38857612543d54732ab5164",
+    "TC-API-061": "ded10c35302b96557c3fb40a99b590ee8360713e85f63032650afc1d96a7c3d7",
+    "TC-API-062": "fbd262405ca15c604c0e87452acb9a1085b761fff9821b7326fb65bf8d44e811",
+    "TC-API-063": "0c670a79f053e4826b3f830c5950ca46fffeac4f5f358ae3002942cdb455d932",
+    "TC-API-064": "6d4bc01c7963c6b7a0d9f02c8c0021d6ccc48a7883f299269edd8e171b93350d",
+    "TC-API-065": "12af5f79ccd8b44557788bde672a1e7d858c445ff28ed844b7eabdee303af0b3",
+    "TC-API-066": "8a68f3c8b7106cdbc2f5f9ba5c10c94d4329730cc5be48f9e0e9203c71a09310",
+    "TC-API-067": "0a6a8590cf725ee86888513231e6d0df44cf2c9436c2fe06001964ae9c3ead12",
+    "TC-API-068": "306458ca8bf7f52e2417f5f4ce92c94748ee81e26dcb1bcdb2f9cc18713264d7",
+    "TC-API-069": "6ed6879bb0b4e0f6a40cba899e3deb7d5ff3cbe617d341564ac91dab3d654d5f",
+    "TC-API-070": "593cbf42840bcb451b4c9151b9b20c318011b55004d42cbe7a22c0cd64aff0c2",
+    "TC-API-071": "59199905cd668dc2be944542c7ea011bbe3a048ce02ffcd8be00554d8aa80960",
+    "TC-API-072": "d90b0c710e8c15689de5aaab93c5765e397a37acf8d51a3b7f0e4ac2f1da2d21",
+    "TC-API-073": "8bbbb6fb463e7b6e4bcf60da068e6d71c7bbf2f03d0c53724559261eb962bb0e",
+    "TC-API-074": "3be489c74d475d0b998b34cbc675faf809efd6534584bcd7e8d7fad18d1d04ee",
+    "TC-API-075": "f41002e9b4fbaeccf8fff012ff0621d84f5aacea17986f50a2bd6af34215ffe2",
+    "TC-API-076": "c12dc25ee1a64f4de9f1f6a145b021a9191cfcb8d4018445456a9d1c324fa3e9",
+    "TC-API-077": "a14a7618dfc28ab14a4fcbe1a47800c75708dd28b6ab9852731c8a0527d65aa2",
+    "TC-API-078": "5f18ff7daff052463f34f95c8a2bc39082a53f8acba068dec2d1b7fca5055231",
+    "TC-API-079": "470fbf70016462c5da761cc364dad6a1edce1239399c419c36b69c3cdaa1bd90",
+    "TC-API-080": "5507eb7374afafea47d3e81bbdf2943275351fb554761022bf9bdae6e1400dec",
+    "TC-API-081": "16f950fdf5c721c501578bd3c44d00a5630af0a52820b3adf08420d1b548b7c6",
+    "TC-API-082": "8b80607178af44a3c2360261023a03717b011b0d4faec24c2898ce3c6e473654",
+    "TC-API-083": "0271c4965faa3bc444f7ee7165c6f687ef4f25bc10b1c3424520c96855834ef6",
+    "TC-API-087": "1843f1095765ea80a4c1619fcc798f65d5828a6094d3e959bbfe006df6301c0e",
+    "TC-API-088": "61634b94a3f85ae121f6c0f69f136daf5842b5716a0c95e5f970d5798df436d2",
+    "TC-API-089": "e1efc3bfb6f38220178f182e45927658e5076e4eddeab7470a9dc32313808d3c",
+    "TC-API-090": "6f41f3e3a87ae2535cf395eab970919226f66c1dba9230c66a005fbebc73b0e7",
+    "TC-API-084": "c4a64ae9d859013ec7b6f351e79fb0bef42bbad9c9b771dbcb84eac4e1df20dd",
+    "TC-API-085": "59e2c6eb1a93d17b791bd3f8df3e5d842879e38e312d5b509ea91bf14b86ab15",
+    "TC-API-086": "4af8d4f1572c13149ce00dce90445d242466efa30e8a0a84d0362ef97c5ad5e6",
+    "TC-API-091": "e04bf43c45b42b34acdc1e63742fc9016f679e4dd343bbbfbca5e497778aa50e",
+    "TC-API-092": "f895372d1b6ed9e42450b9bd603c658ae39f12ffea3e2acf6b565dfb3a60849c",
+    "TC-API-093": "bad76ad09f0be4f61efeb9678c9e8e253585230a6bff2f236e39826be836c0f2",
+    "TC-API-094": "4a585f55a72b398c68882c282766cf9a9bb949ecc7047f9e7bc9ea8ac9808ee8",
+    "TC-API-095": "a882d0f1fcd916b28f845397aa355745b2070ca9bff4151e5b6d14a3977f5dcb",
+    "TC-API-096": "3b0712737ee00a6d55205c7b35d12eb8d61086e6b06be0d3baec36738605bc26",
+    "TC-API-097": "9d6f3d2405d72915d3273430ea5103053e6ad9a503b2cfece5be8f2db1e2a28c",
+    "TC-API-098": "d1b4333f2b9738864fbba648c71077d81f8240af02bacfc549f77ea182d33b8d",
+    "TC-API-099": "d556ba153bbaa675010bca375dc50c44c17571ab700e954d42c1f5d3d369dfcb",
+    "TC-API-100": "69c21a2e76da225267624c31bcc5b663bedf55871c0f28e59d428aafe60b7803",
+    "TC-API-101": "1768c806eead820f34c9a60406195d7e6eebd1614ac60aa4d5acef805852d886",
+    "TC-API-102": "dc632452b729e74a9ee36ad3766b660dc4ca655a399ba369f93fb7c4506dc2d0",
+    "TC-API-103": "3b51e18ed7ef643b3bb175017ed70f84f4653a89b44fd0ca76b986bb07d8d323",
+    "TC-API-104": "32eb36377d100f7ba16fcc3f51281feff42728a1bcd68b365098f6991fbc547b",
+    "TC-API-105": "1be8de9a643f737b0f74a0627c6ef71eaf4c699709f69d269430139d14d0ceb9",
+    "TC-API-114": "25bb5840918e1d80381169a6c4c93c9cd8648849426f81e009525c386a3f673d",
+    "TC-API-115": "9e0e7999bc2f3508f09fd2f0f7fbb95279390024524f2fae164ca5599e17d9b3",
+    "TC-API-116": "7ee6644c845f1f7f2c43e376c4e096d1d6568da4072f5eee818253de7f835bac",
+    "TC-API-117": "2b856a6176aa5d84325b8268506499d305bf6a38348922d30389a14845c741cc",
+    "TC-API-118": "3667102b180ced7a21a3b642c4c7c2d0ef1cca0187ca8245cf855dc83d7b3c3d",
+    "TC-API-119": "ac692607dea551a73f437b0d40c36b302e3d70bcb37412aabbd60e700f86d35c",
+    "TC-API-120": "16c317538093fe42a1f782acaabeb08f1b735200c88b7ef52fd4452ff25ad5f1",
+    "TC-API-121": "c57c4feea08a16a35212620075ea430ef3ba1d5ddc104b4b118e3ed07d57bec1",
+    "TC-API-122": "db3aebd98d789fbf61c673fec51a2ff922bff86a1b22c9ff4d93fbd05d9eef53",
+    "TC-API-123": "576ced282d27a4b40268dfcda79bcbec8db02fb2a5980d752faa3a4afec25025",
+    "TC-API-124": "513950174d2db0809b3424c8c2ba781cdf6ef2f52efca33a39547a83d73dd9a0",
+    "TC-API-125": "779448940656a5d8286d539a2e5edfc177e605b677dd4baae567ff94b3175f74",
+    "TC-API-126": "53739bb68057967635b4256c9df25fd4e9a57afe8e33db9261d950f07a3aa198",
+    "TC-API-127": "5004254dff59d51bf45312a1731f45486e534ae64e1c803ecc50cd0369751e19",
+    "TC-API-128": "2c9c2ebdb43b06a8eccf67f2d2432e68be74a824781ddbdbd409145f4f0041be",
+    "TC-API-129": "7d555aba53c224bb29ecce169c51b692a2020cc680cd668c6ba170e58b1dd395",
+    "TC-API-130": "151ce4453b4acaad3e3864ef177cb8883ed4f2c37e30ceb924c26f37b0077d8a",
+    "TC-API-131": "d5bd2ec9ac46a81334a104eba144c8fd72c785d40dfd30038cd9fe01dcd99d5a",
+    "TC-API-132": "645ffaa6f2d645341833f811827221cff3835a3854cdaafe225bd9c71965ffa4",
+    "TC-API-133": "065b19419f460f01904fd23982c3f7ef57f7501db47e61266e89f79b7054882b",
+    "TC-API-134": "9353fced9a3093c4d53c28f93b49f97698cc78137517aba6972fe1ef5c2e2946",
+    "TC-API-135": "b1df5ec8076b09e41bd3cf2736897b2105f368cae8cc019152fe7c4917250c3f",
+    "TC-API-136": "3d81049cb84c3c1b49c91b375ef4e4fd0928081433d2a639f6cc406312c9deca",
+    "TC-API-137": "3bae7f65ce1d4f043800e1861f008d251650ed6576c173601d613f024f888f6b",
+    "TC-API-138": "0d627b97fafd22509f3bd1a8be21e677f178f2d12e0f83a34e5aeb1ed8c14430",
+    "TC-API-139": "b273c8b8afe3d054ba6b5ed689975d89a144285d303480cf34077386cc4c4019",
+    "TC-API-140": "d0acafeeade3f227ed4ea7cc16eacc6b9eb5ab1db86a5b62d53435ed9fd007d2",
+    "TC-API-141": "921f147e1493ab57a435f5bd08b998daf47347efe73713d2856dd6a2737392ec"
+  },
+  "nodes": [
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "POST /schedules subscription → 201",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/schedules"
+      },
+      "requestEventSha256": "38e5c8346df423a5d6db587ba4749999be1c5ba2551fce45c3dc8c18167d65f6",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-043"
+      ],
+      "extendedIds": [],
+      "testMarker": "remaining_* are null for a subscription (spec §5)",
+      "oracleReason": "POST {{baseUrl}}/api/schedules; auth=inherited bearer; body={ \"name\": \"Telekom {{runId}}\", \"amount_cents\": 1500, \"category_id\": {{catA}}, \"day_of_month\": 12, \"starts_on\": \"2026-01-01\" }; checks=expectOk(201, 'schedule'); assertions=remaining_* are null for a subscription (spec §5) / next_due falls on the requested day."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "POST /schedules day_of_month = 0 → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/schedules"
+      },
+      "requestEventSha256": "d41cb6fa0fa476325249d57c08379cdda17374db81ec7648f630d4419541869a",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-044"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "POST {{baseUrl}}/api/schedules; auth=inherited bearer; body={ \"name\": \"day zero\", \"amount_cents\": 1000, \"day_of_month\": 0, \"starts_on\": \"2026-01-01\" }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "POST /schedules day_of_month = 1 → 201",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/schedules"
+      },
+      "requestEventSha256": "4724187276c60e8ee6d83a0045b05042ad0dd53a9d3280ac2be6ac5900ea5821",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-045"
+      ],
+      "extendedIds": [],
+      "testMarker": "next_due lands on the 1st",
+      "oracleReason": "POST {{baseUrl}}/api/schedules; auth=inherited bearer; body={ \"name\": \"day one {{runId}}\", \"amount_cents\": 1000, \"day_of_month\": 1, \"starts_on\": \"2026-01-01\" }; checks=expectOk(201, 'schedule'); assertions=next_due lands on the 1st."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "POST /schedules day_of_month = 28 → 201",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/schedules"
+      },
+      "requestEventSha256": "82f27065f410fac5b8aaf1bc1f4926551e76a3be699bcf9393fe011ee76447e2",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-046"
+      ],
+      "extendedIds": [],
+      "testMarker": "next_due lands on the 28th in every month",
+      "oracleReason": "POST {{baseUrl}}/api/schedules; auth=inherited bearer; body={ \"name\": \"day 28 {{runId}}\", \"amount_cents\": 1000, \"day_of_month\": 28, \"starts_on\": \"2026-01-01\" }; checks=expectOk(201, 'schedule'); assertions=next_due lands on the 28th in every month."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "POST /schedules day_of_month = 31 starting in February → clamps",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/schedules"
+      },
+      "requestEventSha256": "c0dd25d092339021b8142f6248bb4fc1a77dc0a1deb41b6f2f0ed100a5c5a90b",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-047"
+      ],
+      "extendedIds": [],
+      "testMarker": "the 31st clamps to the last day of February, it does not skip the month",
+      "oracleReason": "POST {{baseUrl}}/api/schedules; auth=inherited bearer; body={ \"name\": \"day 31 {{runId}}\", \"amount_cents\": 1000, \"day_of_month\": 31, \"starts_on\": \"{{febStart}}\" }; prerequest=// Next February that is still ahead of us, and whether it is a leap year. const now = new Date(); let year = now.getFullYear() + 1; const leap = (year % 4 === 0 && year % 100 !==; checks=expectOk(201, 'schedule'); assertions=the 31st clamps to the last day of February, it does not skip the month."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "POST /schedules day_of_month = 32 → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/schedules"
+      },
+      "requestEventSha256": "9b6cc02b19e543e4188c5bab4845f64a2e3ac439728a26a608561a935f50244b",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-048"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "POST {{baseUrl}}/api/schedules; auth=inherited bearer; body={ \"name\": \"day 32\", \"amount_cents\": 1000, \"day_of_month\": 32, \"starts_on\": \"2026-01-01\" }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "POST /schedules total_count = 0 → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/schedules"
+      },
+      "requestEventSha256": "e50ff77168da58322f1ce7461fe922da6a00a92a02051fe9d2cb26789f26084d",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-049"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "POST {{baseUrl}}/api/schedules; auth=inherited bearer; body={ \"name\": \"zero instalments\", \"amount_cents\": 1000, \"day_of_month\": 5, \"starts_on\": \"2026-01-01\", \"total_count\": 0 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "POST /schedules total_count = 1200 → 201",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/schedules"
+      },
+      "requestEventSha256": "feb860343f2af43fc89a5693e90298a4beea56dfa209f30c2188876f6449f465",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-109"
+      ],
+      "extendedIds": [],
+      "testMarker": "the whole loan is still exact to the cent",
+      "oracleReason": "POST {{baseUrl}}/api/schedules; auth=inherited bearer; body={ \"name\": \"Ceiling loan {{runId}}\", \"amount_cents\": 99999999, \"day_of_month\": 9, \"starts_on\": \"2026-01-01\", \"total_count\": 1200 }; checks=expectOk(201, 'schedule'); assertions=the whole loan is still exact to the cent."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "POST /schedules total_count = 1201 → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/schedules"
+      },
+      "requestEventSha256": "403d27eedea199136671a520150f9719e425a58c01e5d583e470ec36370f8016",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-110"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "POST {{baseUrl}}/api/schedules; auth=inherited bearer; body={ \"name\": \"one instalment too many\", \"amount_cents\": 1000, \"day_of_month\": 9, \"starts_on\": \"2026-01-01\", \"total_count\": 1201 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "POST /schedules the loan from BUG-018 → 400, not a lost cent",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/schedules"
+      },
+      "requestEventSha256": "efa56dcf3306c2e84c8195ff88bc609055b89c5596cdf5acf04904d87ce4e7df",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-111"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "POST {{baseUrl}}/api/schedules; auth=inherited bearer; body={ \"name\": \"99999999 instalments\", \"amount_cents\": 99999999, \"day_of_month\": 9, \"starts_on\": \"2026-01-01\", \"total_count\": 99999999 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "POST /schedules total_count = 1e30 → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/schedules"
+      },
+      "requestEventSha256": "892ac62dd915cd0af7bd423b172ffab5224a70c0d889fe35e78386e883644848",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-112"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "POST {{baseUrl}}/api/schedules; auth=inherited bearer; body={ \"name\": \"a number that is not a count\", \"amount_cents\": 1000, \"day_of_month\": 9, \"starts_on\": \"2026-01-01\", \"total_count\": 1e+30 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "PATCH /schedules/:id total_count past the ceiling → 400",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{schedCeiling}}"
+      },
+      "requestEventSha256": "e18200f8848d60d7629dbaddee13a4a1acd33bef79057ceb48afa531d458e3f5",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-113"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{schedCeiling}}; auth=inherited bearer; body={ \"total_count\": 1201 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "POST /schedules starts_on malformed → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/schedules"
+      },
+      "requestEventSha256": "f410a0759e56ca19e3a0aadab7dd751ffc1ec622a801d7ac2c877d176c9d1d83",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-050"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "POST {{baseUrl}}/api/schedules; auth=inherited bearer; body={ \"name\": \"bad start\", \"amount_cents\": 1000, \"day_of_month\": 5, \"starts_on\": \"2026-13-45\" }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "POST /schedules loan of 2 instalments → 201",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/schedules"
+      },
+      "requestEventSha256": "90a97e1a85e12bfe56d292db262cfdb3296f5140b75d9f6ead3063718935c575",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-051"
+      ],
+      "extendedIds": [],
+      "testMarker": "the countdown starts at the full amount (spec §4.2)",
+      "oracleReason": "POST {{baseUrl}}/api/schedules; auth=inherited bearer; body={ \"name\": \"Loan {{runId}}\", \"amount_cents\": 10000, \"category_id\": {{catA}}, \"day_of_month\": 15, \"starts_on\": \"2026-01-01\", \"total_count\": 2 }; checks=expectOk(201, 'schedule'); assertions=the countdown starts at the full amount (spec §4.2)."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "GET /schedules → 200, sorted by next_due",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/schedules"
+      },
+      "requestEventSha256": "8a80f370b84420d03aa8a8746320261c6d7bc947c300b20175bb442cf47499bb",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-052"
+      ],
+      "extendedIds": [],
+      "testMarker": "sorted by next_due ascending (spec §5)",
+      "oracleReason": "GET {{baseUrl}}/api/schedules; auth=inherited bearer; body=none; checks=expectOk(200, 'scheduleList'); assertions=sorted by next_due ascending (spec §5) / remaining_cents equals remaining_count × amount_cents on every loan."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "GET /schedules?active=1 → 200, only active",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/schedules?active=1"
+      },
+      "requestEventSha256": "aa7d1ce4aacb22145bd491f2c0c12e5d4ca56e4727c5db12d640fa72db70e7e4",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-053"
+      ],
+      "extendedIds": [],
+      "testMarker": "every row returned is active",
+      "oracleReason": "GET {{baseUrl}}/api/schedules?active=1; auth=inherited bearer; body=none; checks=expectOk(200, 'scheduleList'); assertions=every row returned is active."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "PATCH /schedules/:id/pay first instalment → 200",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{schedLoan}}/pay"
+      },
+      "requestEventSha256": "de1b2db194affb9d6b379d2d209de3bc7604751e5adf7509a64152935d6f3c2d",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-054"
+      ],
+      "extendedIds": [],
+      "testMarker": "one instalment down, one to go, not finished",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{schedLoan}}/pay; auth=inherited bearer; body=none; checks=expectOk(200, 'payResult'); assertions=one instalment down, one to go, not finished."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "The payment created a transaction",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "e8bbee467c7cdf4168f07f4a976b7ddbad13d9bb0e2a0d12c7286a1e785cfbe7",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-055"
+      ],
+      "extendedIds": [],
+      "testMarker": "the transaction named by the pay response exists",
+      "oracleReason": "GET {{baseUrl}}/api/transactions; auth=inherited bearer; body=none; checks=expectOk(200, 'transactionList'); assertions=the transaction named by the pay response exists / it is linked back to the schedule and carries the instalment amount."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "PATCH /schedules/:id/pay last instalment → finished",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{schedLoan}}/pay"
+      },
+      "requestEventSha256": "2a4ec22c151914743bbda1f162706aad6406897cfe0633b75ba36d4a14e60d75",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-056"
+      ],
+      "extendedIds": [],
+      "testMarker": "the loan closes itself on its last payment (spec §4.2)",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{schedLoan}}/pay; auth=inherited bearer; body=none; checks=expectOk(200, 'payResult'); assertions=the loan closes itself on its last payment (spec §4.2)."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "PATCH /schedules/:id/pay a closed loan → 409",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{schedLoan}}/pay"
+      },
+      "requestEventSha256": "42bafbe655bf6348c7fae38714c81a243325ba0f5356bb3d39c3d295b7fc0c7f",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-057"
+      ],
+      "extendedIds": [],
+      "testMarker": "409, not 400 — this is a state conflict, not bad input",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{schedLoan}}/pay; auth=inherited bearer; body=none; checks=expectError(409, 'CONFLICT'); assertions=409, not 400 — this is a state conflict, not bad input."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "The finished loan is gone from ?active=1",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/schedules?active=1"
+      },
+      "requestEventSha256": "1d762ba42649e07ef7789c2e99f9a3f1ebad45287154fd800505a5d327955e97",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-058"
+      ],
+      "extendedIds": [],
+      "testMarker": "a closed loan no longer appears among active schedules",
+      "oracleReason": "GET {{baseUrl}}/api/schedules?active=1; auth=inherited bearer; body=none; checks=expectOk(200, 'scheduleList'); assertions=a closed loan no longer appears among active schedules."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "PATCH /schedules/:id/pay another user's schedule → 404, not 403",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{schedSub}}/pay"
+      },
+      "requestEventSha256": "9216bdd7c1063094b091f32115b03577d1102c517eec7b445acff405bde7eb07",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-059"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectNotForbidden()",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{schedSub}}/pay; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body=none; checks=expectNotForbidden(), expectError(404, 'NOT_FOUND'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "05 · Schedules and loans",
+        "name": "PATCH /schedules/:id/pay a schedule that does not exist → 404",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/99999999/pay"
+      },
+      "requestEventSha256": "8c9af5b41df35207be78168b968a15c509859f695d256c7e84a671b5a3af715e",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-060"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(404, 'NOT_FOUND')",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/99999999/pay; auth=inherited bearer; body=none; checks=expectError(404, 'NOT_FOUND'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "06 · Summary",
+        "name": "GET /summary → 200, parts sum to the whole",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "fd5fa140b2883ac10cbf33964fbfd8759426ffd7bd266617489292089606bc4a",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-061"
+      ],
+      "extendedIds": [],
+      "testMarker": "the per-category totals add up to the month total",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=the per-category totals add up to the month total / the month defaults to the current one."
+    },
+    {
+      "selector": {
+        "folder": "06 · Summary",
+        "name": "GET /summary?month=YYYY-MM → 200",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary?month=2026-01"
+      },
+      "requestEventSha256": "0778165936507920e04376b07798a28ef34ac56adfd7f371b1e19118ac3f5326",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-062"
+      ],
+      "extendedIds": [],
+      "testMarker": "answers for the month that was asked for",
+      "oracleReason": "GET {{baseUrl}}/api/summary?month=2026-01; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=answers for the month that was asked for."
+    },
+    {
+      "selector": {
+        "folder": "06 · Summary",
+        "name": "GET /summary?month malformed → 400",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary?month=January"
+      },
+      "requestEventSha256": "a36c9fc08c24e8a17a86f65948eec7dbe13e13073a7353bfb88bcd7d15bcf431",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-063"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "GET {{baseUrl}}/api/summary?month=January; auth=inherited bearer; body=none; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "06 · Summary",
+        "name": "GET /summary as user B → their own empty month",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "69a0af67c0b2ab642aea04e5cc7b78b1c9e6280ea3b3acef97427aa40a56df7f",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-064"
+      ],
+      "extendedIds": [],
+      "testMarker": "another user",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body=none; checks=expectOk(200, 'summary'); assertions=another user."
+    },
+    {
+      "selector": {
+        "folder": "07 · Contract edges",
+        "name": "Unknown /api path → 404 in JSON, not HTML",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/nope-{{runId}}"
+      },
+      "requestEventSha256": "d62052ee977dd30601076f4a7f6ff13bcfa7379f80e6c1b78793efe43719a2e6",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-065"
+      ],
+      "extendedIds": [],
+      "testMarker": "the body is JSON, not markup",
+      "oracleReason": "GET {{baseUrl}}/api/nope-{{runId}}; auth=inherited bearer; body=none; checks=expectError(404, 'NOT_FOUND'); assertions=the body is JSON, not markup."
+    },
+    {
+      "selector": {
+        "folder": "07 · Contract edges",
+        "name": "403 is unreachable — every cross-user path answered 404",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/transactions?category_id={{catA}}"
+      },
+      "requestEventSha256": "950977ea3bb8397be93191e7de92655dd2439edcd48d10d6584f4a9e059b7250",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-066"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectNotForbidden()",
+      "oracleReason": "GET {{baseUrl}}/api/transactions?category_id={{catA}}; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body=none; checks=expectNotForbidden(), expectError(404, 'NOT_FOUND'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "08 · Settings and the month balance",
+        "name": "GET /settings on a fresh account → 0",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "70a3c8e73ed52ad18db69d006be90c714e3b61aeac00630855e6c7f560996801",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-074"
+      ],
+      "extendedIds": [],
+      "testMarker": "a fresh account reports zero rather than 404",
+      "oracleReason": "GET {{baseUrl}}/api/settings; auth=inherited bearer; body=none; checks=expectOk(200, 'settings'); assertions=a fresh account reports zero rather than 404."
+    },
+    {
+      "selector": {
+        "folder": "08 · Settings and the month balance",
+        "name": "PUT /settings → 200",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "ae825a63e56e69171cfdd7786195eb456fa567a1a0c0eac9c90e02d86c772f69",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-075"
+      ],
+      "extendedIds": [],
+      "testMarker": "echoes the stored figure",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 150000 }; checks=expectOk(200, 'settings'); assertions=echoes the stored figure."
+    },
+    {
+      "selector": {
+        "folder": "08 · Settings and the month balance",
+        "name": "PUT /settings again → replaces, does not accumulate",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "9b5aa022fd0c54ad729840e69b8a75acdfb9e4787816957d32204319bb5bdaef",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-076"
+      ],
+      "extendedIds": [],
+      "testMarker": "the second write replaces the first",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 200000 }; checks=expectOk(200, 'settings'); assertions=the second write replaces the first."
+    },
+    {
+      "selector": {
+        "folder": "08 · Settings and the month balance",
+        "name": "PUT /settings back to 150000",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "18e74ad8d7088afc6db706f5503356c8c5dc1f4ca4aa6de1a16a98b5a165b5c0",
+      "classification": "supporting_control",
+      "caseIds": [
+        "TC-API-076",
+        "TC-API-077"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(200, 'settings')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 150000 }; checks=expectOk(200, 'settings'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "08 · Settings and the month balance",
+        "name": "PUT /settings zero → allowed",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "fae18db2e74bfe71c53dc390b15f13894ed65196b2c0d04fab68f06f4b8a80f6",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-077"
+      ],
+      "extendedIds": [],
+      "testMarker": "zero is a legal value — it means not set",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 0 }; checks=expectOk(200, 'settings'); assertions=zero is a legal value — it means not set."
+    },
+    {
+      "selector": {
+        "folder": "08 · Settings and the month balance",
+        "name": "PUT /settings negative → 400",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "3a79335f694fe9eb1c50070b4720f8e7e4c3cf87569433e55a2a330528d59220",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-078"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": -1 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "08 · Settings and the month balance",
+        "name": "PUT /settings fractional → 400",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "eec2dc30808f20dc01c5eb4b454635ab3d11ea3848203bb5c0f40c2a1262d5cc",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-079"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 12.5 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "08 · Settings and the month balance",
+        "name": "PUT /settings as a string → 400",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "f40971424a11a732e0b9990d09c6e8288b78ce41cd3113b3ccc0a4ee2a370e46",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-080"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": \"150000\" }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "08 · Settings and the month balance",
+        "name": "PUT /settings missing field → 400",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "8a06169f2e839fb50ba64935a28e202b1386b08801c358d5187159ae432cad43",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-081"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "08 · Settings and the month balance",
+        "name": "PUT /settings above the ceiling → 400",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "9520d3c3616188ec9bcca629a4e29b0102b64a995d23d6647857e87d92dcabe9",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-082"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 100000001 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "08 · Settings and the month balance",
+        "name": "GET /settings with no token → 401",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "eee8903d290fb6e35bb63c2d9fd73a1d5845016b3de9451994375b2f8590f43d",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-083"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(401, 'UNAUTHORIZED')",
+      "oracleReason": "GET {{baseUrl}}/api/settings; auth={\"type\":\"noauth\"}; body=none; checks=expectError(401, 'UNAUTHORIZED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "08 · Settings and the month balance",
+        "name": "PUT /settings = 1 → the smallest income above zero",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "66f640211028f07208593b9348de0cee8cd151b7045ac3800c7b73bd263f4550",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-087"
+      ],
+      "extendedIds": [],
+      "testMarker": "one cent is a legal income",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 1 }; checks=expectOk(200, 'settings'); assertions=one cent is a legal income."
+    },
+    {
+      "selector": {
+        "folder": "08 · Settings and the month balance",
+        "name": "PUT /settings = the ceiling exactly → 200",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "068a84e8b94b0db9bca49ae2e0d055eac139b28fb7c0432887e92e7f4a9b423a",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-088"
+      ],
+      "extendedIds": [],
+      "testMarker": "the ceiling itself is allowed and survives exactly",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 100000000 }; checks=expectOk(200, 'settings'); assertions=the ceiling itself is allowed and survives exactly."
+    },
+    {
+      "selector": {
+        "folder": "08 · Settings and the month balance",
+        "name": "PUT /settings explicit null → 400",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "d14ffeafd29f2a74173d2e21a9d116e98f65031c216b65fd14e080c11490a187",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-089"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": null }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "08 · Settings and the month balance",
+        "name": "PUT /settings with no token → 401",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "7970973719c1c6c6dfe6651a2f256c88e7a5d032c0bda1cb61ed58b576c816b8",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-090"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(401, 'UNAUTHORIZED')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth={\"type\":\"noauth\"}; body={ \"monthly_income_cents\": 150000 }; checks=expectError(401, 'UNAUTHORIZED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "08 · Settings and the month balance",
+        "name": "Restore the income for the summary cases",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "42a589f4ae5a49e0d8757f3726bfb2730b21a7a4759371eaf0c036a513a0872f",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-084",
+        "TC-API-085"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(200, 'settings')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 150000 }; checks=expectOk(200, 'settings'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "08 · Settings and the month balance",
+        "name": "GET /summary carries income and what remains",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "c2a9753450f405d8fa4a7040567a8dc97fa3d298bf869af73c06486bf21a193b",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-084",
+        "TC-API-085"
+      ],
+      "extendedIds": [],
+      "testMarker": "income is the figure that was just written",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=income is the figure that was just written / remaining is income minus spent, to the cent."
+    },
+    {
+      "selector": {
+        "folder": "08 · Settings and the month balance",
+        "name": "Another user's income does not leak",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "dfd342c48b1604c228b4ec986c12b4084418fba711d02b1aa77f32f185366a3d",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-086"
+      ],
+      "extendedIds": [],
+      "testMarker": "user B has their own income, not user A",
+      "oracleReason": "GET {{baseUrl}}/api/settings; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body=none; checks=expectOk(200, 'settings'); assertions=user B has their own income, not user A."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "setup · an expense to edit",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "fffbb3c0882984c86261a0960f69b0a954b8beb951e1b39fb1aadbc6e29dac9d",
+      "classification": "case_arrange",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-1A98CAB913E5"
+      ],
+      "testMarker": "expectOk(201, 'transaction')",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; body={ \"amount_cents\": 1500, \"category_id\": \"{{catA}}\", \"note\": \"before the edit\" }; checks=expectOk(201, 'transaction'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "setup · a 3-instalment loan to edit",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/schedules"
+      },
+      "requestEventSha256": "f8174abdcd4b44a52386db1d5088e1596ded2a04db3b55a077ef342ed586b53c",
+      "classification": "case_arrange",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-AFD2CA77902B"
+      ],
+      "testMarker": "expectOk(201, 'schedule')",
+      "oracleReason": "POST {{baseUrl}}/api/schedules; auth=inherited bearer; body={ \"name\": \"Editable loan\", \"amount_cents\": 10000, \"category_id\": \"{{catA}}\", \"day_of_month\": 10, \"starts_on\": \"2026-01-10\", \"total_count\": 3 }; checks=expectOk(201, 'schedule'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "setup · pay it once, so paid_count is 1",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}/pay"
+      },
+      "requestEventSha256": "ba18e2af210d1f45682077e85fdd97bd42231f9be70658fec273a1dd721203e2",
+      "classification": "case_arrange",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-AFD2CA77902B"
+      ],
+      "testMarker": "paid_count is 1",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}/pay; auth=inherited bearer; body=none; checks=expectOk(200, 'payResult'); assertions=paid_count is 1."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /transactions/:id 200, only the field sent changes",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{editTx}}"
+      },
+      "requestEventSha256": "1a98cab913e54e18ad64685018f38448312e6cd5946f8d9e70e3030d45bb24b7",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-1A98CAB913E5"
+      ],
+      "testMarker": "the amount changed",
+      "oracleReason": "PATCH {{baseUrl}}/api/transactions/{{editTx}}; auth=inherited bearer; body={ \"amount_cents\": 2500 }; checks=expectOk(200, 'transaction'); assertions=the amount changed / the note was NOT touched, because PATCH is partial (D-029)."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /transactions/:id note null clears it",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{editTx}}"
+      },
+      "requestEventSha256": "4233bdb93506c335625d7a8c4133a06b8aeef35bf72f443e7b1093bc47bf26e1",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-4233BDB93506"
+      ],
+      "testMarker": "the note is null, and null is a legal value for it",
+      "oracleReason": "PATCH {{baseUrl}}/api/transactions/{{editTx}}; auth=inherited bearer; body={ \"note\": null }; checks=expectOk(200, 'transaction'); assertions=the note is null, and null is a legal value for it / the amount survived a patch that did not mention it."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /transactions/:id an empty body is 400, not a 200 that did nothing",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{editTx}}"
+      },
+      "requestEventSha256": "849844fd356b11fa89379a5e9892921e23a9868344d20c5d3dd9e84b07ceed2e",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-849844FD356B"
+      ],
+      "testMarker": "the message says a field is needed",
+      "oracleReason": "PATCH {{baseUrl}}/api/transactions/{{editTx}}; auth=inherited bearer; body={}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=the message says a field is needed."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /transactions/:id a server-owned field is rejected, not ignored",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{editTx}}"
+      },
+      "requestEventSha256": "ec6ca2c58fb1206b6d8873071583bef6a274e727f09a0d3d6fe176afff0ab9eb",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-EC6CA2C58FB1"
+      ],
+      "testMarker": "it names the field rather than silently dropping it (D-029)",
+      "oracleReason": "PATCH {{baseUrl}}/api/transactions/{{editTx}}; auth=inherited bearer; body={ \"schedule_id\": 1 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=it names the field rather than silently dropping it (D-029)."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /transactions/:id an unknown field is rejected",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{editTx}}"
+      },
+      "requestEventSha256": "9dd25fcdb8185177f3c95132397bd704e833433cc8191a76889f67f9178749ab",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-9DD25FCDB818"
+      ],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/transactions/{{editTx}}; auth=inherited bearer; body={ \"colour\": \"red\" }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /transactions/:id the create-path validators still apply",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{editTx}}"
+      },
+      "requestEventSha256": "470ae31dd3e3ce11c7e25f3c734b6fe7de3874f412d35cbe279dbc08fa10bb81",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-470AE31DD3E3"
+      ],
+      "testMarker": "zero is refused on edit exactly as on create",
+      "oracleReason": "PATCH {{baseUrl}}/api/transactions/{{editTx}}; auth=inherited bearer; body={ \"amount_cents\": 0 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=zero is refused on edit exactly as on create."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /transactions/:id another user gets 404, never 403",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{editTx}}"
+      },
+      "requestEventSha256": "3771b5217be18033d7b09e609025ef84c5c47133e1ff15131adacc83f333fb73",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-3771B5217BE1"
+      ],
+      "testMarker": "expectError(404, 'NOT_FOUND')",
+      "oracleReason": "PATCH {{baseUrl}}/api/transactions/{{editTx}}; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body={ \"amount_cents\": 100 }; checks=expectError(404, 'NOT_FOUND'), expectNotForbidden(); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /transactions/:id a row that does not exist is 404",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/transactions/99999999"
+      },
+      "requestEventSha256": "9a0f7905be70ec53ca8fafb9e36348e75bdc63a543b5d8d3a5ac65ed59583b66",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-9A0F7905BE70"
+      ],
+      "testMarker": "expectError(404, 'NOT_FOUND')",
+      "oracleReason": "PATCH {{baseUrl}}/api/transactions/99999999; auth=inherited bearer; body={ \"amount_cents\": 100 }; checks=expectError(404, 'NOT_FOUND'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id 200, renames and re-prices",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}"
+      },
+      "requestEventSha256": "afd2ca77902ba64d6f26bd739fc30a44bcade22e6ff2edd2e14b7be505e5b828",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-AFD2CA77902B"
+      ],
+      "testMarker": "name and amount changed together",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}; auth=inherited bearer; body={ \"name\": \"Renamed loan\", \"amount_cents\": 20000 }; checks=expectOk(200, 'schedule'); assertions=name and amount changed together / remaining_cents is recomputed from the new amount, never stored."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id paid_count is refused",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}"
+      },
+      "requestEventSha256": "bcb0a8759345bbc4ee184e8cc6fbcf139c72765296485f7a416bb19843bd685b",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-BCB0A8759345"
+      ],
+      "testMarker": "a counter cannot be set by hand (D-029)",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}; auth=inherited bearer; body={ \"paid_count\": 99 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=a counter cannot be set by hand (D-029)."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id active is refused",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}"
+      },
+      "requestEventSha256": "6a4f5feee983cb559f5bd012a65fc1b339c14f981b45a97f1ded0e9b91fdfba2",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-6A4F5FEEE983"
+      ],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}; auth=inherited bearer; body={ \"active\": 0 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id total_count 0 is bad input, before state is considered",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}"
+      },
+      "requestEventSha256": "ff8762a7a10be3cc064dc272df24b7cfc4951d43726077c757507353f15aebc0",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-FF8762A7A10B"
+      ],
+      "testMarker": "zero is refused as INPUT, so it never reaches the state check",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}; auth=inherited bearer; body={ \"total_count\": 0 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=zero is refused as INPUT, so it never reaches the state check."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "setup · pay it twice more, so paid_count reaches 3",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}/pay"
+      },
+      "requestEventSha256": "08c37946c90d74b79e8f8dce888575e64a5fb04ba215e30412292ba626e8c6f2",
+      "classification": "case_arrange",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-E9E3672999F0"
+      ],
+      "testMarker": "expectOk(200, 'payResult')",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}/pay; auth=inherited bearer; body=none; checks=expectOk(200, 'payResult'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "setup · the third payment finishes it",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}/pay"
+      },
+      "requestEventSha256": "c4d8a35de6e725fa1f89bde28f5cc7fa397300efd1e28e01d8344bdf6f4b099f",
+      "classification": "case_arrange",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-E9E3672999F0"
+      ],
+      "testMarker": "finished after the third",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}/pay; auth=inherited bearer; body=none; checks=expectOk(200, 'payResult'); assertions=finished after the third."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id raising total_count reopens a finished loan",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}"
+      },
+      "requestEventSha256": "e9e3672999f02d079f9c3b26be976c2fbd7f88dac870d1db5983cfc973a3de86",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-E9E3672999F0"
+      ],
+      "testMarker": "active is DERIVED from the counts, not preserved (D-029)",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}; auth=inherited bearer; body={ \"total_count\": 6 }; checks=expectOk(200, 'schedule'); assertions=active is DERIVED from the counts, not preserved (D-029)."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id total_count below paid_count is 409, not 400",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}"
+      },
+      "requestEventSha256": "47fd85c284ab09ae7d5e9b8c3df3a7cee21b761f369962ac775c22aedd5fc3ad",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-47FD85C284AB"
+      ],
+      "testMarker": "a valid integer that conflicts with state is 409, not 400",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}; auth=inherited bearer; body={ \"total_count\": 1 }; checks=expectError(409, 'CONFLICT'); assertions=a valid integer that conflicts with state is 409, not 400."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id total_count equal to paid_count finishes it",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}"
+      },
+      "requestEventSha256": "350b2a7a5448325efd1f00a1daa45421d1924e601e8fe01c65146db0cd16bf42",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-350B2A7A5448"
+      ],
+      "testMarker": "finished, reached from the other direction than the last payment",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}; auth=inherited bearer; body={ \"total_count\": 3 }; checks=expectOk(200, 'schedule'); assertions=finished, reached from the other direction than the last payment."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id/pay a loan finished by editing cannot be paid",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}/pay"
+      },
+      "requestEventSha256": "878e8eca9eab6684e4903ca43f88816b332267abb9505a57e15b8016f891ebc0",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-878E8ECA9EAB"
+      ],
+      "testMarker": "the state machine does not care how it reached finished",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}/pay; auth=inherited bearer; body=none; checks=expectError(409, 'CONFLICT'); assertions=the state machine does not care how it reached finished."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id day_of_month 32 is refused on edit too",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}"
+      },
+      "requestEventSha256": "d4bdd4178d3e91541ce64e6418adf8f66ab74b7e8c7f93caa3769de7e3f6cd9a",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-D4BDD4178D3E"
+      ],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}; auth=inherited bearer; body={ \"day_of_month\": 32 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "10 · Editing (D-029)",
+        "name": "PATCH /schedules/:id another user gets 404, never 403",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{editSched}}"
+      },
+      "requestEventSha256": "f5d4f1b7cf3467c66c12df926ff272b24eeb0a12065a4c02e2d8ef77ccb81899",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-EDIT-F5D4F1B7CF34"
+      ],
+      "testMarker": "expectError(404, 'NOT_FOUND')",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{editSched}}; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body={ \"name\": \"stolen\" }; checks=expectError(404, 'NOT_FOUND'), expectNotForbidden(); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "GET /ai/capabilities (off) → 200, disabled, nothing secret",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/ai/capabilities"
+      },
+      "requestEventSha256": "f52637484c1538389fdc45dafed49f49f79996fbfcf41cb293f49df582c4155c",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-AI-F52637484C15"
+      ],
+      "testMarker": "the off-mode capability shape, exactly",
+      "oracleReason": "GET {{baseUrl}}/api/ai/capabilities; auth=inherited bearer; body=none; checks=expectStatus(200); assertions=the off-mode capability shape, exactly."
+    },
+    {
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /ai/expense-draft without a token → 401",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/ai/expense-draft"
+      },
+      "requestEventSha256": "24aab6dbb7e24808573b5dac58f8cadbcb376b0208b911b7af2d1fdcd7af8206",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-AI-24AAB6DBB7E2"
+      ],
+      "testMarker": "expectError(401, 'UNAUTHORIZED')",
+      "oracleReason": "POST {{baseUrl}}/api/ai/expense-draft; auth={\"type\":\"noauth\"}; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"}]; body={ \"text\": \"Lunch 9 EUR\", \"reference_date\": \"{{aiToday}}\", \"locale\": \"auto\" }; prerequest=// The server compares reference_date and keyed spent_on with its own local day. const d = new Date(); const p = (n) => String(n).padStart(2, '0'); pm.collectionVariables.set('aiTo; checks=expectError(401, 'UNAUTHORIZED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /ai/expense-draft with an unknown field → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/ai/expense-draft"
+      },
+      "requestEventSha256": "56313949bc61fe0a0473d7146c8df283601382811aa41acc468ebe6799099ce4",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-AI-56313949BC61"
+      ],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "POST {{baseUrl}}/api/ai/expense-draft; auth=inherited bearer; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"}]; body={ \"text\": \"Lunch 9 EUR\", \"reference_date\": \"{{aiToday}}\", \"locale\": \"auto\", \"provider\": \"demo\" }; prerequest=// The server compares reference_date and keyed spent_on with its own local day. const d = new Date(); const p = (n) => String(n).padStart(2, '0'); pm.collectionVariables.set('aiTo; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /ai/expense-draft (off) → 503 AI_UNAVAILABLE",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/ai/expense-draft"
+      },
+      "requestEventSha256": "be6b0e4c14f5385241ce002317358f82b934c48ab88ee3086d7624acc55c1d2e",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-AI-BE6B0E4C14F5"
+      ],
+      "testMarker": "the message points to manual entry",
+      "oracleReason": "POST {{baseUrl}}/api/ai/expense-draft; auth=inherited bearer; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"}]; body={ \"text\": \"Lunch 9 EUR\", \"reference_date\": \"{{aiToday}}\", \"locale\": \"auto\", \"consent_to_external_processing\": true }; prerequest=// The server compares reference_date and keyed spent_on with its own local day. const d = new Date(); const p = (n) => String(n).padStart(2, '0'); pm.collectionVariables.set('aiTo; checks=expectError(503, 'AI_UNAVAILABLE'); assertions=the message points to manual entry."
+    },
+    {
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /transactions with Idempotency-Key → 201",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "3de6bc99cdcf47b533974a5a3ae260e5fcb16d23715ed8ba12f6b9cface08ce1",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-AI-3DE6BC99CDCF"
+      ],
+      "testMarker": "a first save is not a replay",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"},{\"key\":\"Idempotency-Key\",\"value\":\"{{aiKey}}\"}]; body={ \"amount_cents\": 1800, \"category_id\": {{catA}}, \"spent_on\": \"{{aiToday}}\", \"note\": \"keyed lunch\" }; prerequest=// The server compares reference_date and keyed spent_on with its own local day. const d = new Date(); const p = (n) => String(n).padStart(2, '0'); pm.collectionVariables.set('aiTo; checks=expectOk(201, 'transaction'); assertions=a first save is not a replay."
+    },
+    {
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /transactions same key, same payload → 201 replay, same row",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "d82522c85456aeae85a7ffb155b5476d7f77a77cf0147019710af66aa20fe7d5",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-AI-D82522C85456"
+      ],
+      "testMarker": "marked as a replay",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"},{\"key\":\"Idempotency-Key\",\"value\":\"{{aiKey}}\"}]; body={ \"note\": \"keyed lunch\", \"spent_on\": \"{{aiToday}}\", \"category_id\": {{catA}}, \"amount_cents\": 1800 }; checks=expectOk(201, 'transaction'); assertions=marked as a replay / the same expense, not a second one."
+    },
+    {
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /transactions same key, different amount → 409",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "1a13ff4633697cb2c237e8cb77f9f2b0ae6a8ce372a1ef0c27749dba431ca4d1",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-AI-1A13FF463369"
+      ],
+      "testMarker": "expectError(409, 'IDEMPOTENCY_CONFLICT')",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"},{\"key\":\"Idempotency-Key\",\"value\":\"{{aiKey}}\"}]; body={ \"amount_cents\": 1900, \"category_id\": {{catA}}, \"spent_on\": \"{{aiToday}}\", \"note\": \"keyed lunch\" }; checks=expectError(409, 'IDEMPOTENCY_CONFLICT'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /transactions keyed without spent_on → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "e9f3807726f0a071fc8a22d7a3c3c04486451540918f24a8b118fec73bfe5af1",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-AI-E9F3807726F0"
+      ],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"},{\"key\":\"Idempotency-Key\",\"value\":\"qa-no-date-{{runId}}\"}]; body={ \"amount_cents\": 1800, \"category_id\": {{catA}} }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /transactions with a malformed Idempotency-Key → 400",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "fa43dd0bc0433f0d5b532a8c0b757e7da224a14f42864c4b2d0668654a436345",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-AI-FA43DD0BC043"
+      ],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"},{\"key\":\"Idempotency-Key\",\"value\":\"short\"}]; body={ \"amount_cents\": 1800, \"category_id\": {{catA}}, \"spent_on\": \"{{aiToday}}\", \"note\": \"keyed lunch\" }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "DELETE /transactions/:id the keyed expense → 204",
+        "method": "DELETE",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{aiKeyedTx}}"
+      },
+      "requestEventSha256": "4b686db55ad317cfb9e9d8335f4b4a11c617ffca7e982a3bd73fb5a816e40895",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-AI-4B686DB55AD3"
+      ],
+      "testMarker": "expectStatus(204)",
+      "oracleReason": "DELETE {{baseUrl}}/api/transactions/{{aiKeyedTx}}; auth=inherited bearer; body=none; checks=expectStatus(204), expectNoBody(); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /transactions replay of a deleted expense's key → 409, not resurrected",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "1d867a0f8300548c35e2604aff0345ea3cb73307ea99bd6bd330283c5af35a56",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-AI-1D867A0F8300"
+      ],
+      "testMarker": "expectError(409, 'IDEMPOTENCY_REPLAY_UNAVAILABLE')",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"},{\"key\":\"Idempotency-Key\",\"value\":\"{{aiKey}}\"}]; body={ \"amount_cents\": 1800, \"category_id\": {{catA}}, \"spent_on\": \"{{aiToday}}\", \"note\": \"keyed lunch\" }; checks=expectError(409, 'IDEMPOTENCY_REPLAY_UNAVAILABLE'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "11 · AI drafts and keyed saves (D-033–D-035)",
+        "name": "POST /transactions with a body over the parser limit → 413, not 500 (BUG-019)",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "e4709cfe7b5de2af85c2357508a7d9a5c40ba372a2f74e6b6637ea91e26f4d96",
+      "classification": "business_assertion",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-AI-E4709CFE7B5D"
+      ],
+      "testMarker": "expectError(413, 'PAYLOAD_TOO_LARGE')",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; headers=[{\"key\":\"Content-Type\",\"value\":\"application/json\"}]; body={ \"amount_cents\": 1, \"note\": \"{{bigNote}}\" }; prerequest=pm.collectionVariables.set('bigNote', 'x'.repeat(120 * 1024));; checks=expectError(413, 'PAYLOAD_TOO_LARGE'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-091 · PUT /settings sets a monthly limit",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "e9584df4934cea2cecf591dd480605b25bc91a0607e7c4ba1bc3c3367ab69f14",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-091"
+      ],
+      "extendedIds": [],
+      "testMarker": "the stored limit is 12000",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 150000, \"monthly_limit_cents\": 12000 }; checks=expectOk(200, 'settings'); assertions=the stored limit is 12000 / the income is untouched."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-091 · GET /settings returns the stored limit",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "54e8d5099e51b2c2dda1e682700d7f8ed913db73a409b1f563f14e9a5039c86d",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-091"
+      ],
+      "extendedIds": [],
+      "testMarker": "the stored limit is 12000",
+      "oracleReason": "GET {{baseUrl}}/api/settings; auth=inherited bearer; body=none; checks=expectOk(200, 'settings'); assertions=the stored limit is 12000."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-092 · PUT /settings with null clears the limit",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "361cdec05a4e2222bba206edf6bce809853a5f45eca1fc44fc672ada8b42661c",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-092"
+      ],
+      "extendedIds": [],
+      "testMarker": "the stored limit is null",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 150000, \"monthly_limit_cents\": null }; checks=expectOk(200, 'settings'); assertions=the stored limit is null."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-092 · GET /settings after clearing reports null",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "e3ec88f67aaef947ec6ec9005611e025dbb9859479e68d82ad7508547ba1abbf",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-092"
+      ],
+      "extendedIds": [],
+      "testMarker": "the stored limit is null",
+      "oracleReason": "GET {{baseUrl}}/api/settings; auth=inherited bearer; body=none; checks=expectOk(200, 'settings'); assertions=the stored limit is null."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-093 · arrange: set the limit to 9900",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "0c7ef346cbb7c2562ceff5688d9b14ecaf830247ff1418b0aad9e1ff0e42eeaf",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-093"
+      ],
+      "extendedIds": [],
+      "testMarker": "the stored limit is 9900",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 150000, \"monthly_limit_cents\": 9900 }; checks=expectOk(200, 'settings'); assertions=the stored limit is 9900."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-093 · PUT /settings without the field leaves the limit alone",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "7360cc0ab5a88175fdd58559978ae30a15a8d6cd28891493270bb2bbdd4494e8",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-093"
+      ],
+      "extendedIds": [],
+      "testMarker": "the omitted limit is 9900",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 150000 }; checks=expectOk(200, 'settings'); assertions=the omitted limit is 9900."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-094 · GET /summary carries the limit, its state and what is left",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "0df31be07727f0ba271740f35f0fda3f764ed9f2d33906743ea785e565675f76",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-094"
+      ],
+      "extendedIds": [],
+      "testMarker": "the limit is reported",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=the limit is reported / what is left is the limit minus the month total, to the cent / the state follows the decision table."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-102 · a negative limit is refused",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "a0d4f1b0c829c49c45193f8781c52a0d773a4df359f854bfb33402f71a83623c",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-102"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 150000, \"monthly_limit_cents\": -1 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-102 · a fractional limit is refused",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "7d99fb4f701d948d486407beed61aa14337f2071fc23ef6645068ef2de3c8300",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-102"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 150000, \"monthly_limit_cents\": 12.5 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-102 · a limit sent as a string is refused",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "4106491ae2cec4966f98ece3718ea9185c90b38c22189cd1533314c4d29381aa",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-102"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 150000, \"monthly_limit_cents\": \"12000\" }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-102 · a boolean limit is refused",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "69d5a2daf75dfa4a554fec17245434a70a9de0bb7ef62a93ea668cc8c4b2fe8e",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-102"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 150000, \"monthly_limit_cents\": true }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-102 · one cent above the ceiling is refused",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "71f9b6c283ee8e86d35e0a4c4acc90c83589d3c3dc0f48726f0722974e4fca3e",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-102"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 150000, \"monthly_limit_cents\": 100000001 }; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-102 · five refusals changed nothing",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "25cc6672eaf78cbb54ab4010c54c2a293c9a1bf47e29ed289f4cfbe1ef648608",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-102"
+      ],
+      "extendedIds": [],
+      "testMarker": "the limit from before the refusals is 9900",
+      "oracleReason": "GET {{baseUrl}}/api/settings; auth=inherited bearer; body=none; checks=expectOk(200, 'settings'); assertions=the limit from before the refusals is 9900."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-103 · the ceiling exactly is accepted",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "61cf6f2b0955945f133345945678c130680e46c52dd37219587e0a43afffcae5",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-103"
+      ],
+      "extendedIds": [],
+      "testMarker": "the ceiling is stored exactly",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 150000, \"monthly_limit_cents\": {{ceiling}} }; checks=expectOk(200, 'settings'); assertions=the ceiling is stored exactly."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-105 · GET /settings without a token is refused",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "430f4a24af3ec6c847bf43a34eeab4e23529a4fbd969d1c88626b481b9d3ab14",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-105"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(401, 'UNAUTHORIZED')",
+      "oracleReason": "GET {{baseUrl}}/api/settings; auth={\"type\":\"noauth\"}; body=none; checks=expectError(401, 'UNAUTHORIZED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-105 · PUT /settings without a token is refused",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "354fa9f76e14fc766d04504bf625bb9bf778b3f7e514d9569888af70084d2355",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-105"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(401, 'UNAUTHORIZED')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth={\"type\":\"noauth\"}; body={ \"monthly_income_cents\": 150000, \"monthly_limit_cents\": 12000 }; checks=expectError(401, 'UNAUTHORIZED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-095 · R1 no limit on an empty month is not_set",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "74034b3c99df329f8786fbc2a67581d2a9d4b7078ea6e62eec56af24f726a103",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-095"
+      ],
+      "extendedIds": [],
+      "testMarker": "an untouched account has no limit and no state",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body=none; checks=expectOk(200, 'summary'); assertions=an untouched account has no limit and no state."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-096 · R3 arrange: a limit on an empty month",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "a7c146b049ead73b4166b71be0cfbe835e2771eb71eec5c16554d331283fc94a",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-096"
+      ],
+      "extendedIds": [],
+      "testMarker": "the stored limit is 5000",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body={ \"monthly_income_cents\": 0, \"monthly_limit_cents\": 5000 }; checks=expectOk(200, 'settings'); assertions=the stored limit is 5000."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-096 · R3 zero spending is within the limit",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "033e190c316515ae2a4bfa1607d194f48d5f46929e346fc05274c423b96a1efe",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-096"
+      ],
+      "extendedIds": [],
+      "testMarker": "limit_status is within",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body=none; checks=expectOk(200, 'summary'); assertions=limit_status is within / what is left of the limit is exact / the month total is 0."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-099 · R7 arrange: a zero limit on an empty month",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "57b75aeaefeb9dbdb2d2bff1607ff21b9e2958ec3ec44f7fd382dc3b5c0f4fe4",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-099"
+      ],
+      "extendedIds": [],
+      "testMarker": "the stored limit is 0",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body={ \"monthly_income_cents\": 0, \"monthly_limit_cents\": 0 }; checks=expectOk(200, 'settings'); assertions=the stored limit is 0."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-099 · R7 a zero limit with no spending is reached",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "eb46ff52e9b662e1dbcaf3c307b1712b6a9ed0c2bfb58460e4c1666e227bbd32",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-099"
+      ],
+      "extendedIds": [],
+      "testMarker": "limit_status is reached",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body=none; checks=expectOk(200, 'summary'); assertions=limit_status is reached / what is left of the limit is exact / the month total is 0."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-100 · arrange: the smallest limit above zero",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "cf80c24846c28c9875228ca067edbcad30714293298b490cbb79f8966d0454b6",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-100"
+      ],
+      "extendedIds": [],
+      "testMarker": "the stored limit is 1",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body={ \"monthly_income_cents\": 0, \"monthly_limit_cents\": 1 }; checks=expectOk(200, 'settings'); assertions=the stored limit is 1."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-100 · one cent of limit on an empty month is within",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "9fe3a578ac80f1d8088c500da9c6293d0dd312276b97f0ced07caffee29d67d9",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-100"
+      ],
+      "extendedIds": [],
+      "testMarker": "limit_status is within",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body=none; checks=expectOk(200, 'summary'); assertions=limit_status is within / what is left of the limit is exact / the month total is 0."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-096 · arrange: spend exactly 2500 on the empty account",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "67c3f58df15ace8016952986c27c3935a129784c7f09413aab1e2b6ade84751d",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-096"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(201, 'transaction')",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body={ \"amount_cents\": 2500, \"category_id\": {{catB}}, \"note\": \"limit boundary\" }; checks=expectOk(201, 'transaction'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-096 · R4 arrange: a limit above that total",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "481164e952a954891e79673c9ccb02330b4d9ac99b320bd1c78050c0bf0e1196",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-096"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(200, 'settings')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body={ \"monthly_income_cents\": 0, \"monthly_limit_cents\": 3000 }; checks=expectOk(200, 'settings'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-096 · R4 spending below the limit is within",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "6e4693db6c4b7f5309055cf5a29124c67180107de871a31dac9d4f2bc83ce3bf",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-096"
+      ],
+      "extendedIds": [],
+      "testMarker": "limit_status is within",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body=none; checks=expectOk(200, 'summary'); assertions=limit_status is within / what is left of the limit is exact / the month total is 2500."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-097 · R5 arrange: the limit is exactly the month total",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "8e0420b16faca7f55ce14a83215486754437d2247f6bb12a143b3747bc975d29",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-097"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(200, 'settings')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body={ \"monthly_income_cents\": 0, \"monthly_limit_cents\": 2500 }; checks=expectOk(200, 'settings'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-097 · R5 exactly at the limit is reached, not exceeded",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "28d8b95fb44b11457737d30a25fcbcf61dd57ba64a634c9e294800accdb1d9ac",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-097"
+      ],
+      "extendedIds": [],
+      "testMarker": "limit_status is reached",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body=none; checks=expectOk(200, 'summary'); assertions=limit_status is reached / what is left of the limit is exact / the month total is 2500."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-098 · R6 arrange: one cent below the month total",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "b4752a5239d2601a7400655ab1894b5cbee093cb1250d640e32049f9308bc264",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-098"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(200, 'settings')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body={ \"monthly_income_cents\": 0, \"monthly_limit_cents\": 2499 }; checks=expectOk(200, 'settings'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-098 · R6 one cent over is exceeded and what is left is negative",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "2e64b812005bfb7ec51f56253143ce1295ccf1f9504e4abf1c4908071c8770ca",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-098"
+      ],
+      "extendedIds": [],
+      "testMarker": "limit_status is exceeded",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body=none; checks=expectOk(200, 'summary'); assertions=limit_status is exceeded / what is left of the limit is exact / the month total is 2500."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-099 · R8 arrange: a zero limit while the month has spending",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "d39daa7ece5e6442e2af51138f4e2a18c9ff4214115ac15f27f32bfbfe273b64",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-099"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(200, 'settings')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body={ \"monthly_income_cents\": 0, \"monthly_limit_cents\": 0 }; checks=expectOk(200, 'settings'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-099 · R8 a zero limit with spending is exceeded",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "b0aa61a1eae6633ff60ee4291c1db74fbd997ec7c7a13bb965aa9652e5eebf50",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-099"
+      ],
+      "extendedIds": [],
+      "testMarker": "limit_status is exceeded",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body=none; checks=expectOk(200, 'summary'); assertions=limit_status is exceeded / what is left of the limit is exact / the month total is 2500."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-101 · arrange: a limit already exceeded",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "b1dd7ea82be203682fedf3b7c13b12d138a5b9f96af185ed8a9f90ab1f57e66b",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-101"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(200, 'settings')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body={ \"monthly_income_cents\": 0, \"monthly_limit_cents\": 1000 }; checks=expectOk(200, 'settings'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-101 · an expense above the limit is still created",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "6676653b3393e5faab016ab34754c4a88ceaaa34e52792a5c369442be2a79c95",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-101"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(201, 'transaction')",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body={ \"amount_cents\": 1000, \"category_id\": {{catB}}, \"note\": \"over the limit on purpose\" }; checks=expectOk(201, 'transaction'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-101 · the month total moved and the state followed",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "f3336dfdff394634b0f0fa50daedfdf80c8435b68f3b445a9cf3ec8270ed75e7",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-101"
+      ],
+      "extendedIds": [],
+      "testMarker": "limit_status is exceeded",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body=none; checks=expectOk(200, 'summary'); assertions=limit_status is exceeded / what is left of the limit is exact / the month total is 3500."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-095 · R2 arrange: clear the limit while the month has spending",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "b63e877082a6e258f90881f27187912a2f66dee812113a8eabb57d720a45fced",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-095"
+      ],
+      "extendedIds": [],
+      "testMarker": "the stored limit is null",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body={ \"monthly_income_cents\": 0, \"monthly_limit_cents\": null }; checks=expectOk(200, 'settings'); assertions=the stored limit is null."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-095 · R2 no limit on a month with spending is not_set",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "8262a4d11fcdfb35c38d1d9f906f6efa0a2d8e59b74f8b6848494d9711c6e833",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-095"
+      ],
+      "extendedIds": [],
+      "testMarker": "no limit means no judgement",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body=none; checks=expectOk(200, 'summary'); assertions=no limit means no judgement / the month total is unaffected by the limit."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-104 · the other account's limit stays its own",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "f754848fe031193366178896d3cb488552fa4b357c68b8af24649a9df49da68f",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-104"
+      ],
+      "extendedIds": [],
+      "testMarker": "the first account still has the ceiling it set, not the second account\\",
+      "oracleReason": "GET {{baseUrl}}/api/settings; auth=inherited bearer; body=none; checks=expectOk(200, 'settings'); assertions=the first account still has the ceiling it set, not the second account\\."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "TC-API-104 · and the first account's spending is still its own",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "144eb449d627106f73f68e4427225a24ff3ca04a4da8804fd4e5091b52d2abd5",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-104"
+      ],
+      "extendedIds": [],
+      "testMarker": "the month total did not move while the other account spent",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=the month total did not move while the other account spent."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "Clean up: remove the second account's boundary expense",
+        "method": "DELETE",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{mlTxB}}"
+      },
+      "requestEventSha256": "f4ea232a462a076039beee7f36902b0f556ecd94873eacda335dec31680c17f4",
+      "classification": "case_cleanup",
+      "caseIds": [
+        "TC-API-096"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectStatus(204)",
+      "oracleReason": "DELETE {{baseUrl}}/api/transactions/{{mlTxB}}; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body=none; checks=expectStatus(204); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "Clean up: remove the second account's over-the-limit expense",
+        "method": "DELETE",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{mlTxB2}}"
+      },
+      "requestEventSha256": "d0cca1dbc755677d41f51c8565d32d46dce245fbfecd42f4e3822b709afba3fb",
+      "classification": "case_cleanup",
+      "caseIds": [
+        "TC-API-101"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectStatus(204)",
+      "oracleReason": "DELETE {{baseUrl}}/api/transactions/{{mlTxB2}}; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body=none; checks=expectStatus(204); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "Restore: the second account has no limit and no income again",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "b63e877082a6e258f90881f27187912a2f66dee812113a8eabb57d720a45fced",
+      "classification": "supporting_control",
+      "caseIds": [
+        "TC-API-095",
+        "TC-API-104"
+      ],
+      "extendedIds": [],
+      "testMarker": "the stored limit is null",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{tokenB}}\",\"type\":\"string\"}]}; body={ \"monthly_income_cents\": 0, \"monthly_limit_cents\": null }; checks=expectOk(200, 'settings'); assertions=the stored limit is null."
+    },
+    {
+      "selector": {
+        "folder": "12 · Monthly spending limit",
+        "name": "Restore: the first account keeps its income and no limit",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "2f0d59e9e1ce6b41e8be3d22b7005616673a0a08c699344baed5fa42a47a0fd2",
+      "classification": "supporting_control",
+      "caseIds": [
+        "TC-API-091",
+        "TC-API-104"
+      ],
+      "extendedIds": [],
+      "testMarker": "the stored limit is null",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={ \"monthly_income_cents\": 150000, \"monthly_limit_cents\": null }; checks=expectOk(200, 'settings'); assertions=the stored limit is null / the income survived every limit change."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "Setup · fresh category-limit account",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/register"
+      },
+      "requestEventSha256": "f2a2815350613ab953998de0de90cad8e56b3e6f4d64b1770ad53e2b360cc71e",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-114"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(201, 'token')",
+      "oracleReason": "POST {{baseUrl}}/api/auth/register; auth={\"type\":\"noauth\"}; body={\"email\":\"cl-{{runId}}@example.test\",\"password\":\"cl-pass-{{runId}}\"}; checks=expectOk(201, 'token'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-114 · categories initially have NULL limits",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/categories"
+      },
+      "requestEventSha256": "de62f744b7ceb4b7455ee9eaf4542e820d473f0ae28597e9e7a5169e8c157a16",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-114"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-01 / initial nullable field",
+      "oracleReason": "GET {{baseUrl}}/api/categories; auth=inherited bearer; body=none; checks=expectOk(200, 'categoryList'); assertions=REQ-CL-01 / initial nullable field."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-114 · no-spend no-limit categories hidden",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "2e0f917e2dc6f54220f174a01baef8e90513ca7ccc902787e4231dcef752e786",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-114"
+      ],
+      "extendedIds": [],
+      "testMarker": "CR2 / CR3",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=CR2 / CR3."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-115 · set 20000",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "5892978c5e8426e5f0c59f80904e537b333c37a3c2b5a1a8d2e3c646dd81bf4a",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-115"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-01 / category field",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"monthly_limit_cents\":20000}; checks=expectOk(200, 'category'); assertions=REQ-CL-01 / category field."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-115 · GET retains limit and category name",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/categories"
+      },
+      "requestEventSha256": "d6ed2d681bb76018a16b7d64c578bc36752ef38cd5af2f3885eba0619d29ab9e",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-115"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-01 stored value",
+      "oracleReason": "GET {{baseUrl}}/api/categories; auth=inherited bearer; body=none; checks=expectOk(200, 'categoryList'); assertions=REQ-CL-01 stored value."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-116 · replace current limit",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "3c268190c599d8095079e7a360b7511f3eb4f5c7d549ac1e8887e7791b270d8f",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-116"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-01 / category field",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"monthly_limit_cents\":15000}; checks=expectOk(200, 'category'); assertions=REQ-CL-01 / category field."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-116 · cl1 state within",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "d60a171f98a0ea7b64198b9deccf98e8e2973c15c1a5e83448eee075c3b8e874",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-116"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-117 · zero is real",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "b3bbf70d21a8f90dd7c62d15211b3046d9cbd8c7937eaf489455573b05f25cad",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-117"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-01 / category field",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"monthly_limit_cents\":0}; checks=expectOk(200, 'category'); assertions=REQ-CL-01 / category field."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-117 · cl1 state reached",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "db7ff82557b5f10bf09794d80a0741469d09cc351a75c9bcab37f78e9c78751a",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-117"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-117 · save even with zero budget",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "b789e1a2af63b04a36e8f8f97d9790596a5566458018bb4f921851fcfec7ab25",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-117"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(201, 'transaction')",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; body={\"amount_cents\":1,\"category_id\":{{cl1}}}; checks=expectOk(201, 'transaction'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-117 · cl1 state exceeded",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "fe99322e7128872773aeef7611377910acf4184e81b20e6fa5c6f4cbb2d274b3",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-117"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-118 · explicit NULL clears",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "20f6a84a728f692521d27f89074a9340ddb0e755eb0aaa7912c1b7f89325d73c",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-118"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-01 / category field",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"monthly_limit_cents\":null}; checks=expectOk(200, 'category'); assertions=REQ-CL-01 / category field."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-118 · cl1 state not_set",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "0f89d3cc647cf5127601e3da06977207ff723e8965763791e1d338453cef7a34",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-118"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-119 · arrange unchanged limit",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "995e0c854df5cd645910a5ec44c884c0804f77aef10d0859a40edfd860211a2d",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-119"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-01 / category field",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"monthly_limit_cents\":9000}; checks=expectOk(200, 'category'); assertions=REQ-CL-01 / category field."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-119 · empty/unknown/server-owned PATCH refused",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "c0aa948a0e6174ee7037eb39c8a1ae9a86c7becda01c69686080793251411e69",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-119"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-119 · empty/unknown/server-owned PATCH refused",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "631bb90ec63ee3972073f3892ae88f2295ebde89d3bcf727d7b678414bb4b6db",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-119"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"name\":\"Not a rename\"}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-119 · empty/unknown/server-owned PATCH refused",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "a3cdf47e0a280c56a0a427b344e27063d67eff5db80bd2744040e1b790bc644e",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-119"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"icon\":\"X\"}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-119 · empty/unknown/server-owned PATCH refused",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "6b6b1eacd31ac9b934eb61442b992887d3403ab3f6ce27cb1439c2d1b3318f80",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-119"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"id\":123}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-119 · empty/unknown/server-owned PATCH refused",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "3ea36a36aff574c5afa67e923fb084c5729252a3f4624f3978e48a6ada56459a",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-119"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"user_id\":123}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-119 · empty/unknown/server-owned PATCH refused",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "cb51acc089641d2f0e1672813fae7db25584ad13ea4c5b1f747ccba186b5cbe4",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-119"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"created_at\":\"2020-01-01\"}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-120 · invalid value refused",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "f37362ebae80c44fe2ae10466f36ca947104c6c023abfbd0120aa29de392b9c5",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-120"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"monthly_limit_cents\":-1}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-120 · invalid value refused",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "27334bf30d3207e2aa1fb29b8ec7157892592379bfe7c518dea354c27cbfbcd6",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-120"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"monthly_limit_cents\":12.5}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-120 · invalid value refused",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "a5d1642d972bef90bdd951ac8ed2f2d78f893072587edc1a9cf3ae7f72880098",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-120"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"monthly_limit_cents\":\"12000\"}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-120 · invalid value refused",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "b54a564493a4f8f19adc6703ffd16f680eb5f214e64275e9a384bf9a8365b2bc",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-120"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"monthly_limit_cents\":true}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-120 · invalid value refused",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "6dbe0ed68c9cfef87078bf761245592438953bb6736e62c903e709009c946690",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-120"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"monthly_limit_cents\":[]}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-120 · invalid value refused",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "d58397e8b2b546cd4491900e86464581c3ba7442ef988d5db8073455dc412fe7",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-120"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"monthly_limit_cents\":{}}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-120 · invalid value refused",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "9042ff42baca468aaaac8f7b6fd6afe2fa61410ea2d5af760ff81cf89f67f9ca",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-120"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"monthly_limit_cents\":100000001}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-120 · invalid writes leave stored value intact",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/categories"
+      },
+      "requestEventSha256": "45fbed948d0fce7430c2ea7f0f7905e377891a21e1b4a4f30f97f8417907953b",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-120"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-03 / 04 no change",
+      "oracleReason": "GET {{baseUrl}}/api/categories; auth=inherited bearer; body=none; checks=expectOk(200, 'categoryList'); assertions=REQ-CL-03 / 04 no change."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-121 · accept exact ceiling",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "778879571c0a5993689953d4cb8ef54e04bbc4369024a7189d29e182b8e20000",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-121"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-01 / category field",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"monthly_limit_cents\":100000000}; checks=expectOk(200, 'category'); assertions=REQ-CL-01 / category field."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-122 · invalid category id abc",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/abc"
+      },
+      "requestEventSha256": "642697c832d809d3ce45a9c62d6b883b442f37d803b38474d30e31e1997cd89a",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-122"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/abc; auth=inherited bearer; body={\"monthly_limit_cents\":1}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-122 · invalid category id 0",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/0"
+      },
+      "requestEventSha256": "3b47ea0c3b9bdd481dc9f566d04f2beb0634315b5fdf94d61f16e943684e290a",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-122"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/0; auth=inherited bearer; body={\"monthly_limit_cents\":1}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-122 · invalid category id -1",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/-1"
+      },
+      "requestEventSha256": "2b5e0a8412472b8706b901af5478e84b7c73ae02744ba1c9bfed50c1b0729cb8",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-122"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/-1; auth=inherited bearer; body={\"monthly_limit_cents\":1}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-122 · invalid category id 1.5",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/1.5"
+      },
+      "requestEventSha256": "e9534f246e916944bcd74dc9063705d7580c218ee0da27ec8070def4f778e2e7",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-122"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/1.5; auth=inherited bearer; body={\"monthly_limit_cents\":1}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-122 · invalid category id null",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/null"
+      },
+      "requestEventSha256": "068d54f1dcaee245422524ad50431b33932e9171023e7dd5ece379969a7f8226",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-122"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/null; auth=inherited bearer; body={\"monthly_limit_cents\":1}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-122 · invalid category id none",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/none"
+      },
+      "requestEventSha256": "910115c1fb7b8f33fa71f92217b9e630b877c9c7f658440f23c03c98c89fa388",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-122"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/none; auth=inherited bearer; body={\"monthly_limit_cents\":1}; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-122 · missing category has canonical 404",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{clMissing}}"
+      },
+      "requestEventSha256": "be5de563664d45188c7cca756b7a85928fd7b6272eebefac542eb958b0f4f920",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-122"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-05 missing resource",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{clMissing}}; auth=inherited bearer; body={\"monthly_limit_cents\":1}; checks=expectError(404, 'NOT_FOUND'); assertions=REQ-CL-05 missing resource."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-123 · no token cannot update",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "f8f3bcb4a4c08145aa98ba41e6c0d07ed6f78a6d5f1e6c2ab4df7411fd49887c",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-123"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(401, 'UNAUTHORIZED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth={\"type\":\"noauth\"}; body={\"monthly_limit_cents\":1}; checks=expectError(401, 'UNAUTHORIZED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "Setup · second independent account",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/register"
+      },
+      "requestEventSha256": "0ebed7860a23651615a5dccaaac334e79170f338d59aba9088855517c96e8f01",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-124",
+        "TC-API-125"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(201, 'token')",
+      "oracleReason": "POST {{baseUrl}}/api/auth/register; auth={\"type\":\"noauth\"}; body={\"email\":\"cl-other-{{runId}}@example.test\",\"password\":\"cl-other-pass-{{runId}}\"}; checks=expectOk(201, 'token'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-124 · foreign category refuses update",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "41aa8d5a0b993649b0f72518b3efbf5f2be475fcdca3d2b20ef24ab7d2eb1f9b",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-124"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-05 same not-found convention",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{clOtherToken}}\",\"type\":\"string\"}]}; body={\"monthly_limit_cents\":1}; checks=expectError(404, 'NOT_FOUND'); assertions=REQ-CL-05 same not-found convention."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-124 · foreign attempt did not change owner value",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/categories"
+      },
+      "requestEventSha256": "05b2230ed049e86907854d778c4711d05c1ba01fb42201708b27d19bb82c7550",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-124"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-05 owner preserved",
+      "oracleReason": "GET {{baseUrl}}/api/categories; auth=inherited bearer; body=none; checks=expectOk(200, 'categoryList'); assertions=REQ-CL-05 owner preserved."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-125 · category reads isolated",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/categories"
+      },
+      "requestEventSha256": "d68acfe1d6d96635d32743c618de4aa0765e98af12e998a1973062d28111ecae",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-125"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-05 no foreign category",
+      "oracleReason": "GET {{baseUrl}}/api/categories; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{clOtherToken}}\",\"type\":\"string\"}]}; body=none; checks=expectOk(200, 'categoryList'); assertions=REQ-CL-05 no foreign category."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-125 · summary reads isolated",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "0d13d4612f1aca47762b8091f24bfc1d4893280c6ef69410f248810a3fa2c38b",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-125"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-05 no foreign spending/budget",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth={\"type\":\"bearer\",\"bearer\":[{\"key\":\"token\",\"value\":\"{{clOtherToken}}\",\"type\":\"string\"}]}; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-05 no foreign spending/budget."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-126 · one-cent budget with zero spend",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl2}}"
+      },
+      "requestEventSha256": "81182dd6c6a821936ca4722da2abd79db5fb3308c5fc7e60da0b883e5524e8ee",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-126"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-01 / category field",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl2}}; auth=inherited bearer; body={\"monthly_limit_cents\":1}; checks=expectOk(200, 'category'); assertions=REQ-CL-01 / category field."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-126 · cl2 state within",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "839a75727177f8d2281375c618e22be76bae443a601eb974d2fcdce8c96bf767",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-126"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-126 · one cent hits one-cent budget",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "c76e6ee1a893983535e6ad9b47a6092c34ab6c191c08526248d18a76e8ecedc2",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-126"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(201, 'transaction')",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; body={\"amount_cents\":1,\"category_id\":{{cl2}}}; checks=expectOk(201, 'transaction'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-126 · cl2 state reached",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "f3dc0b5d7eb2e9f7094c2df1da031089a2634c8170ed75559bb4cac500426bf4",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-126"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-126 · next cent exceeds one-cent budget",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "c76e6ee1a893983535e6ad9b47a6092c34ab6c191c08526248d18a76e8ecedc2",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-126"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(201, 'transaction')",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; body={\"amount_cents\":1,\"category_id\":{{cl2}}}; checks=expectOk(201, 'transaction'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-126 · cl2 state exceeded",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "38ad09e08be91b392b8090892ce5c61f9ff5cc5ad46f7c64102e1aa4baeccffb",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-126"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-127 · within L=100 T=1",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "959e6c6adbdebc383cd6489ca1ef9d19dc61365443a8c5977db4ca2ead6ad94f",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-127"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-01 / category field",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"monthly_limit_cents\":100}; checks=expectOk(200, 'category'); assertions=REQ-CL-01 / category field."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-127 · cl1 state within",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "c76b39f774f0c81af2837819eddd56ff7d54681f6676ddafaca5bbc87cc5d9b9",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-127"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-128 · reach exactly 100",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "120d19aa2e4cb82ee75746c54dc2ea6e5756c04e44d805a5942ac97870d18912",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-128"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(201, 'transaction')",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; body={\"amount_cents\":99,\"category_id\":{{cl1}}}; checks=expectOk(201, 'transaction'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-128 · cl1 state reached",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "25431f53ccb4564de9881cfd81acc2d90ff816a99fb2fe3e136524e3e1e381cd",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-128"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-129 · cross by one cent",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "5bbab9c99db581b93df1e75c44df86aaa9666ae9131151494450b4de41ed7f8f",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-129"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(201, 'transaction')",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; body={\"amount_cents\":1,\"category_id\":{{cl1}}}; checks=expectOk(201, 'transaction'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-129 · cl1 state exceeded",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "50ce8d53f6e56d4c0ea1ad18f2d04134ce8e15b3c68b1584f5725ad5069bf471",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-129"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-130 · zero with positive spending",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "b3bbf70d21a8f90dd7c62d15211b3046d9cbd8c7937eaf489455573b05f25cad",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-130"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-01 / category field",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"monthly_limit_cents\":0}; checks=expectOk(200, 'category'); assertions=REQ-CL-01 / category field."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-130 · cl1 state exceeded",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "723140c8000c3ab25a4095f57a29d56bcfc9135049c5b1d912b4df3f0be7d214",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-130"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-131 · zero-spend limited category listed",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl3}}"
+      },
+      "requestEventSha256": "95c7b06722753f4cab6701f235db5e436caf2312d4fa754411b14974f2e48251",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-131"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-01 / category field",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl3}}; auth=inherited bearer; body={\"monthly_limit_cents\":20000}; checks=expectOk(200, 'category'); echoes the limit field only. This arranges the zero-spend category; the following GET summary is the TC-API-131 listing, ordering, and total oracle."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-131 · ordering and parts sum to whole",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "7ffe8f0826e2144321d23a91b41efa0952c6cdb146453d7f2dfc962d4f935d42",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-131"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-07 ordering and total",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-07 ordering and total."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-132 · create unpaid schedule",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/schedules"
+      },
+      "requestEventSha256": "f8b6d69b4fbccbd0f068a0ffe283705a17e0d8fe5cf4c29dea213f72825ad85d",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-132"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(201, 'schedule')",
+      "oracleReason": "POST {{baseUrl}}/api/schedules; auth=inherited bearer; body={\"name\":\"Category limit fixture\",\"amount_cents\":1000,\"category_id\":{{cl3}},\"day_of_month\":1,\"starts_on\":\"{{clToday}}\"}; checks=expectOk(201, 'schedule'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-132 · cl3 state within",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "c46d63106c4396cf428e65e5e62b78f4f6f5067701cd5c959ed989f6275a236f",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-132"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-133 · pay the category instalment",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/schedules/{{clSchedule}}/pay"
+      },
+      "requestEventSha256": "f3e627036dc342a2ec71f078c8dea95f9a7644f7976c8b2d461f3e68300b2e75",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-133"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(200, 'payResult')",
+      "oracleReason": "PATCH {{baseUrl}}/api/schedules/{{clSchedule}}/pay; auth=inherited bearer; body=none; checks=expectOk(200, 'payResult'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-133 · cl3 state within",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "f475d232a609793ad3e1c5165380cf3fc58392a6e1961b806407f6ee779324c3",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-133"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-134 · uncategorised remains unjudged",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "9add29d25769bcc7ac069aef5ae688442594bda3537f49a4e0fef858c93016b4",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-134"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(201, 'transaction')",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; body={\"amount_cents\":500,\"category_id\":null}; checks=expectOk(201, 'transaction'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-134 · NULL row carries no category budget",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "d9b2327845be5004131a8deab4a03db2321e22df50bd2e365914adb65b51461b",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-134"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-09 / CR1",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-09 / CR1."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-135 · arrange overall income and limit",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "b8108f4ef53f091c219891eeac6ed7ac2576868bf2c806349c0da9e03d565729",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-135"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(200, 'settings')",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={\"monthly_income_cents\":150000,\"monthly_limit_cents\":40000}; checks=expectOk(200, 'settings'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-135 · first independent 30000",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "1794cfe368a88cab3436e7d273d851b13408dcb87cd2be4f77471fbbf226245b",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-135"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-01 / category field",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"monthly_limit_cents\":30000}; checks=expectOk(200, 'category'); assertions=REQ-CL-01 / category field."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-135 · second independent 30000 (sum over overall)",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl2}}"
+      },
+      "requestEventSha256": "bf9ec2e6caf1d88f7a8291df8c18ebd501be0ac97c000447baf27865052aefa5",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-135"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-01 / category field",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl2}}; auth=inherited bearer; body={\"monthly_limit_cents\":30000}; checks=expectOk(200, 'category'); assertions=REQ-CL-01 / category field."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-135 · overall and category budgets stand apart",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "377853c4cbd95516469bdeb0f826ab149feec33f999572ac6e2a6c2fdc86f075",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-135"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-10 independent judgement",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-10 independent judgement."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-135 · income-only save preserves budgets",
+        "method": "PUT",
+        "rawUrl": "{{baseUrl}}/api/settings"
+      },
+      "requestEventSha256": "af155ebbe1d388cb193b1ec12972d608445aa1156fa0ce8d9019f4f35fe04f98",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-135"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-10 overall preserved",
+      "oracleReason": "PUT {{baseUrl}}/api/settings; auth=inherited bearer; body={\"monthly_income_cents\":180000}; checks=expectOk(200, 'settings'); assertions=REQ-CL-10 overall preserved."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-135 · creating a category has no side effects",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/categories"
+      },
+      "requestEventSha256": "baa85830464617ca5c1d516888df1ddf7e2949c56d168811df3fe2b518fbaaa7",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-135"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-03 new category no budget",
+      "oracleReason": "POST {{baseUrl}}/api/categories; auth=inherited bearer; body={\"name\":\"Category-limit new category\"}; checks=expectOk(201, 'category'); assertions=REQ-CL-03 new category no budget."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-135 · cl1 state within",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "ee5815fa9199bb6d2f3e5edf159dba7fff75d8333ac207f5d656d2888f68f340",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-135"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-136 · valid save above category/overall budget",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "fd7c8f6898cbc7ca86a1e35c31d572b93175548f37850fd7adbdf3a72b34fc78",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-136"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(201, 'transaction')",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; body={\"amount_cents\":100000,\"category_id\":{{cl1}}}; checks=expectOk(201, 'transaction'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-136 · cl1 state exceeded",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "ca8296577db5baf50b48d11f1b966e135232d82087a7c6d038c5a0fe2ccdd1d7",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-136"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-137 · edit moves the expense to its current category",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{clHuge}}"
+      },
+      "requestEventSha256": "b25b74745b481f48981b3989dafe2800b691ce88cce51b97fd8625ea13c6f697",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-137"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(200, 'transaction')",
+      "oracleReason": "PATCH {{baseUrl}}/api/transactions/{{clHuge}}; auth=inherited bearer; body={\"category_id\":{{cl2}}}; checks=expectOk(200, 'transaction'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-137 · cl1 state within",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "b5a6ef5f9c121c15d442da8a53a2460d1236ba9a88d4aa27fd7ad4dde1f78a75",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-137"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-137 · cl2 state exceeded",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "0d2d260dd4a5fde879188ee0b530e2b382e250952f87046edf7f42335a3d3022",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-137"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-137 · delete recomputes category state",
+        "method": "DELETE",
+        "rawUrl": "{{baseUrl}}/api/transactions/{{clHuge}}"
+      },
+      "requestEventSha256": "5c60ab1af59a275012ea1a71290346a25f6f11d5a53fbdefc376836c6388b2dc",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-137"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectStatus(204)",
+      "oracleReason": "DELETE {{baseUrl}}/api/transactions/{{clHuge}}; auth=inherited bearer; body=none; checks=expectStatus(204), expectNoBody(); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-137 · cl2 state within",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "9596da82be0a92bf89810039fabdb2abf6d856efcd384b47dfa592dfcf2f812a",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-137"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-138 · another month expense",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/transactions"
+      },
+      "requestEventSha256": "3cc08a496a911046ad33a6d50b09dd27ad70d91819e16dbfe37a2fb6715218bb",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-138"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectOk(201, 'transaction')",
+      "oracleReason": "POST {{baseUrl}}/api/transactions; auth=inherited bearer; body={\"amount_cents\":77,\"category_id\":{{cl3}},\"spent_on\":\"2020-01-02\"}; checks=expectOk(201, 'transaction'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-138 · cl3 state within",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "32b80ec5eba48ea12a7de5bc53c1fa441c7d9a94855c70978ae3e39f33d5bf60",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-138"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-138 · past month uses the current category budget",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary?month=2020-01"
+      },
+      "requestEventSha256": "3d922d53985979181389d6471541077d87930c9215f968479bee8c43b12ee2ae",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-138"
+      ],
+      "extendedIds": [],
+      "testMarker": "CL-D5 / CR14",
+      "oracleReason": "GET {{baseUrl}}/api/summary?month=2020-01; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=CL-D5 / CR14."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-139 · set empty category then clear",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl4}}"
+      },
+      "requestEventSha256": "27fb27abc3d71a2e6e1523d2040d4a898434a1a7e6e11ac1aebfb9cc4304def9",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-139"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-01 / category field",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl4}}; auth=inherited bearer; body={\"monthly_limit_cents\":1200}; checks=expectOk(200, 'category'); assertions=REQ-CL-01 / category field."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-139 · cl4 state within",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "4fd31132c4830267a44421606f4f597d82f64464ae92dada57fad799db58b0d2",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-139"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-139 · clear zero-spend category",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl4}}"
+      },
+      "requestEventSha256": "d56c915614ebf25422bdd855b529983451e775556b07b8026e9063da3b462679",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-139"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-01 / category field",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl4}}; auth=inherited bearer; body={\"monthly_limit_cents\":null}; checks=expectOk(200, 'category'); assertions=REQ-CL-01 / category field."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-139 · cleared zero category disappears",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "bd449bf8d195752bc700f8149e9c8d6cb7ee7a9978efffb41c55e184c4b0e94e",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-139"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-02 / CR3",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-02 / CR3."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-139 · clear category with spending",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl3}}"
+      },
+      "requestEventSha256": "57330f150d160db5b82bd96544fc2d828121b1301de3820501ec731449ff5bdd",
+      "classification": "case_arrange",
+      "caseIds": [
+        "TC-API-139"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-01 / category field",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl3}}; auth=inherited bearer; body={\"monthly_limit_cents\":null}; checks=expectOk(200, 'category'); assertions=REQ-CL-01 / category field."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-139 · cl3 state not_set",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/summary"
+      },
+      "requestEventSha256": "6ec9aacf5646439bf59db7e210bcfeb4649a61fc560d2a00d3b702a1264685fc",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-139"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-06 / decision table",
+      "oracleReason": "GET {{baseUrl}}/api/summary; auth=inherited bearer; body=none; checks=expectOk(200, 'summary'); assertions=REQ-CL-06 / decision table."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-140 · malformed/non-object body {",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "b8d2af36e18b502d637762bcac1897dd2c876ccfe13031d9d56ab706c8daecf3",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-140"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-140 · malformed/non-object body []",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "d0e78ecaa83a0d86b8e3e991044f70e7e355921cc4d021113f5418271f103492",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-140"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body=[]; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-140 · malformed/non-object body null",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "033cc4f29f99876903d09dbc3453226ebae9006f199e56ae4d7d2bce0b430758",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-140"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(400, 'VALIDATION_FAILED')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body=null; checks=expectError(400, 'VALIDATION_FAILED'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-141 · oversized category body is 413",
+        "method": "PATCH",
+        "rawUrl": "{{baseUrl}}/api/categories/{{cl1}}"
+      },
+      "requestEventSha256": "77223bc3e1fa57d4384f957841cc54c92a58772e88e38b31eed72a45c7c5099e",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-141"
+      ],
+      "extendedIds": [],
+      "testMarker": "expectError(413, 'PAYLOAD_TOO_LARGE')",
+      "oracleReason": "PATCH {{baseUrl}}/api/categories/{{cl1}}; auth=inherited bearer; body={\"monthly_limit_cents\":1,\"padding\":\"{{clOversize}}\"}; prerequest=pm.collectionVariables.set('clOversize', 'x'.repeat(102400));; checks=expectError(413, 'PAYLOAD_TOO_LARGE'); assertions=status/schema only."
+    },
+    {
+      "selector": {
+        "folder": "13 · Category spending limits",
+        "name": "TC-API-141 · refused bodies changed no category",
+        "method": "GET",
+        "rawUrl": "{{baseUrl}}/api/categories"
+      },
+      "requestEventSha256": "d0551a2af2cbf5b8d83411313e1f776b4d2df317985761cf586aae324123b3e5",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-141"
+      ],
+      "extendedIds": [],
+      "testMarker": "REQ-CL-04 no change after malformed/oversized bodies",
+      "oracleReason": "GET {{baseUrl}}/api/categories; auth=inherited bearer; body=none; checks=expectOk(200, 'categoryList'); assertions=REQ-CL-04 no change after malformed/oversized bodies."
+    },
+    {
+      "selector": {
+        "folder": "09 · Login rate limiting",
+        "name": "Wait out the window, then fail once → 401",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/login"
+      },
+      "requestEventSha256": "4e7e95918326cd0715daeb94f4dde2cc7eb2e17a016b3acadfec74f20624c00d",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-067"
+      ],
+      "extendedIds": [],
+      "testMarker": "a failed attempt inside the allowance is a 401, not a 429",
+      "oracleReason": "After waiting out earlier login buckets, rlEmail is set to the already registered emailA. The wrong-password attempt for that account asserts 401 and starts the same-identity limit sequence."
+    },
+    {
+      "selector": {
+        "folder": "09 · Login rate limiting",
+        "name": "Fail up to one below the limit → all 401",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/login"
+      },
+      "requestEventSha256": "6f50618cc76fee11edfd0c6e5b25144ec6f76d0f34eb94574f824b4b810e7976",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-068"
+      ],
+      "extendedIds": [],
+      "testMarker": "attempt ",
+      "oracleReason": "POST {{baseUrl}}/api/auth/login; auth={\"type\":\"noauth\"}; body={ \"email\": \"{{rlEmail}}\", \"password\": \"wrong-password-loop\" }; checks=custom assertion; assertions=attempt ."
+    },
+    {
+      "selector": {
+        "folder": "09 · Login rate limiting",
+        "name": "One attempt past the limit → 429 with Retry-After",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/login"
+      },
+      "requestEventSha256": "506e9bdaf796926cc9db1d9d51218ad82479cfb80062dac5b0a75ed6e6dbf986",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-069",
+        "TC-API-070"
+      ],
+      "extendedIds": [],
+      "testMarker": "Retry-After says when to come back",
+      "oracleReason": "POST {{baseUrl}}/api/auth/login; auth={\"type\":\"noauth\"}; body={ \"email\": \"{{rlEmail}}\", \"password\": \"wrong-password-over\" }; checks=expectError(429, 'RATE_LIMITED'); assertions=Retry-After says when to come back / the message does not say whether the account exists."
+    },
+    {
+      "selector": {
+        "folder": "09 · Login rate limiting",
+        "name": "The correct password while blocked → still 429",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/login"
+      },
+      "requestEventSha256": "18249a144916342f4ba22b8c16ca3b9247909b79430e8485ed8c026341b53433",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-071"
+      ],
+      "extendedIds": [],
+      "testMarker": "being right does not lift the block — otherwise it protects nothing",
+      "oracleReason": "rlEmail is the registered emailA established at the start of this folder. After its counted wrong-password attempts, the same account's actual password is sent and the response asserts 429."
+    },
+    {
+      "selector": {
+        "folder": "09 · Login rate limiting",
+        "name": "After the window expires, the block lifts by itself",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/login"
+      },
+      "requestEventSha256": "9bef0d2cdb42df324e0dd6e5930a2afad1807886b37c363bc5962c15634e3cec",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-072"
+      ],
+      "extendedIds": [],
+      "testMarker": "back to 401 — the window expired without anyone intervening",
+      "oracleReason": "After deliberately waiting out the block, a wrong-password attempt for the same registered rlEmail asserts 401. Its prerequest records a conservative start time for the following reset probe."
+    },
+    {
+      "selector": {
+        "folder": "09 · Login rate limiting",
+        "name": "A successful login clears the counter",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/auth/login"
+      },
+      "requestEventSha256": "03bbec82f6595dcc69782dc8fcdd4dd922ba01e9ce5ffce6963e00741deb1078",
+      "classification": "business_assertion",
+      "caseIds": [
+        "TC-API-073"
+      ],
+      "extendedIds": [],
+      "testMarker": "reset observation attempt",
+      "oracleReason": "The same registered rlEmail succeeds with its actual password after one fresh 401. Within that first failure's guarded window, sequential same-email/IP follow-ups require MAX wrong-password responses of 401 and the next of 429; without clear, the old failure would make the MAX-th attempt 429."
+    },
+    {
+      "selector": {
+        "folder": "Synthetic batch import (offline caller-supplied records)",
+        "name": "POST /imports/preview is read-only",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/imports/preview"
+      },
+      "requestEventSha256": "f721f64db7cf7a0f075a5fb7021a4f954e99ed51f410605627d85a5f04478a1d",
+      "classification": "provisional_import",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-IMPORT-F721F64DB7CF"
+      ],
+      "testMarker": "new record is only previewed",
+      "oracleReason": "POST {{baseUrl}}/api/imports/preview; auth=inherited bearer; body={\"source\":\"synthetic-demo-v1\",\"records\":[{\"external_id\":\"newman-{{runId}}\",\"amount_cents\":3500,\"spent_on\":\"{{importToday}}\",\"category_name\":\"{{catAName}}\",\"note\":\"Synthetic example\"}]}; checks=expectStatus(200); assertions=new record is only previewed."
+    },
+    {
+      "selector": {
+        "folder": "Synthetic batch import (offline caller-supplied records)",
+        "name": "POST /imports/confirm saves one expense",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/imports/confirm"
+      },
+      "requestEventSha256": "09b3b7c49e2b417e8b856653b1f6b954d959ed4741c7c63640ea3b9fbd6885ac",
+      "classification": "provisional_import",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-IMPORT-09B3B7C49E2B"
+      ],
+      "testMarker": "save returns a new transaction ID",
+      "oracleReason": "POST {{baseUrl}}/api/imports/confirm; auth=inherited bearer; body={\"source\":\"synthetic-demo-v1\",\"records\":[{\"external_id\":\"newman-{{runId}}\",\"amount_cents\":3500,\"spent_on\":\"{{importToday}}\",\"category_name\":\"{{catAName}}\",\"note\":\"Synthetic example\"}]}; checks=expectStatus(201); assertions=save returns a new transaction ID."
+    },
+    {
+      "selector": {
+        "folder": "Synthetic batch import (offline caller-supplied records)",
+        "name": "POST /imports/confirm lost-response retry replays",
+        "method": "POST",
+        "rawUrl": "{{baseUrl}}/api/imports/confirm"
+      },
+      "requestEventSha256": "2cfe20cfbfd1c94d36a57fff001fb027e14ef7346bcd070162876b13bf4d5ad0",
+      "classification": "provisional_import",
+      "caseIds": [],
+      "extendedIds": [
+        "SRC-API-IMPORT-2CFE20CFBFD1"
+      ],
+      "testMarker": "retry uses the same transaction",
+      "oracleReason": "POST {{baseUrl}}/api/imports/confirm; auth=inherited bearer; body={\"source\":\"synthetic-demo-v1\",\"records\":[{\"external_id\":\"newman-{{runId}}\",\"amount_cents\":3500,\"spent_on\":\"{{importToday}}\",\"category_name\":\"{{catAName}}\",\"note\":\"Synthetic example\"}]}; checks=expectStatus(200); assertions=retry uses the same transaction."
+    }
+  ]
+}

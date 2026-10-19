@@ -94,11 +94,25 @@
     payAria: (name) => `Pay ${name}`,
     paying: 'Paying…',
     paid: (name) => `${name} · paid`,
+    writeUncertain: 'The result is unknown. Check or retry this same action; do not start another payment.',
+    writeStorage: 'This browser cannot safely keep the operation. Nothing was sent.',
+    writeBlocked: 'Resolve or explicitly abandon the pending action before saving or paying again.',
+    writeRefused: 'The request was refused. Review the change before starting a new action.',
+    writeScheduleChanged: 'This schedule changed. Review the latest details before another payment.',
+    writeKeyConflict: 'This recovery key belongs to a different action. Do not resend with a new key automatically.',
+    writeReplayUnavailable: 'The original expense was deleted. This payment cannot be replayed; check the ledger before acting.',
+    writeAbandon: 'The original may already have been saved or paid. Abandon recovery anyway?',
     remaining: (left, total) => `${left} of ${total} left`,
     finished: 'Paid off 🎉',
     subscription: 'Subscription',
     loan: 'Loan',
     scheduleAdded: (name) => `${name} · added`,
+    scheduleUpdated: (name) => `${name} · updated`,
+    editSchedule: (name) => `Edit ${name}`,
+    editScheduleGone: 'That schedule is no longer available. Review the list before editing again.',
+    editScheduleConflict: 'This schedule changed. Review its current payments and try again.',
+    editScheduleUncertain: 'The edit result is unknown. Refresh the schedule before trying again.',
+    editSchedulePending: 'Wait for the edit result before closing this form.',
     nameRequired: 'Enter a name',
     dayInvalid: 'Day of month must be between 1 and 31',
     dateRequired: 'Enter a start date',
@@ -301,10 +315,11 @@
     incomeCents: 0,
     limitCents: null,
     busy: false,
-    // The month list is paged (D-031). `loaded` is what is on screen, `total`
-    // is what the server says exists, and the two together are the only thing
-    // that can tell the reader a list is incomplete.
-    month: { items: [], total: 0, editing: null },
+    busyOwner: null,
+    readGeneration: { month: 0, upcoming: 0, schedules: 0, categories: 0 },
+    // Cursor continuation keeps unseen surviving rows stable across earlier
+    // insertions/deletions; a changed total triggers one bounded restart.
+    month: { items: [], total: 0, cursor: null, editing: null },
     // Incremented whenever a session starts or ends. A response that belongs
     // to an older epoch belongs to somebody who is no longer signed in here,
     // and must not be applied — or sign out whoever is (spec/ai-expense-entry.md).
@@ -322,40 +337,72 @@
 
   // ===================================================================== API
 
-  async function api(path, { method = 'GET', body, signal } = {}) {
-    const headers = {};
+  async function api(path, { method = 'GET', body, signal, headers: extraHeaders = {} } = {}) {
+    const token = state.token;
+    const epoch = state.sessionEpoch;
+    const currentSession = () => token === state.token && epoch === state.sessionEpoch;
+    const headers = { ...extraHeaders };
     if (body !== undefined) headers['Content-Type'] = 'application/json';
-    if (state.token) headers.Authorization = `Bearer ${state.token}`;
+    if (token) headers.Authorization = `Bearer ${token}`;
 
-    let res;
+    const controller = new AbortController();
+    let timedOut = false;
+    let rejectDeadline;
+    const deadline = new Promise((_, reject) => { rejectDeadline = reject; });
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+      rejectDeadline(apiError(0, 'TIMEOUT'));
+    }, 10000);
+    const onAbort = () => controller.abort();
+    if (signal) {
+      if (signal.aborted) controller.abort();
+      else signal.addEventListener('abort', onAbort, { once: true });
+    }
+
     try {
-      res = await fetch('/api' + path, {
-        method,
-        headers,
-        signal,
+      const res = await Promise.race([fetch('/api' + path, {
+        method, headers, signal: controller.signal,
         body: body === undefined ? undefined : JSON.stringify(body),
-      });
-    } catch (networkError) {
-      throw apiError(0, 'OFFLINE');
-    }
-
-    if (res.status === 204) return null;
-
-    let data = null;
-    try { data = await res.json(); } catch (_) { /* empty or non-JSON body */ }
-
-    if (!res.ok) {
-      const code = (data && data.error && data.error.code) || 'UNKNOWN';
-      const requestId = res.headers.get('X-Request-Id');
-      // An expired or revoked token: drop it and show the sign-in screen
-      // rather than leaving the user on a screen that cannot load.
-      if (res.status === 401 && state.token) {
-        signOut(T.signedOut);
-        throw apiError(res.status, code, undefined, requestId);
+      }), deadline]);
+      let data = null;
+      if (res.status !== 204) {
+        if (res.ok && !/json/i.test(res.headers.get('Content-Type') || '')) {
+          throw apiError(res.status, 'INVALID_RESPONSE');
+        }
+        try {
+          data = await Promise.race([res.json(), deadline]);
+        } catch (error) {
+          if (timedOut) throw apiError(0, 'TIMEOUT');
+          if (res.ok) throw apiError(res.status, 'INVALID_RESPONSE');
+        }
       }
-      throw apiError(res.status, code, data && data.error && data.error.message, requestId);
+      if (!currentSession()) {
+        const stale = apiError(0, 'STALE');
+        stale.stale = true;
+        throw stale;
+      }
+      if (!res.ok) {
+        const code = (data && data.error && data.error.code) || 'UNKNOWN';
+        const requestId = res.headers.get('X-Request-Id');
+        if (res.status === 401 && token) signOut(T.signedOut);
+        throw apiError(res.status, code, data && data.error && data.error.message, requestId);
+      }
+      return data;
+    } catch (error) {
+      // A rejected fetch or JSON body belongs to its original session too.
+      // Never surface an old account's error after a newer sign-in.
+      if (!currentSession()) {
+        const stale = apiError(0, 'STALE');
+        stale.stale = true;
+        throw stale;
+      }
+      if (error && error.status !== undefined) throw error;
+      throw apiError(0, timedOut ? 'TIMEOUT' : 'OFFLINE');
+    } finally {
+      clearTimeout(timeout);
+      if (signal) signal.removeEventListener('abort', onAbort);
     }
-    return data;
   }
 
   // requestId is the server's X-Request-Id for the failed request; an error
@@ -409,7 +456,10 @@
   const toastOk = (text) => showToast($('#toast-success'), text);
   // `err`, when given, is what api() threw: its request id becomes the
   // reference shown under the message. Messages about input never have one.
-  const toastErr = (text, err) => showToast($('#toast-error'), text, err ? err.requestId : null);
+  const toastErr = (text, err) => {
+    if (err && err.stale) return;
+    showToast($('#toast-error'), text, err ? err.requestId : null);
+  };
 
   // ==================================================================== AUTH
 
@@ -458,11 +508,20 @@
 
   function signOut(message) {
     state.sessionEpoch += 1;
+    state.busy = false;
+    state.busyOwner = null;
+    for (const name of Object.keys(state.readGeneration)) state.readGeneration[name] += 1;
+    closeTransactionEditor();
     if ($('#import-dialog').open) $('#import-dialog').close();
+    closeScheduleEditor(false);
     importBatch = null;
     for (const feature of features) if (feature.onSessionEnd) feature.onSessionEnd();
     localStorage.removeItem(TOKEN_KEY);
     state.token = null;
+    $('#expense-save-btn').disabled = false;
+    $('#expense-save-btn').textContent = 'Save';
+    $('#auth-submit').disabled = false;
+    renderWriteRecovery();
     state.categories = [];
     state.categoryById = new Map();
     clearAmount();
@@ -483,7 +542,9 @@
    * temporary label and "restoring" it made the change permanent.
    */
   async function withBusy(button, fn, busyLabel) {
+    const owner = Symbol('busy action');
     state.busy = true;
+    state.busyOwner = owner;
     const label = button ? button.textContent : null;
     if (button) {
       button.disabled = true;
@@ -492,10 +553,16 @@
     try {
       await fn();
     } finally {
-      state.busy = false;
-      if (button) {
-        button.disabled = false;
-        if (label !== null) button.textContent = label;
+      // A successful login legitimately advances the session epoch inside
+      // startApp(). Ownership, not epoch equality, decides who may release
+      // this button. signOut clears the owner before a new action can start.
+      if (state.busyOwner === owner) {
+        state.busy = false;
+        state.busyOwner = null;
+        if (button) {
+          button.disabled = false;
+          if (label !== null) button.textContent = label;
+        }
       }
     }
   }
@@ -570,14 +637,19 @@
   let importBatch = null;
   let importSaving = false;
 
+  function accountSub() {
+    try {
+      const payload = JSON.parse(atob(state.token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      if (/^[1-9]\d*$/.test(String(payload.sub))) return String(payload.sub);
+    } catch (_) { /* invalid local token; auth still belongs to the server */ }
+    return null;
+  }
+
   function importPendingKey() {
     // JWT sub is used only to separate local draft keys. Server auth still
     // verifies the token on every request; this is not a security decision.
-    try {
-      const payload = JSON.parse(atob(state.token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-      if (/^[1-9]\d*$/.test(String(payload.sub))) return `wallet_synthetic_import_pending_${payload.sub}`;
-    } catch (_) { /* invalid local token; the next API request signs out */ }
-    return null;
+    const sub = accountSub();
+    return sub ? `wallet_synthetic_import_pending_${sub}` : null;
   }
 
   function pendingImport(key) {
@@ -673,31 +745,174 @@
     }
   }
 
+  // An operation has its own storage key so two tabs cannot overwrite a
+  // single account-wide slot. This is not an atomic cross-tab intent lock.
+  const WRITE_PREFIX = 'wallet_write_pending_';
+  const writeStorageKey = (sub, key) => `${WRITE_PREFIX}${sub}_${key}`;
+
+  function pendingWrites() {
+    const sub = accountSub();
+    if (!sub) return [{ bad: true, storageKey: null }];
+    const prefix = `${WRITE_PREFIX}${sub}_`;
+    const records = [];
+    try {
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const storageKey = localStorage.key(i);
+        if (!storageKey || !storageKey.startsWith(prefix)) continue;
+        try {
+          const record = JSON.parse(localStorage.getItem(storageKey));
+          const routeOK = record.kind === 'save' ? record.route === '/transactions' :
+            record.kind === 'pay' && /^\/schedules\/[1-9]\d*\/pay$/.test(record.route);
+          if (record.accountSub !== sub ||
+              !/^[A-Za-z0-9-]{8,64}$/.test(record.key) ||
+              storageKey !== writeStorageKey(sub, record.key) || !routeOK ||
+              !record.body || typeof record.body !== 'object' || Array.isArray(record.body) ||
+              !['prepared', 'sending', 'uncertain', 'refused'].includes(record.status)) {
+            throw new Error('invalid pending record');
+          }
+          records.push({ ...record, storageKey,
+            status: record.status === 'sending' || record.status === 'prepared' ? 'uncertain' : record.status });
+        } catch (_) {
+          // Do not delete damaged recovery data or allow an unkeyed fallback.
+          records.push({ bad: true, storageKey });
+        }
+      }
+    } catch (_) { return [{ bad: true, storageKey: null }]; }
+    return records.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  }
+
+  function storeWrite(record) {
+    const storageKey = writeStorageKey(record.accountSub, record.key);
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(record));
+      if (localStorage.getItem(storageKey) !== JSON.stringify(record)) throw new Error('storage mismatch');
+      return true;
+    } catch (_) { return false; }
+  }
+
+  function renderWriteRecovery() {
+    const box = $('#write-recovery');
+    const list = $('#write-recovery-list');
+    list.textContent = '';
+    if (!state.token) { box.hidden = true; return; }
+    const records = pendingWrites();
+    box.hidden = records.length === 0;
+    for (const record of records) {
+      const item = el('div', { className: 'write-recovery__item' });
+      const label = record.bad ? 'Recovery data cannot be read. Do not save or pay until you inspect and explicitly discard it.' :
+        `${record.kind === 'save' ? 'Expense save' : 'Schedule payment'}: ${record.status === 'refused' ? refusalText(record) : T.writeUncertain}`;
+      item.append(el('p', { textContent: label }));
+      const actions = el('div', { className: 'write-recovery__actions' });
+      if (!record.bad && record.status !== 'refused') {
+        const retry = el('button', { type: 'button', className: 'btn btn--primary', textContent: 'Check / retry this action' });
+        attrs(retry, { 'data-testid': 'write-retry' });
+        retry.addEventListener('click', () => { if (!state.busy) sendWrite(record, retry); });
+        actions.append(retry);
+      }
+      if (record.storageKey) {
+        const abandon = el('button', { type: 'button', className: 'btn', textContent: 'Abandon recovery' });
+        attrs(abandon, { 'data-testid': 'write-abandon' });
+        abandon.addEventListener('click', () => {
+          if (state.busy || !window.confirm(T.writeAbandon)) return;
+          try { localStorage.removeItem(record.storageKey); }
+          catch (_) { toastErr(T.writeStorage); }
+          renderWriteRecovery();
+        });
+        actions.append(abandon);
+      }
+      item.append(actions);
+      list.append(item);
+    }
+  }
+
+  function validWriteResult(record, result) {
+    if (!result || typeof result !== 'object' || Array.isArray(result)) return false;
+    if (record.kind === 'save') {
+      return Number.isSafeInteger(result.id) && result.id > 0 &&
+        result.amount_cents === record.body.amount_cents &&
+        result.category_id === record.body.category_id &&
+        result.spent_on === record.body.spent_on && result.note === record.body.note;
+    }
+    const total = record.body.expected_total_count;
+    return Number.isSafeInteger(result.transaction_id) && result.transaction_id > 0 &&
+      result.paid_count === record.body.expected_paid_count + 1 &&
+      result.remaining_count === (total === null ? null : total - result.paid_count) &&
+      result.finished === (total !== null && result.paid_count >= total);
+  }
+
+  function refusalText(record) {
+    if (record.refusalCode === 'IDEMPOTENCY_CONFLICT') return T.writeKeyConflict;
+    if (record.refusalCode === 'IDEMPOTENCY_REPLAY_UNAVAILABLE') return T.writeReplayUnavailable;
+    if (record.refusalCode === 'SCHEDULE_CLOSED') return T.scheduleClosed;
+    if (record.refusalCode === 'SCHEDULE_CHANGED') return T.writeScheduleChanged;
+    return T.writeRefused;
+  }
+
+  async function sendWrite(record, button) {
+    const epoch = state.sessionEpoch;
+    const token = state.token;
+    await withBusy(button, async () => {
+      try {
+        const result = await api(record.route, {
+          method: record.kind === 'save' ? 'POST' : 'PATCH', body: record.body,
+          headers: { 'Idempotency-Key': record.key },
+        });
+        if (epoch !== state.sessionEpoch || token !== state.token) return;
+        if (!validWriteResult(record, result)) throw apiError(0, 'INVALID_RESPONSE');
+        try { localStorage.removeItem(record.storageKey); }
+        catch (_) { throw apiError(0, 'STORAGE'); }
+        renderWriteRecovery();
+        if (record.kind === 'save') {
+          toastOk(T.saved(formatMoney(record.body.amount_cents)));
+          if (state.screen === 'add') clearAmount();
+        } else {
+          toastOk(T.paid(record.body.expected_name));
+          if (state.screen === 'upcoming') {
+            const row = document.querySelector(`[data-testid="schedule-row-${record.targetId}"]`);
+            if (result.finished && row) {
+              const meta = row.querySelector(`[data-testid="schedule-remaining-${record.targetId}"]`);
+              if (meta) meta.textContent = remainingText(record.body.expected_total_count,
+                result.remaining_count, record.body.expected_amount_cents);
+              markRowFinished(row, record.targetId);
+            } else loadUpcoming();
+          }
+        }
+      } catch (err) {
+        if (epoch !== state.sessionEpoch || token !== state.token) return;
+        record.status = err.status >= 400 && err.status < 500 && err.status !== 401 ? 'refused' : 'uncertain';
+        record.refusalCode = err.code === 'CONFLICT' && record.kind === 'pay' ?
+          (/no longer active/i.test(err.message) ? 'SCHEDULE_CLOSED' : 'SCHEDULE_CHANGED') : err.code;
+        storeWrite(record); // An old persisted identity still makes a reload safe if this fails.
+        renderWriteRecovery();
+        toastErr(record.status === 'refused' ? refusalText(record) : T.writeUncertain, err);
+      }
+    }, record.kind === 'pay' ? T.paying : 'Saving…');
+  }
+
+  function prepareWrite(kind, route, body, targetId) {
+    if (pendingWrites().length) { toastErr(T.writeBlocked); return null; }
+    const sub = accountSub();
+    if (!sub) { toastErr(T.writeStorage); return null; }
+    const key = crypto.randomUUID();
+    const record = { kind, accountSub: sub, key, route, body, targetId,
+      createdAt: Date.now(), status: 'sending' };
+    if (!storeWrite(record)) { toastErr(T.writeStorage); return null; }
+    renderWriteRecovery();
+    return { ...record, storageKey: writeStorageKey(sub, key) };
+  }
+
   async function saveExpense() {
     const cents = Number(state.amountDigits || '0');
     if (cents <= 0) return toastErr(T.amountRequired);
     if (!state.selectedCategoryId) return toastErr(T.categoryRequired);
     if (state.busy) return;
 
-    await withBusy($('#expense-save-btn'), async () => {
-      try {
-        const note = $('#expense-note').value.trim();
-        await api('/transactions', {
-          method: 'POST',
-          body: {
-            amount_cents: cents,
-            category_id: state.selectedCategoryId,
-            // Empty means "no note" rather than an empty string, so the row
-            // falls back to its category name instead of showing a blank title.
-            note: note === '' ? null : note,
-          },
-        });
-        toastOk(T.saved(formatMoney(cents)));
-        clearAmount();
-      } catch (err) {
-        toastErr(messageFor(err), err);
-      }
+    const note = $('#expense-note').value.trim();
+    const record = prepareWrite('save', '/transactions', {
+      amount_cents: cents, category_id: state.selectedCategoryId,
+      spent_on: todayIso(), note: note === '' ? null : note,
     });
+    if (record) await sendWrite(record, $('#expense-save-btn'));
   }
 
   // ====================================================== 6.2 · THIS MONTH
@@ -705,22 +920,29 @@
   async function loadMonth() {
     const bars = $('#category-bars');
     const list = $('#tx-list');
+    const generation = ++state.readGeneration.month;
+    const epoch = state.sessionEpoch;
+    const token = state.token;
+    const current = () => state.readGeneration.month === generation &&
+      state.sessionEpoch === epoch && state.token === token && state.screen === 'month';
 
     let summary, transactions;
     try {
       [summary, transactions] = await Promise.all([
         api('/summary'),
-        api(`/transactions?limit=${PAGE_SIZE}&offset=0`),
+        api(`/transactions?paging=cursor&limit=${PAGE_SIZE}`),
       ]);
     } catch (err) {
-      toastErr(messageFor(err), err);
+      if (current()) toastErr(messageFor(err), err);
       return;
     }
+    if (!current()) return;
 
     state.incomeCents = summary.income_cents;
     state.limitCents = summary.limit_cents;
     state.month.items = transactions.items;
     state.month.total = transactions.total;
+    state.month.cursor = transactions.next_cursor;
 
     renderOverview(summary);
     renderCategoryBars(bars, summary);
@@ -728,26 +950,33 @@
     renderLoadMore();
   }
 
-  /**
-   * The next page, appended.
-   *
-   * The offset is `state.month.items.length` rather than a page counter: a page
-   * counter and a list can disagree after a delete, and then the app asks for
-   * an offset that skips a row nobody has seen.
-   */
+  /** Append a stable keyset page, or restart once when the live total changed. */
   async function loadMoreTransactions() {
-    if (state.busy) return;
+    if (state.busy || !state.month.cursor) return;
+    const generation = state.readGeneration.month;
+    const epoch = state.sessionEpoch;
+    const token = state.token;
+    const current = () => state.readGeneration.month === generation &&
+      state.sessionEpoch === epoch && state.token === token && state.screen === 'month';
     await withBusy($('#tx-load-more'), async () => {
       try {
         const next = await api(
-          `/transactions?limit=${PAGE_SIZE}&offset=${state.month.items.length}`
+          `/transactions?paging=cursor&limit=${PAGE_SIZE}&cursor=${encodeURIComponent(state.month.cursor)}`
         );
+        if (!current()) return;
+        if (next.total !== state.month.total) {
+          // A second tab changed the set. Never append a stale page or report
+          // 51 of 50; this user action makes at most one first-page request.
+          await loadMonth();
+          return;
+        }
         state.month.items = state.month.items.concat(next.items);
         state.month.total = next.total;
+        state.month.cursor = next.next_cursor;
         renderTransactions($('#tx-list'), state.month.items);
         renderLoadMore();
       } catch (err) {
-        toastErr(messageFor(err), err);
+        if (current()) toastErr(messageFor(err), err);
       }
     });
   }
@@ -768,7 +997,7 @@
     const total = state.month.total;
 
     wrap.hidden = total <= PAGE_SIZE;
-    button.hidden = shown >= total;
+    button.hidden = state.month.cursor === null;
     count.textContent = T.shownOf(shown, total);
   }
 
@@ -1025,6 +1254,15 @@
 
   let transactionEditOpener = null;
 
+  function transactionEditError(text, err) {
+    toastErr(text, err);
+    if (!$('#tx-edit-sheet').open) return;
+    $('#tx-edit-error').textContent = text;
+    $('#tx-edit-error-ref').hidden = !err?.requestId;
+    $('#tx-edit-error-ref-code').textContent = err?.requestId ? err.requestId.slice(0, 8) : '';
+    $('#tx-edit-error-box').hidden = false;
+  }
+
   function openTransactionEditor(tx) {
     transactionEditOpener = document.activeElement;
     state.month.editing = tx.id;
@@ -1048,18 +1286,21 @@
     $('#tx-edit-amount').value = centsToInput(tx.amount_cents);
     $('#tx-edit-date').value = tx.spent_on;
     $('#tx-edit-note').value = tx.note || '';
+    $('#tx-edit-error-box').hidden = true;
 
-    $('#tx-edit-sheet').hidden = false;
+    $('#tx-edit-sheet').showModal();
     $('#tx-edit-amount').focus();
   }
 
   function closeTransactionEditor() {
-    $('#tx-edit-sheet').hidden = true;
+    if ($('#tx-edit-sheet').open) $('#tx-edit-sheet').close();
+    $('#tx-edit-error-box').hidden = true;
     state.month.editing = null;
     transactionEditOpener = null;
   }
 
   function dismissTransactionEditor() {
+    if (state.busy) return; // A pending PATCH has an uncertain outcome.
     const opener = transactionEditOpener;
     closeTransactionEditor();
     if (opener?.isConnected) opener.focus();
@@ -1084,8 +1325,8 @@
     if (!original) return closeTransactionEditor();
 
     const cents = parseAmountToCents($('#tx-edit-amount').value);
-    if (cents === null) return toastErr(T.amountRequired);
-    if (cents > MAX_AMOUNT_CENTS) return toastErr(T.amountTooBig);
+    if (cents === null) return transactionEditError(T.amountRequired);
+    if (cents > MAX_AMOUNT_CENTS) return transactionEditError(T.amountTooBig);
 
     // Empty means Uncategorised, which is null — not 0. Number('') is 0, and 0
     // is neither a category nor the null it replaced, so the patch below saw a
@@ -1101,7 +1342,9 @@
     if (spentOn && spentOn !== original.spent_on) patch.spent_on = spentOn;
     if (note !== (original.note || '')) patch.note = note === '' ? null : note;
 
-    if (Object.keys(patch).length === 0) return closeTransactionEditor();
+    if (Object.keys(patch).length === 0) return dismissTransactionEditor();
+
+    $('#tx-edit-error-box').hidden = true;
 
     await withBusy($('[data-testid="tx-edit-save"]'), async () => {
       try {
@@ -1114,12 +1357,12 @@
         // refreshing is more use than the generic message, and the screen must
         // not keep showing a row the server no longer has.
         if (err.status === 404) {
-          toastErr(T.expenseGone, err);
+          transactionEditError(T.expenseGone, err);
           closeTransactionEditor();
           await loadMonth();
           return;
         }
-        toastErr(messageFor(err), err);
+        transactionEditError(messageFor(err), err);
       }
     });
   }
@@ -1275,13 +1518,19 @@
   // ======================================================== 6.3 · UPCOMING
   async function loadUpcoming() {
     const container = $('#upcoming-list');
+    const generation = ++state.readGeneration.upcoming;
+    const epoch = state.sessionEpoch;
+    const token = state.token;
+    const current = () => state.readGeneration.upcoming === generation &&
+      state.sessionEpoch === epoch && state.token === token && state.screen === 'upcoming';
     let schedules;
     try {
       schedules = await api('/schedules?active=1');
     } catch (err) {
-      toastErr(messageFor(err), err);
+      if (current()) toastErr(messageFor(err), err);
       return;
     }
+    if (!current()) return;
 
     container.textContent = '';
     if (schedules.length === 0) {
@@ -1333,6 +1582,16 @@
       });
       pay.addEventListener('click', () => paySchedule(schedule, pay));
       bottom.append(pay);
+    } else {
+      const edit = el('button', {
+        type: 'button', className: 'btn', textContent: 'Edit',
+      });
+      attrs(edit, {
+        'data-testid': `schedule-edit-${schedule.id}`,
+        'aria-label': T.editSchedule(schedule.name),
+      });
+      edit.addEventListener('click', () => openScheduleEditor(schedule, edit));
+      bottom.append(edit);
     }
 
     const row = el('div', { className: 'row' }, [top, bottom]);
@@ -1371,43 +1630,154 @@
 
   async function paySchedule(schedule, button) {
     if (state.busy) return;
-
-    await withBusy(button, async () => {
-      try {
-        const result = await api(`/schedules/${schedule.id}/pay`, { method: 'PATCH' });
-        toastOk(T.paid(schedule.name));
-
-        if (result.finished) {
-          // Show the finished state on this row rather than reloading it away:
-          // the list is filtered to active schedules, so a refresh would make
-          // the row vanish and the user would never see that it completed.
-          const row = button.closest('.row');
-          const meta = row.querySelector(`[data-testid="schedule-remaining-${schedule.id}"]`);
-          // The counter must be brought up to date here too — this row is the
-          // one the refresh below never reaches (BUG-002).
-          meta.textContent = remainingText(schedule.total_count, result.remaining_count,
-                                           schedule.amount_cents);
-          markRowFinished(row, schedule.id);
-          return;
-        }
-        await loadUpcoming();
-      } catch (err) {
-        toastErr(messageFor(err, 'pay'), err);
-      }
-    }, T.paying);
+    const record = prepareWrite('pay', `/schedules/${schedule.id}/pay`, {
+      expected_paid_count: schedule.paid_count,
+      expected_amount_cents: schedule.amount_cents,
+      expected_category_id: schedule.category_id,
+      expected_name: schedule.name,
+      expected_total_count: schedule.total_count,
+      spent_on: todayIso(),
+    }, schedule.id);
+    if (record) await sendWrite(record, button);
   }
 
   // ======================================================= 6.4 · SCHEDULES
 
+  let scheduleEdit = null;
+  let scheduleEditSerial = 0;
+
+  function scheduleEditError(text) {
+    if (!$('#schedule-edit-dialog').open) return;
+    $('#schedule-edit-error').textContent = text;
+    $('#schedule-edit-error').hidden = false;
+  }
+
+  function openScheduleEditor(schedule, opener) {
+    if (state.busy || state.screen !== 'schedules') return;
+    const select = $('#schedule-edit-category');
+    select.textContent = '';
+    select.append(el('option', { value: '', textContent: T.uncategorised }));
+    for (const category of state.categories) {
+      select.append(el('option', { value: String(category.id),
+        textContent: `${category.icon || '•'} ${category.name}` }));
+    }
+    select.value = schedule.category_id !== null && state.categoryById.has(schedule.category_id)
+      ? String(schedule.category_id) : '';
+    $('#schedule-edit-name').value = schedule.name;
+    $('#schedule-edit-amount').value = centsToInput(schedule.amount_cents);
+    $('#schedule-edit-day').value = String(schedule.day_of_month);
+    $('#schedule-edit-starts-on').value = schedule.starts_on;
+    $('#schedule-edit-is-loan').checked = schedule.total_count !== null;
+    $('#schedule-edit-total-count').value = schedule.total_count === null ? '' : String(schedule.total_count);
+    $('#schedule-edit-count-field').hidden = schedule.total_count === null;
+    $('#schedule-edit-error').hidden = true;
+    scheduleEdit = { schedule, opener, epoch: state.sessionEpoch, token: state.token,
+      serial: ++scheduleEditSerial, saving: false };
+    $('#schedule-edit-dialog').showModal();
+    $('#schedule-edit-name').focus();
+  }
+
+  function closeScheduleEditor(restoreFocus = true) {
+    const edit = scheduleEdit;
+    if (!edit && !$('#schedule-edit-dialog').open) return;
+    scheduleEditSerial += 1; // Invalidates any still-running PATCH callback.
+    scheduleEdit = null;
+    if (edit?.saving) {
+      state.busyOwner = null;
+      state.busy = false;
+    }
+    const save = $('#schedule-edit-save');
+    save.disabled = false;
+    save.textContent = 'Save changes';
+    if ($('#schedule-edit-dialog').open) $('#schedule-edit-dialog').close();
+    $('#schedule-edit-error').hidden = true;
+    if (restoreFocus && edit?.opener?.isConnected) edit.opener.focus();
+  }
+
+  function dismissScheduleEditor() {
+    if (scheduleEdit?.saving) return scheduleEditError(T.editSchedulePending);
+    closeScheduleEditor();
+  }
+
+  async function submitScheduleEdit(event) {
+    event.preventDefault();
+    const edit = scheduleEdit;
+    if (!edit || state.busy || state.screen !== 'schedules') return;
+    const original = edit.schedule;
+    const name = $('#schedule-edit-name').value.trim();
+    const cents = parseAmountToCents($('#schedule-edit-amount').value);
+    const dayRaw = $('#schedule-edit-day').value;
+    const day = Number(dayRaw);
+    const startsOn = $('#schedule-edit-starts-on').value;
+    const categoryRaw = $('#schedule-edit-category').value;
+    const categoryId = categoryRaw === '' ? null : Number(categoryRaw);
+    const isLoan = $('#schedule-edit-is-loan').checked;
+    const countRaw = $('#schedule-edit-total-count').value;
+    const totalCount = isLoan ? Number(countRaw) : null;
+
+    if (!name || name.length > 60) return scheduleEditError(T.nameRequired);
+    if (cents === null || cents <= 0) return scheduleEditError(T.amountInvalid);
+    if (cents > MAX_AMOUNT_CENTS) return scheduleEditError(T.amountTooBig);
+    if (!dayRaw || !Number.isInteger(day) || day < 1 || day > 31) return scheduleEditError(T.dayInvalid);
+    if (!startsOn) return scheduleEditError(T.dateRequired);
+    if (categoryId !== null && !state.categoryById.has(categoryId)) return scheduleEditError(T.categoryRequired);
+    if (isLoan && (!countRaw || !Number.isInteger(totalCount) || totalCount < 1)) {
+      return scheduleEditError(T.totalCountInvalid);
+    }
+    if (isLoan && totalCount > MAX_TOTAL_COUNT) return scheduleEditError(T.totalCountTooMany);
+
+    const patch = {};
+    if (name !== original.name) patch.name = name;
+    if (cents !== original.amount_cents) patch.amount_cents = cents;
+    if (categoryId !== original.category_id) patch.category_id = categoryId;
+    if (day !== original.day_of_month) patch.day_of_month = day;
+    if (startsOn !== original.starts_on) patch.starts_on = startsOn;
+    if (totalCount !== original.total_count) patch.total_count = totalCount;
+    if (!Object.keys(patch).length) return dismissScheduleEditor();
+
+    $('#schedule-edit-error').hidden = true;
+    edit.saving = true;
+    const current = () => scheduleEdit === edit && scheduleEditSerial === edit.serial &&
+      state.sessionEpoch === edit.epoch && state.token === edit.token && state.screen === 'schedules';
+    await withBusy($('#schedule-edit-save'), async () => {
+      try {
+        const updated = await api(`/schedules/${original.id}`, { method: 'PATCH', body: patch });
+        if (!current()) return;
+        if (!updated || updated.id !== original.id ||
+            Object.entries(patch).some(([field, value]) => updated[field] !== value)) {
+          return scheduleEditError(T.editScheduleUncertain);
+        }
+        closeScheduleEditor(false);
+        toastOk(T.scheduleUpdated(updated.name));
+        await loadSchedules();
+        if (state.screen === 'schedules' && state.sessionEpoch === edit.epoch && state.token === edit.token) {
+          $(`[data-testid="schedule-edit-${original.id}"]`)?.focus();
+        }
+      } catch (err) {
+        if (!current()) return;
+        scheduleEditError(err.status === 404 ? T.editScheduleGone :
+          err.status === 409 ? (err.message || T.editScheduleConflict) :
+          err.status === 0 || err.status >= 500 ? T.editScheduleUncertain : messageFor(err));
+      }
+    }, 'Saving…');
+    if (current()) edit.saving = false;
+  }
+
   async function loadSchedules() {
     const container = $('#schedules-list');
+    const generation = ++state.readGeneration.schedules;
+    const epoch = state.sessionEpoch;
+    const token = state.token;
+    const current = () => state.readGeneration.schedules === generation &&
+      state.sessionEpoch === epoch && state.token === token && state.screen === 'schedules';
     let schedules;
     try {
       schedules = await api('/schedules');
     } catch (err) {
-      toastErr(messageFor(err), err);
+      if (current()) toastErr(messageFor(err), err);
       return;
     }
+    if (!current()) return;
 
     container.textContent = '';
     if (schedules.length === 0) {
@@ -1513,7 +1883,9 @@
       // screen, so hiding the screen no longer hides it.
       closeTransactionEditor();
     }
+    if (state.screen === 'schedules' && name !== 'schedules') closeScheduleEditor(false);
     state.screen = name;
+    renderWriteRecovery();
     for (const feature of features) if (feature.onScreen) feature.onScreen(name);
 
     for (const [key, screen] of Object.entries(SCREENS)) {
@@ -1531,13 +1903,23 @@
 
   async function startApp() {
     state.sessionEpoch += 1;
+    const epoch = state.sessionEpoch;
+    const token = state.token;
+    const generation = ++state.readGeneration.categories;
     $('#screen-auth').hidden = true;
     $('#app').hidden = false;
-    $('#nav').hidden = false;
+    // Nav must not accept a screen switch that the pending bootstrap would
+    // later undo with showScreen('add'). It becomes usable after categories.
+    $('#nav').hidden = true;
 
     try {
-      state.categories = await api('/categories');
+      const categories = await api('/categories');
+      if (state.sessionEpoch !== epoch || state.token !== token ||
+          state.readGeneration.categories !== generation) return;
+      state.categories = categories;
     } catch (err) {
+      if (state.sessionEpoch !== epoch || state.token !== token ||
+          state.readGeneration.categories !== generation) return;
       // A 401 has already sent the user back to sign-in; anything else leaves
       // the app usable with an empty category grid rather than a blank screen.
       if (err.status !== 401) toastErr(messageFor(err), err);
@@ -1548,7 +1930,9 @@
     renderCategories();
     renderScheduleCategoryOptions();
     clearAmount();
+    renderWriteRecovery();
     showScreen('add');
+    $('#nav').hidden = false;
     for (const feature of features) if (feature.onSessionStart) feature.onSessionStart();
   }
 
@@ -1557,7 +1941,13 @@
    * selected on Add. Used when a save is refused because a category vanished.
    */
   async function reloadCategories() {
-    state.categories = await api('/categories');
+    const epoch = state.sessionEpoch;
+    const token = state.token;
+    const generation = ++state.readGeneration.categories;
+    const categories = await api('/categories');
+    if (state.sessionEpoch !== epoch || state.token !== token ||
+        state.readGeneration.categories !== generation) return;
+    state.categories = categories;
     state.categoryById = new Map(state.categories.map((c) => [c.id, c]));
     const selected = state.selectedCategoryId;
     renderCategories();
@@ -1586,6 +1976,9 @@
   };
 
   function bindEvents() {
+    window.addEventListener('storage', event => {
+      if (event.key && event.key.startsWith(WRITE_PREFIX)) renderWriteRecovery();
+    });
     $('#auth-form').addEventListener('submit', submitAuth);
     $('#auth-toggle').addEventListener('click', () => {
       setAuthMode(state.authMode === 'login' ? 'register' : 'login');
@@ -1624,6 +2017,30 @@
     });
 
     $('#schedule-form').addEventListener('submit', submitSchedule);
+    $('#schedule-edit-form').addEventListener('submit', submitScheduleEdit);
+    $('#schedule-edit-cancel').addEventListener('click', dismissScheduleEditor);
+    $('#schedule-edit-is-loan').addEventListener('change', event => {
+      $('#schedule-edit-count-field').hidden = !event.target.checked;
+    });
+    $('#schedule-edit-dialog').addEventListener('cancel', event => {
+      event.preventDefault();
+      dismissScheduleEditor();
+    });
+    $('#schedule-edit-dialog').addEventListener('click', event => {
+      if (event.target === $('#schedule-edit-dialog')) dismissScheduleEditor();
+    });
+    $('#schedule-edit-dialog').addEventListener('keydown', event => {
+      if (event.key !== 'Tab') return;
+      const controls = Array.from($('#schedule-edit-form').elements).filter(control =>
+        !control.disabled && !control.hidden && control.getClientRects().length > 0);
+      const first = controls[0], last = controls[controls.length - 1];
+      if (!first || !last) return;
+      if ((event.shiftKey && document.activeElement === first) ||
+          (!event.shiftKey && document.activeElement === last)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      }
+    });
 
     $('#income-edit').addEventListener('click', openIncomeForm);
     $('#income-cancel').addEventListener('click', closeIncomeForm);
@@ -1649,10 +2066,20 @@
     $('#tx-load-more').addEventListener('click', loadMoreTransactions);
     $('#tx-edit-cancel').addEventListener('click', dismissTransactionEditor);
     $('#tx-edit-form').addEventListener('submit', submitTransactionEdit);
+    $('#tx-edit-sheet').addEventListener('cancel', (event) => {
+      event.preventDefault();
+      dismissTransactionEditor();
+    });
     $('#tx-edit-sheet').addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') {
+      if (event.key !== 'Tab') return;
+      const controls = Array.from($('#tx-edit-form').elements).filter(control =>
+        !control.disabled && !control.hidden && control.getClientRects().length > 0);
+      const first = controls[0], last = controls[controls.length - 1];
+      if (!first || !last) return;
+      if ((event.shiftKey && document.activeElement === first) ||
+          (!event.shiftKey && document.activeElement === last)) {
         event.preventDefault();
-        dismissTransactionEditor();
+        (event.shiftKey ? last : first).focus();
       }
     });
     // Clicking the dimmed area behind the panel closes it, the way a sheet is

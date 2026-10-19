@@ -14,8 +14,9 @@ permissions:
   contents: read
 
 env:
-  # The floor this project claims in package.json; better-sqlite3 needs >= 22.
-  NODE_VERSION: '22'
+  # Compatibility floor for the installed native SQLite binding (Node-API 10),
+  # not a security recommendation for ordinary deployments.
+  NODE_VERSION: '22.14.0'
 
 jobs:
   secrets:
@@ -25,6 +26,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0        # scan the history, not just the tip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Install gitleaks
         run: |
@@ -32,10 +36,20 @@ jobs:
             "https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz" \
             | tar -xz gitleaks
           ./gitleaks version
+          echo "$GITHUB_WORKSPACE" >> "$GITHUB_PATH"
 
       # --redact keeps any finding out of the public log.
       - name: Scan for secrets
-        run: ./gitleaks detect --source . --redact --verbose --exit-code 1
+        run: node scripts/verify-ci.js --group secrets
+
+      - name: Retain secret-scan verdict
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-secrets-${{ github.run_id }}-${{ github.run_attempt }}
+          path: qa/reports/verification/*/summary.json
+          if-no-files-found: warn
+          retention-days: 7
 
   api:
     name: API checks (newman)
@@ -49,32 +63,23 @@ jobs:
           cache: npm
       - run: npm ci
 
-      - name: Self-check gate
-        run: npm run check
+      # One source defines the same offline tasks for local and CI. The Newman
+      # runner mints its own throwaway secret; no .env or external URL is read.
+      - name: Run API verification group
+        run: node scripts/verify-ci.js --group api
 
-      - name: OpenAPI schema and source inventory gate
-        run: npm run check:openapi
-
-      # Offline disposable servers; stdout is an aggregate operation/status
-      # matrix and validator controls, never captured bodies or bearer tokens.
-      - name: Real-response contract checks (offline and demo)
-        run: npm run test:contract
-
-      # The in-place database upgrade, on temporary files it makes itself. No
-      # server and no secret, so it runs before anything is started.
-      - name: Database migration test
-        run: npm run test:db
-
-      - name: Synthetic expense import (offline)
-        run: npm run test:import
-
-      # A throwaway secret per run; nothing signed with it outlives the job.
-      - name: Generate a throwaway secret
-        run: echo "JWT_SECRET=$(openssl rand -hex 48)" >> "$GITHUB_ENV"
-
-      # run.js starts its own server, port and throwaway database.
-      - name: Run the Postman collection
-        run: npm run test:api
+      - name: Retain allowlisted API and race evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-api-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            qa/reports/verification/*/summary.json
+            qa/reports/verification/*/api-report.html
+            qa/reports/verification/*/api-junit.xml
+            qa/reports/verification/*/race-summary.json
+          if-no-files-found: warn
+          retention-days: 7
 
   python:
     name: API scenarios (pytest)
@@ -95,9 +100,20 @@ jobs:
           cache-dependency-path: qa/python/requirements.txt
       - run: python -m pip install -r qa/python/requirements.txt
       - name: Run Python API scenarios
-        run: npm run test:python
+        run: node scripts/verify-ci.js --group python
         env:
           PYTHON: python
+
+      - name: Retain allowlisted Python evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-python-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            qa/reports/verification/*/summary.json
+            qa/reports/verification/*/python-junit.xml
+          if-no-files-found: warn
+          retention-days: 7
 
   e2e:
     name: End-to-end (Playwright)
@@ -112,25 +128,25 @@ jobs:
       - run: npm ci
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Run end-to-end tests
-        run: npm run test:e2e
-        env:
-          # playwright.config.js starts the server itself through webServer.
-          JWT_SECRET: ${{ github.run_id }}-${{ github.run_attempt }}-ci-only-secret
-          DB_PATH: ${{ runner.temp }}/e2e-wallet.db
-          CI: 'true'
-      - name: Accessibility regression (offline demo)
-        run: npm run test:a11y
-        env:
-          CI: 'true'
+      - name: Run browser and accessibility verification group
+        run: node scripts/verify-ci.js --group e2e
+      - name: Retain browser verification verdict
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-e2e-${{ github.run_id }}-${{ github.run_attempt }}
+          path: qa/reports/verification/*/summary.json
+          if-no-files-found: warn
+          retention-days: 7
       # The report and traces only when something failed, and only for a week.
       - name: Upload Playwright report and traces
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             playwright-report/
+            qa/reports/playwright-main/results-*.json
             qa/reports/playwright-a11y/
             test-results/
           if-no-files-found: ignore
@@ -156,16 +172,24 @@ jobs:
       - run: python -m pip install -r qa/python/requirements.txt
       # The runner's own Chrome; Selenium Manager fetches the driver that matches it.
       - name: Run the Selenium browser checks
-        run: npm run test:selenium
+        run: node scripts/verify-ci.js --group selenium
         env:
           PYTHON: python
+      - name: Retain Selenium verification verdict
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-selenium-${{ github.run_id }}-${{ github.run_attempt }}
+          path: qa/reports/verification/*/summary.json
+          if-no-files-found: warn
+          retention-days: 7
       # Each failed test's screenshot, page source and console, only when
       # something failed, and only for a week.
       - name: Upload Selenium failure evidence
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: selenium-evidence
+          name: selenium-evidence-${{ github.run_id }}-${{ github.run_attempt }}
           path: qa/reports/selenium/
           if-no-files-found: ignore
           retention-days: 7
@@ -186,21 +210,23 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - name: Unit, integration, idempotency, guard, evaluator and demo tests
-        run: npm run test:ai
-      - name: Fixture evaluation (does not measure a model)
-        run: npm run eval:ai
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: AI browser suite
-        run: npm run test:ai:e2e
-        env:
-          CI: 'true'
+      - name: Run offline AI and browser verification group
+        run: node scripts/verify-ci.js --group ai
+      - name: Retain AI verification verdict
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-ai-${{ github.run_id }}-${{ github.run_attempt }}
+          path: qa/reports/verification/*/summary.json
+          if-no-files-found: warn
+          retention-days: 7
       - name: Upload AI browser failure evidence
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-ai-failure
+          name: playwright-ai-failure-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             qa/reports/playwright-ai/
             test-results/ai/

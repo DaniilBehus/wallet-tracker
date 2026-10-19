@@ -72,7 +72,17 @@ test('Add, Month, category and expense dialogs, Upcoming and Schedules', async (
 
   await month.editButton(transaction.id).click();
   await expect(month.editAmount).toBeVisible();
+  await expect(signedIn.getByRole('dialog', { name: 'Edit expense' })).toBeVisible();
+  await expect(month.editAmount).toBeFocused();
+  expect(await signedIn.evaluate(() =>
+    document.querySelector('#tx-edit-sheet').scrollWidth <= window.innerWidth)).toBe(true);
+  await month.editCancel.scrollIntoViewIfNeeded();
+  await expect(month.editCancel).toBeVisible();
   await scan(signedIn, testInfo, 'expense-edit-sheet');
+  await month.editAmount.fill('0');
+  await month.editSave.click();
+  await expect(signedIn.getByTestId('tx-edit-error')).toBeVisible();
+  await scan(signedIn, testInfo, 'expense-edit-validation-error');
   await month.editCancel.click();
   await expect(month.editAmount).toBeHidden();
 
@@ -116,12 +126,18 @@ test('negative control: missing image alternative is detected', async ({ page })
   expect(results.violations.map(({ id }) => id)).toContain('image-alt');
 });
 
-test('keyboard reaches navigation, Schedules and the expense editor', async ({ signedIn, api }) => {
+test('keyboard reaches navigation, Schedules and the expense editor', async ({ signedIn, api }, testInfo) => {
   const nav = signedIn.getByRole('navigation', { name: 'Main navigation' });
   const buttons = ['Add', 'Month', 'Upcoming', 'Schedules'].map(name =>
     nav.getByRole('button', { name, exact: true }));
   const schedules = new SchedulesPage(signedIn);
   const month = new MonthPage(signedIn);
+  const editWrites = [];
+  signedIn.on('request', request => {
+    if (request.method() === 'PATCH' && /\/api\/transactions\/\d+$/.test(request.url())) {
+      editWrites.push(request.url());
+    }
+  });
   const focusRing = async (locator) => {
     await expect(locator).toBeFocused();
     expect(await locator.evaluate(el => el.matches(':focus-visible'))).toBe(true);
@@ -170,7 +186,99 @@ test('keyboard reaches navigation, Schedules and the expense editor', async ({ s
   await month.editButton(transaction.id).focus();
   await signedIn.keyboard.press('Enter');
   await expect(month.editAmount).toBeFocused();
-  await signedIn.keyboard.press('Escape');
-  await expect(month.editAmount).toBeHidden();
+  const focusState = () => signedIn.evaluate(() => {
+    const modal = document.querySelector('#tx-edit-sheet');
+    const active = document.activeElement;
+    const identity = element => element ? {
+      tag: element.tagName, id: element.id || null,
+      testid: element.getAttribute('data-testid') || null,
+    } : null;
+    return {
+      active: identity(active), hasFocus: document.hasFocus(),
+      dialogOpen: modal.open, modalMatches: modal.matches(':modal'),
+      activeInside: active === modal || modal.contains(active),
+      monthVisible: !document.querySelector('#screen-month').hidden,
+      addVisible: !document.querySelector('#screen-add').hidden,
+    };
+  });
+  const beforeBoundary = await focusState();
+  // A visual overlay used to let Shift+Tab escape into the Month screen.
+  await signedIn.keyboard.press('Shift+Tab');
+  const afterBoundary = await focusState();
+  await buttons[0].evaluate(element => element.focus());
+  const afterBackgroundFocusAttempt = await focusState();
+  const focusEvidence = { beforeBoundary, afterBoundary, afterBackgroundFocusAttempt };
+  await testInfo.attach('expense-modal-focus-diagnostic.json', {
+    body: JSON.stringify(focusEvidence, null, 2), contentType: 'application/json',
+  });
+  console.log(`EXPENSE MODAL FOCUS ${JSON.stringify(focusEvidence)}`);
+  expect(afterBoundary.activeInside).toBe(true);
+  expect(afterBackgroundFocusAttempt.activeInside).toBe(true);
+  await expect(month.editCancel).toBeFocused();
+  await signedIn.keyboard.press('Tab');
+  await expect(month.editAmount).toBeFocused();
+  const modal = signedIn.getByRole('dialog', { name: 'Edit expense' });
+  await expect(month.incomeEdit.click({ timeout: 700 })).rejects.toThrow();
+  await expect(month.incomeInput).toBeHidden();
+  await expect(buttons[1]).toHaveAttribute('aria-current', 'page');
+  await expect(modal).toBeVisible();
+  await signedIn.mouse.click(2, 2); // The backdrop, not an underlying control.
+  await expect(modal).toBeHidden();
   await expect(month.editButton(transaction.id)).toBeFocused();
+
+  await month.editButton(transaction.id).click();
+  await month.editAmount.fill('99.99');
+  await month.editCancel.click();
+  await expect(modal).toBeHidden();
+  await expect(month.row(transaction.id)).toContainText('€12.50');
+  await expect(month.editButton(transaction.id)).toBeFocused();
+
+  await month.editButton(transaction.id).click();
+  await signedIn.keyboard.press('Escape');
+  await expect(modal).toBeHidden();
+  await expect(month.editButton(transaction.id)).toBeFocused();
+
+  await month.editButton(transaction.id).click();
+  await month.editSave.click(); // Unchanged Save sends no PATCH.
+  await expect(modal).toBeHidden();
+  await expect(month.editButton(transaction.id)).toBeFocused();
+  expect(editWrites).toHaveLength(0); // Backdrop, Cancel, Escape and no-op were all write-free.
+
+  let releasePatch;
+  const heldPatch = new Promise(resolve => { releasePatch = resolve; });
+  await signedIn.route('**/api/transactions/*', async route => {
+    if (route.request().method() !== 'PATCH') return route.continue();
+    await heldPatch;
+    await route.fulfill({ status: 503, contentType: 'application/json',
+      body: JSON.stringify({ error: { code: 'OFFLINE', message: 'Synthetic refusal' } }) });
+  });
+  try {
+    await month.editButton(transaction.id).click();
+    await month.editAmount.fill('12.51');
+    await month.editSave.click();
+    await expect(month.editSave).toBeDisabled();
+    await signedIn.keyboard.press('Escape');
+    await expect(modal).toBeVisible(); // A pending PATCH cannot be abandoned as a no-write dismiss.
+  } finally { releasePatch(); }
+  await expect(month.editSave).toBeEnabled();
+  await expect(signedIn.getByTestId('tx-edit-error')).toBeVisible();
+  await expect(modal).toBeVisible();
+  await expect(month.row(transaction.id)).toContainText('€12.50');
+  expect(editWrites).toHaveLength(1);
+  await signedIn.unroute('**/api/transactions/*');
+  await signedIn.keyboard.press('Escape');
+  await expect(modal).toBeHidden();
+  await expect(month.editButton(transaction.id)).toBeFocused();
+
+  await signedIn.route('**/api/transactions/*', route => route.fulfill({
+    status: 401, contentType: 'application/json',
+    body: JSON.stringify({ error: { code: 'UNAUTHORIZED', message: 'Synthetic expiry' } }),
+  }));
+  await month.editButton(transaction.id).click();
+  await month.editAmount.fill('12.51');
+  await month.editSave.click();
+  await expect(modal).toBeHidden();
+  await expect(signedIn.getByTestId('auth-submit')).toBeVisible();
+  expect(editWrites).toHaveLength(2);
+  await signedIn.unroute('**/api/transactions/*');
 });

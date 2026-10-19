@@ -6,7 +6,20 @@ Recorded 2026-09-28 UTC on the local work tree based on
 `efa1c11bab1b6cceac5e112cbe195e89b2ff2440`. This is local evidence, not a
 new GitHub CI result, owner UAT or measured model quality. Historical reports
 remain unchanged. The API workflow has two additional local steps only;
-publication and execution on GitHub are still pending.
+at that 2026-09-28 checkpoint, publication and execution on GitHub were still
+pending. The baseline `b270355c8c850282b10cc0a7bdeb81c88b784765` was
+published on 2026-10-08; the validation slice below remains local and uncommitted.
+
+Earlier local validation checkpoint (2026-10-09, uncommitted): the expanded
+contract command passed **14/14 tests and 335 validated real HTTP responses**.
+See the [focused API validation report](test-report-api-validation.md) for the
+new negative-before/positive-after evidence. The dated 2026-09-28 matrix and
+244-response measurement below remain historical, not current counts.
+
+Current local checkpoint (2026-10-10, uncommitted): **15/15 tests and 340
+validated real HTTP responses**. The added [date-boundary report](test-report-date-boundaries.md)
+records four-digit year and schedule overflow controls; the historical counts
+above are not recalculated.
 
 ## Scope and environment
 

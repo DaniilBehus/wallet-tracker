@@ -6,6 +6,7 @@ const { db } = require('../db');
 const { monthBounds, currentMonth, isValidDate } = require('../dates');
 const v = require('../validate');
 const { ApiError } = require('../errors');
+const { encodeCursor, decodeCursor } = require('../pagination');
 
 const router = express.Router();
 
@@ -44,7 +45,7 @@ function canonicalPayload(body) {
     throw v.badRequest('spent_on is required when an Idempotency-Key is sent');
   }
   if (!isValidDate(body.spent_on)) throw v.badRequest('spent_on must be a date in YYYY-MM-DD form');
-  const note = body.note === undefined || body.note === null ? null : String(body.note);
+  const note = v.nullableText(body.note, 'note');
   const canonical = JSON.stringify([amount, category, body.spent_on, note]);
   return { hash: crypto.createHash('sha256').update(canonical).digest('hex') };
 }
@@ -66,7 +67,7 @@ const keyedSave = db.transaction((userId, key, body, hash) => {
   const categoryId = v.ownedCategoryId(body.category_id, userId);
   const spentOn = v.spentOn(body.spent_on);
   const amountCents = v.amountCents(body.amount_cents);
-  const note = body.note === undefined || body.note === null ? null : String(body.note);
+  const note = v.nullableText(body.note, 'note');
 
   const info = db
     .prepare(
@@ -103,7 +104,7 @@ router.post('/', (req, res) => {
   const amountCents = v.amountCents(body.amount_cents);
   const categoryId = v.ownedCategoryId(body.category_id, req.userId);
   const spentOn = v.spentOn(body.spent_on);
-  const note = body.note === undefined || body.note === null ? null : String(body.note);
+  const note = v.nullableText(body.note, 'note');
 
   const info = db
     .prepare(
@@ -119,7 +120,7 @@ router.post('/', (req, res) => {
   res.status(201).json(created);
 });
 
-// GET /api/transactions?from=&to=&category_id=&limit=&offset=
+// GET /api/transactions?from=&to=&category_id=&limit=&offset= or paging=cursor
 router.get('/', (req, res) => {
   const thisMonth = monthBounds(currentMonth());
 
@@ -134,14 +135,21 @@ router.get('/', (req, res) => {
     max: MAX_LIMIT,
     field: 'limit',
   });
-  const offset = v.positiveIntParam(req.query.offset, { fallback: 0, field: 'offset' });
+  const cursorMode = req.query.paging === 'cursor';
+  if (req.query.paging !== undefined && !cursorMode) throw v.badRequest('paging must be cursor');
+  if (cursorMode && req.query.offset !== undefined) throw v.badRequest('offset cannot be used with cursor paging');
+  if (!cursorMode && req.query.cursor !== undefined) throw v.badRequest('cursor requires paging=cursor');
+  const offset = cursorMode ? null : v.positiveIntParam(req.query.offset, { fallback: 0, field: 'offset' });
 
   const where = ['user_id = ?', 'spent_on >= ?', 'spent_on <= ?'];
   const params = [req.userId, from, to];
 
+  let categoryContext = 'all';
   if (req.query.category_id !== undefined) {
+    const categoryId = v.ownedCategoryId(req.query.category_id, req.userId);
     where.push('category_id = ?');
-    params.push(v.ownedCategoryId(req.query.category_id, req.userId));
+    params.push(categoryId);
+    categoryContext = categoryId === null ? 'none' : categoryId;
   }
 
   const clause = where.join(' AND ');
@@ -149,14 +157,28 @@ router.get('/', (req, res) => {
     .prepare(`SELECT COUNT(*) AS n FROM transactions WHERE ${clause}`)
     .get(...params).n;
 
-  // Newest first, as the "This month" screen lists them (spec §6.2).
-  const items = db
-    .prepare(
-      `SELECT ${SELECT_COLUMNS} FROM transactions WHERE ${clause}
-       ORDER BY spent_on DESC, id DESC LIMIT ? OFFSET ?`
-    )
-    .all(...params, limit, offset);
+  if (cursorMode) {
+    const context = { userId: req.userId, from, to, category: categoryContext };
+    const boundary = req.query.cursor === undefined ? null : decodeCursor(req.query.cursor, context);
+    const cursorClause = boundary ? ' AND (spent_on < ? OR (spent_on = ? AND id < ?))' : '';
+    const cursorParams = boundary ? [boundary.spent_on, boundary.spent_on, boundary.id] : [];
+    // One extra row proves whether a continuation exists. The last returned
+    // row, not a stored boundary lookup, defines the next position.
+    const found = limit === 0 ? [] : db.prepare(
+      `SELECT ${SELECT_COLUMNS} FROM transactions WHERE ${clause}${cursorClause}
+       ORDER BY spent_on DESC, id DESC LIMIT ?`
+    ).all(...params, ...cursorParams, limit + 1);
+    const items = found.slice(0, limit);
+    const nextCursor = found.length > limit ? encodeCursor(context, items[items.length - 1]) : null;
+    return res.type('application/vnd.wallet.cursor+json')
+      .status(200).json({ items, total, next_cursor: nextCursor });
+  }
 
+  // Legacy offset response shape stays exactly two fields.
+  const items = db.prepare(
+    `SELECT ${SELECT_COLUMNS} FROM transactions WHERE ${clause}
+     ORDER BY spent_on DESC, id DESC LIMIT ? OFFSET ?`
+  ).all(...params, limit, offset);
   res.status(200).json({ items, total });
 });
 
@@ -186,7 +208,7 @@ router.patch('/:id', (req, res) => {
     set('spent_on', v.spentOn(body.spent_on));
   }
   if (given.includes('note')) {
-    set('note', body.note === null ? null : String(body.note));
+    set('note', v.nullableText(body.note, 'note'));
   }
 
   // The user_id in the WHERE clause is what makes another user's row answer
