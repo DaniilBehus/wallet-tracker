@@ -5,8 +5,11 @@
 //
 //   npm install --prefix output/analysis-tools --no-save --package-lock=false --ignore-scripts bpmn-js@18.30.1 mermaid@12.0.0
 //   node scripts/render-analysis.js output/analysis-tools [model ...]
+//   node scripts/render-analysis.js --check output/analysis-tools [model ...]
 //
-// Checks every model and regenerates its preview. BPMN is parsed with
+// Checks every formal model and regenerates its SVG in docs/analysis/formal/.
+// The explanatory modular maps in docs/analysis/ are generated separately by
+// scripts/render-analysis-maps.js and are never overwritten here. BPMN is parsed with
 // bpmn-moddle, checked for structure, imported with bpmn-js, round-tripped and
 // exported. Mermaid goes through Mermaid's own parse and render. The UML SVG is
 // its own source, so it is checked, not regenerated. Every relative link and
@@ -22,7 +25,11 @@ const { chromium } = require('playwright');
 
 const root = path.resolve(__dirname, '..');
 const docs = path.join(root, 'docs/analysis');
-const tools = path.resolve(root, process.argv[2] || 'output/analysis-tools');
+const formal = path.join(docs, 'formal');
+const args = process.argv.slice(2);
+const check = args.includes('--check');
+const positional = args.filter((arg) => arg !== '--check');
+const tools = path.resolve(root, positional[0] || 'output/analysis-tools');
 const review = path.join(root, 'output/analysis-review');
 
 const MODELS = {
@@ -54,7 +61,7 @@ const MODELS = {
   'use-cases': { kind: 'uml' },
 };
 
-const chosen = process.argv.slice(3);
+const chosen = positional.slice(1);
 for (const name of chosen) if (!MODELS[name]) throw new Error('Unknown model: ' + name);
 const models = chosen.length ? chosen : Object.keys(MODELS);
 
@@ -75,7 +82,10 @@ function checkLinks() {
       const target = file ? path.resolve(docs, file) : path.join(docs, page);
       let ok = fs.existsSync(target);
       if (ok && anchor && target.endsWith('.md')) {
-        ok = [...fs.readFileSync(target, 'utf8').matchAll(/^#+\s+(.*)$/gm)].some((m) => slug(m[1]) === anchor);
+        const targetText = fs.readFileSync(target, 'utf8');
+        const headings = [...targetText.matchAll(/^#+\s+(.*)$/gm)].some((m) => slug(m[1]) === anchor);
+        const explicitIds = [...targetText.matchAll(/<a\s+id="([^"]+)"\s*><\/a>/g)].some((m) => m[1] === anchor);
+        ok = headings || explicitIds;
       }
       if (!ok) broken.push(page + ' -> ' + href);
     }
@@ -209,10 +219,18 @@ async function exportPreview(page, model, { svg, warnings }) {
   await page.setContent('<style>body{margin:0;background:white}svg{display:block}</style>' + finished);
   const layout = await measure(page);
   if (layout.clipped.length) throw new Error(model + ': clipped SVG labels: ' + layout.clipped.join('; '));
-  fs.writeFileSync(path.join(docs, model + '.svg'), finished);
+  const target = path.join(formal, model + '.svg');
+  if (check) {
+    if (!fs.existsSync(target) || fs.readFileSync(target, 'utf8') !== finished) {
+      throw new Error(model + ': formal SVG differs from model export');
+    }
+  } else {
+    fs.mkdirSync(formal, { recursive: true });
+    fs.writeFileSync(target, finished);
+  }
   await page.locator('svg').first().screenshot({ path: path.join(review, model + '.png') });
   fs.writeFileSync(path.join(review, model + '-validation.json'), JSON.stringify({ ...warnings, layout }, null, 2) + '\n');
-  console.log(JSON.stringify({ model, step: 'SVG_EXPORT', output: 'docs/analysis/' + model + '.svg', ...layout }));
+  console.log(JSON.stringify({ model, step: check ? 'SVG_CHECK' : 'SVG_EXPORT', output: 'docs/analysis/formal/' + model + '.svg', ...layout }));
 }
 
 /**
@@ -246,7 +264,7 @@ function measure(page) {
 }
 
 async function checkStaticSvg(page, model) {
-  const svg = fs.readFileSync(path.join(docs, model + '.svg'), 'utf8');
+  const svg = fs.readFileSync(path.join(formal, model + '.svg'), 'utf8');
   await page.setViewportSize({ width: 1500, height: 1000 });
   await page.setContent('<style>body{margin:0}svg{display:block}</style>' + svg);
   const parses = await page.evaluate((content) =>
