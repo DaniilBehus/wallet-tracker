@@ -16,7 +16,7 @@
       "REG": 3,
       "CONTRACT": 11
     },
-    "sourceFiles": 138,
+    "sourceFiles": 139,
     "configFiles": 6,
     "sourceFilesByRole": {
       "separate_a11y": 2,
@@ -31,7 +31,7 @@
       "main_load": 3,
       "main_python": 4,
       "main_selenium": 4,
-      "tooling": 12
+      "tooling": 13
     },
     "literalDeclarationsByRole": {
       "separate_a11y": 6,
@@ -6624,10 +6624,22 @@
       "register": null
     },
     {
+      "path": "scripts/render-analysis-maps.js",
+      "role": "tooling",
+      "roleNote": "Static checker or development tool; not a case: scripts/render-analysis-maps.js",
+      "sha256": "e1cc97c32f86301efaa2d60b76c877f15a90c5d00944053fd25efe2c16e2c9d7",
+      "declarations": [],
+      "links": [],
+      "parameters": [],
+      "sourceOnly": [],
+      "otherScenarios": [],
+      "register": null
+    },
+    {
       "path": "scripts/render-analysis.js",
       "role": "tooling",
       "roleNote": "Static checker or development tool; not a case: scripts/render-analysis.js",
-      "sha256": "1cc459a4a7d49d06b3ab7b507918c0da8804d8b098c50a6ddea6bde266102194",
+      "sha256": "dcc78c920f9525d9402da3ac1b53a61c9ec0ca180379ad14e83f3848d7fd3f05",
       "declarations": [],
       "links": [],
       "parameters": [],
@@ -6747,7 +6759,7 @@
     },
     "manifest": {
       "path": "qa/traceability/test-source-manifest.json",
-      "sha256": "843c2780abd7061750ad750998d608227829fbd72a4d5ddad4736791ac38796e"
+      "sha256": "9806ef3e232b9697c50a63a7a4053da163c64492801991c6b212e23290bbf4b3"
     },
     "apiInventory": {
       "path": "qa/docs/postman-api-inventory.json",
