@@ -1,15 +1,16 @@
-# Category spending limits — BPMN 2.0 process
+# Category spending limits — modular map
 
 [← Back to README](../../README.md#start-here) · [Analysis index](README.md) · [Next: database model →](database.md)
 
-**Implemented and published; owner UAT remains unsigned.** This model was frozen
-before code at `4d08651`; see the [local test report](../../qa/docs/test-report-category-limits.md).
+**Implemented and published; owner-reported 13/13 UAT is recorded.** The
+formal model was frozen before code at `4d08651`; see the
+[local test report](../../qa/docs/test-report-category-limits.md).
 Existing overall-limit behaviour is shown
 separately in the [monthly limit model](monthly-limit-process.md).
 
-![Category-limit process: ownership-safe set or clear, non-blocking expense saves and four category states calculated on read](category-limit-process.svg)
+![Modular category-limit map with ownership-safe limit writes, non-blocking expense saves and four states calculated on summary read](category-limit-process.svg)
 
-[Full-size SVG](category-limit-process.svg) · [Editable BPMN 2.0 source](category-limit-process.bpmn)
+[Open modular map](category-limit-process.svg) · [Retained formal BPMN SVG](formal/category-limit-process.svg) · [Editable BPMN 2.0 source](category-limit-process.bpmn)
 
 ## Read the process
 
@@ -23,8 +24,8 @@ separately in the [monthly limit model](monthly-limit-process.md).
    month. Paid instalments are expenses; unpaid instalments and income are not.
    Limited categories are listed even at zero spend. No-limit, no-spend categories
    stay hidden; Uncategorised is listed only when it has spending.
-4. The expanded multi-instance subprocess judges each listed row. Uncategorised
-   and a `NULL` limit are `not_set`. Otherwise `T < L` is `within`, `T = L` is
+4. In the retained formal BPMN, an expanded multi-instance subprocess judges
+   each listed row. Uncategorised and a `NULL` limit are `not_set`. Otherwise `T < L` is `within`, `T = L` is
    `reached` (including both zero), and `T > L` is `exceeded`. Remaining is `L - T`.
 5. The browser uses the returned state: white outline while budget remains;
    solid red box with white text at reached / exceeded. Words distinguish those
@@ -32,9 +33,10 @@ separately in the [monthly limit model](monthly-limit-process.md).
 
 ## Scope and simplifications
 
-- Solid arrows stay within a participant; dashed arrows are messages across
-  participants. This is descriptive, non-executable BPMN, not a workflow engine.
-- The diagram follows a write and its subsequent breakdown refresh. A standalone
+- In the retained formal BPMN, solid arrows stay within a participant and
+  dashed arrows are messages across participants. The modular map uses
+  explanatory connectors instead. Neither is an executable workflow engine.
+- The formal diagram follows a write and its subsequent breakdown refresh. A standalone
   summary read uses the same aggregation and judgement without any preceding
   write. A category limit never changes the overall limit or validates their sum.
 - The person/browser participant is a black box. Authentication is a precondition;
@@ -59,4 +61,4 @@ separately in the [monthly limit model](monthly-limit-process.md).
   local automation from owner acceptance and GitHub CI.
 
 [Dated publication and CI evidence](README.md#dated-publication-evidence--2026-09-29)
-is separate from the still unsigned owner acceptance script.
+is separate from the later [owner-reported 13/13 acceptance](../../qa/docs/uat-category-limits.md).

@@ -1,15 +1,17 @@
-# Monthly spending limit — BPMN 2.0
+# Monthly spending limit — modular map
 
 [← Back to README](../../README.md#start-here) · [Analysis index](README.md) · [Next: database model →](database.md)
 
 **Question:** how does a current limit change the displayed state without blocking records?
 
-![BPMN collaboration showing set, clear or record expense, then a summary decision distinguishing no limit, within, reached and exceeded](monthly-limit-process.svg)
+![Modular monthly-limit map separating settings and expense writes from read-time status judgement: not set, within, reached or exceeded](monthly-limit-process.svg)
 
-[Open full-size preview](monthly-limit-process.svg) · [Editable BPMN 2.0 source](monthly-limit-process.bpmn)
+[Open modular map](monthly-limit-process.svg) · [Retained formal BPMN SVG](formal/monthly-limit-process.svg) · [Editable BPMN 2.0 source](monthly-limit-process.bpmn)
 
-One authenticated interaction starts the system process: set/clear a limit or
-record an expense, then request the selected month's summary. A black-box user
+The modular map separates write, persistence and read-time judgement; the
+retained formal BPMN models one representative authenticated interaction:
+set/clear a limit or record an expense, then request the selected month's
+summary. A black-box user
 participant sends the request and receives the result; sequence flows stay in
 Wallet. The browser is grouped with the system to keep the business rules clear.
 

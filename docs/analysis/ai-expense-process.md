@@ -1,15 +1,17 @@
-# AI-assisted expense entry — BPMN 2.0
+# AI-assisted expense entry — modular map
 
 [← Back to README](../../README.md#start-here) · [Analysis index](README.md) · [Next: API sequence →](draft-save-sequence.md)
 
 **Question:** where does a suggestion stop and a financial write begin?
 
-![BPMN process with editable review, rejection and cancellation paths, followed by a separate explicit keyed-save activity](ai-expense-process.svg)
+![Modular AI expense map separating draft request, editable review and explicit keyed save, with failure and uncertain-response exits](ai-expense-process.svg)
 
-[Open full-size preview](ai-expense-process.svg) · [Editable BPMN 2.0 source](ai-expense-process.bpmn)
+[Open modular map](ai-expense-process.svg) · [Retained formal BPMN SVG](formal/ai-expense-process.svg) · [Editable BPMN 2.0 source](ai-expense-process.bpmn)
 
-The Wallet participant models the person's UI actions as user tasks and server
-work as service tasks. The extraction provider is a black-box participant:
+The modular map summarizes the boundaries; the retained formal BPMN details
+participants and branches. In that BPMN, the Wallet participant models the
+person's UI actions as user tasks and server work as service tasks. The
+extraction provider is a black-box participant:
 messages cross the participant boundary, not sequence flows. In demo it is a
 fixture adapter, not an external service. In off/unavailable mode the request
 fails before reaching extraction; ordinary manual entry remains available.
@@ -36,11 +38,14 @@ stored. No model-quality claim is implied.
 
 ## Reproduce this preview
 
-The [index](README.md#maintain-and-reproduce) gives the two commands; one run
-checks and exports every model. For this one it parses with bpmn-moddle, checks
+The [index](README.md#maintain-and-reproduce) gives separate reproduction
+commands: the built-in Node generator checks or writes this modular map, while
+the formal exporter, if its tools are available, parses the `.bpmn` with
+bpmn-moddle, checks
 sequence and message boundaries and exclusive branches, imports with bpmn-js,
-round-trips the XML and exports the SVG. Inspect the review PNG for line and
-label collisions too: bounding-box checks alone do not detect them. It does not
+round-trips the XML and exports the retained formal SVG. Inspect its review
+PNG for line and label collisions too: bounding-box checks alone do not detect
+them. It does not
 execute the process or prove application test results.
 
 ## Source and coverage

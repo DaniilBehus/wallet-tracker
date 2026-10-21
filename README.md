@@ -18,26 +18,29 @@ working code and test evidence. These are descriptive models, not enterprise
 experience or proof of owner acceptance.
 
 <p align="center">
-  <a href="docs/analysis/use-cases.svg"><img src="docs/analysis/use-cases.svg" width="720" alt="Wallet UML user goals: expenses, monthly and category budgets, schedules and optional AI draft review; open the full-size diagram for labels"></a>
+  <a href="docs/analysis/use-cases.svg"><img src="docs/analysis/use-cases.svg" width="720" alt="Modular Wallet capability map: account access connects expenses, categories, schedules, budgets, month review and optional AI drafts"></a>
 </p>
 
-<p align="center"><strong>User goals, not a screen map</strong> · <a href="docs/analysis/use-cases.svg">Open full-size SVG</a> · <a href="docs/analysis/use-cases.md">Read the scope and coverage</a></p>
+<p align="center"><strong>Capabilities, not a screen map</strong> · <a href="docs/analysis/use-cases.svg">Open full-size map</a> · <a href="docs/analysis/use-cases.md">Read the scope and formal UML source</a></p>
 
 **Choose a model:**
 
-- [Category-limit process — BPMN](docs/analysis/category-limit-process.md): set or clear a budget; saving an expense is never blocked by it.
-- [Monthly-limit process — BPMN](docs/analysis/monthly-limit-process.md): compare actual spending with the overall limit.
-- [AI expense process — BPMN](docs/analysis/ai-expense-process.md): describe → review → explicitly save, with refusal and cancellation paths.
-- [User goals — UML use cases](docs/analysis/use-cases.md): what a person can accomplish, and what is outside scope.
-- [Draft-and-save sequence](docs/analysis/draft-save-sequence.md): component responsibilities, keyed retries and transaction boundaries.
-- [Database model — ERD](docs/analysis/database.md): declared relationships, constraints and the category-limit column.
+- [Category-limit map](docs/analysis/category-limit-process.md): set or clear a budget; saving an expense is never blocked by it.
+- [Monthly-limit map](docs/analysis/monthly-limit-process.md): compare actual spending with the overall limit.
+- [AI expense map](docs/analysis/ai-expense-process.md): describe → review → explicitly save, with refusal and cancellation paths.
+- [Capability map](docs/analysis/use-cases.md): what a person can accomplish, and what is outside scope.
+- [Draft-and-save map](docs/analysis/draft-save-sequence.md): component responsibilities, keyed retries and transaction boundaries.
+- [Data-model map](docs/analysis/database.md): declared relationships, constraints and the category-limit column.
+
+These SVGs are explanatory modular maps. Each analysis page also links its
+retained formal BPMN, Mermaid or UML SVG and editable model where applicable.
 
 **Follow one feature: category budgets**
 
 1. [Business goal and rules](qa/docs/analysis-category-limits.md#1-business-goal-scope-and-assumptions) and [user stories / acceptance criteria](qa/docs/analysis-category-limits.md#2-requirements-and-acceptance-criteria).
 2. [Process model](docs/analysis/category-limit-process.md) → [data model](docs/analysis/database.md) → [category API](src/routes/categories.js) and [summary calculation](src/routes/summary.js).
 3. [Browser regression](qa/e2e/category-limits.spec.js) → [requirement-to-test traceability](qa/docs/analysis-category-limits.md#5-traceability) → [recorded results](qa/docs/test-report-category-limits.md).
-4. [Unsigned owner acceptance script](qa/docs/uat-category-limits.md): publishing and automated checks do not sign it.
+4. [Owner-reported 13/13 category-limit acceptance](qa/docs/uat-category-limits.md) on the named synthetic-data test build; the [current-build record](qa/docs/uat-current-build.md) keeps optional lost Save/Pay response **NOT RUN**.
 
 [All models, source files and dated publication evidence](docs/analysis/README.md) ·
 [Whole-API contract and executable checks](docs/api/README.md) ·
