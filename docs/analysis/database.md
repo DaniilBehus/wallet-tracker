@@ -1,15 +1,18 @@
-# Database — schema and category limits
+# Database — modular data map and formal ERD
 
 [← Back to README](../../README.md#start-here) · [Analysis index](README.md) · [Next: user goals →](use-cases.md)
 
-[SVG preview](database.svg) · [Editable Mermaid source](database.mmd)
+[Open modular map](database.svg) · [Retained formal ERD SVG](formal/database.svg) · [Editable Mermaid source](database.mmd)
 
-**Implemented and published in the [dated 2026-09-29 build](README.md#dated-publication-evidence--2026-09-29); owner UAT remains unsigned.** The category column
+The visible modular map groups seven tables and the eight declared foreign
+keys; the Mermaid block and retained formal ERD show their detailed notation.
+
+**Implemented and published in the [dated 2026-09-29 build](README.md#dated-publication-evidence--2026-09-29); scoped owner UAT was later recorded.** The category column
 was frozen before code at `4d08651`. The local schema and guarded migration now
 enforce `CHECK (monthly_limit_cents IS NULL OR monthly_limit_cents >= 0)` in SQLite,
 not just in an API validator. All eight foreign-key relationships are unchanged.
 See the [migration proof](../../qa/docs/test-report-category-limits.md) and
-[CL-D12 / REQ-CL-13](../../qa/docs/analysis-category-limits.md#req-cl-13--an-existing-database-keeps-working).
+[CL-D12 / REQ-CL-13](../../qa/docs/analysis-category-limits.md#req-cl-13).
 See the separate [dated publication and CI record](README.md#dated-publication-evidence--2026-09-29).
 
 <!-- diagram-source: database.mmd -->
@@ -130,7 +133,7 @@ identities, including where the schema does not spell out `NOT NULL`.
   additive migration, existing rows stay `NULL`, repeated boot is safe, database
   CHECK required. [Recorded local results](../../qa/docs/test-report-category-limits.md)
   preceded the [dated publication](README.md#dated-publication-evidence--2026-09-29);
-  [owner acceptance](../../qa/docs/uat-category-limits.md) remains unsigned.
+  [owner-reported 13/13 acceptance](../../qa/docs/uat-category-limits.md) was recorded on the later named test build.
 - [Complete schema](../../src/schema.sql) and [boot / additive limit migration](../../src/db.js).
 - [Ownership and value validators](../../src/validate.js), [schedule writes and derived fields](../../src/routes/schedules.js),
   [keyed transaction writes](../../src/routes/transactions.js), [quota reservations](../../src/ai/limits.js).

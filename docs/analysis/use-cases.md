@@ -1,18 +1,19 @@
-# Wallet goals — UML use-case diagram
+# Wallet capabilities — modular map
 
 [← Back to README](../../README.md#start-here) · [Analysis index](README.md) · [Next: expense process →](ai-expense-process.md)
 
-![UML use-case diagram showing Wallet user goals; the optional extraction provider connects only to requesting a draft](use-cases.svg)
+![Modular capability map connecting account access with expenses, categories, schedules, budgets, month review and optional AI drafts](use-cases.svg)
 
-[Open editable SVG source / full-size preview](use-cases.svg)
+[Open modular map](use-cases.svg) · [Retained formal UML use-case SVG](formal/use-cases.svg)
 
-**Category limits are implemented and published; owner UAT remains unsigned.**
+**Category limits are implemented and published; scoped owner UAT is recorded.**
 The category-limit goal was frozen before code at `4d08651`. Its ellipse now
 matches the implemented goal; [test evidence](../../qa/docs/test-report-category-limits.md)
-is separate from [unsigned owner UAT](../../qa/docs/uat-category-limits.md).
+is separate from the [owner-reported 13/13 UAT](../../qa/docs/uat-category-limits.md).
 
-Ellipses are user goals, not screens. Plain lines are actor associations, not
-control flow. No `include` or `extend` relation is needed: the diagram does not
+In the retained formal UML, ellipses are user goals, not screens. Plain lines
+are actor associations, not control flow. No `include` or `extend` relation is
+needed: the diagram does not
 claim, for example, that every expense includes an AI request. An extraction
 provider participates only when that optional mode is enabled; demo uses fixtures.
 
@@ -22,7 +23,7 @@ protected goals, not a repeated included use case. Sign-out, filtering and minor
 editing details are grouped. There is no bank actor, payment execution, automatic
 charge, transfer or account balance synchronisation. Category budgeting is
 implemented and published; [publication evidence](README.md#dated-publication-evidence--2026-09-29)
-does not imply owner acceptance.
+is distinct from the later [scoped owner acceptance](../../qa/docs/uat-current-build.md).
 
 ## Source and coverage
 

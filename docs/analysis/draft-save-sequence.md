@@ -1,8 +1,12 @@
-# Draft then explicit save — sequence
+# Draft then explicit save — modular map and sequence
 
 [← Back to README](../../README.md#start-here) · [Analysis index](README.md) · [Next: database model →](database.md)
 
-[SVG preview](draft-save-sequence.svg) · [Editable Mermaid source](draft-save-sequence.mmd)
+[Open modular map](draft-save-sequence.svg) · [Retained formal sequence SVG](formal/draft-save-sequence.svg) · [Editable Mermaid source](draft-save-sequence.mmd)
+
+The visible SVG groups draft generation, human review and keyed persistence.
+The Mermaid block below and retained formal SVG show the detailed sequence;
+the modular arrows are explanatory rather than Mermaid notation.
 
 <!-- diagram-source: draft-save-sequence.mmd -->
 
