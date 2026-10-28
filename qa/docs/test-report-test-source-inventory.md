@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-test-source-inventory.md)
+
 # Current test-source inventory — 2026-10-15
 
 The initial ORD-106 record below is retained as historical evidence. Its claim that all new executable paths failed closed was **superseded** by the ORD-107 discovery findings and the dated ORD-108 correction at the end of this report.

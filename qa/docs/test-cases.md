@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-cases.md)
+
 # Test cases · WALLET
 
 [← Back to README](../../README.md#qa-evidence) · [Next: monthly limit analysis →](analysis-monthly-limit.md)

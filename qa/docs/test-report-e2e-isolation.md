@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-e2e-isolation.md)
+
 # Main Playwright E2E database isolation — local verification
 
 [← Back to test setup](../../docs/testing.md) · [Next: test plan →](test-plan.md)

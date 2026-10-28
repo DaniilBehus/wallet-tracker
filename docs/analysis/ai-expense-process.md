@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/docs/analysis/ai-expense-process.md)
+
 # AI-assisted expense entry — modular map
 
 [← Back to README](../../README.md#start-here) · [Analysis index](README.md) · [Next: API sequence →](draft-save-sequence.md)

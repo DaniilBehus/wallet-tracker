@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-retry-busy.md)
+
 # Retry and busy-state assurance — focused local report
 
 [← Back to README](../../README.md#qa-evidence) · [Test setup](../../docs/testing.md) · [Next: current QA status →](../../docs/qa-status.md)

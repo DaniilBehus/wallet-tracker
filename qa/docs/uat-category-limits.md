@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/uat-category-limits.md)
+
 # Category spending limits — owner acceptance script
 
 [← Back to README](../../README.md#qa-evidence) · [Local automated report](test-report-category-limits.md) · [Requirements](analysis-category-limits.md)

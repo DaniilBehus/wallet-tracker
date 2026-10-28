@@ -1,4 +1,66 @@
-# BUG-004 · Twenty wrong passwords a second make the app unusable for everyone
+**English** · [Slovenčina](../../../locales/sk/qa/docs/defects/BUG-004-bcrypt-blocks-event-loop.md)
+
+# BUG-004 · 20 wrong passwords a second make the app unusable for everyone
+
+[← Back to README](../../../README.md#qa-evidence) · [Defect register](../../../log/BUGS.md) · [Next: report index →](README.md)
+
+## Overview and impact
+
+Synchronous bcrypt checks blocked the shared server event loop during a burst of wrong-password attempts.
+
+## Metadata
+
+| Field | Recorded value |
+|---|---|
+| Type | Defect |
+| Status | **CLOSED** — current canonical register |
+| Severity | High |
+| Priority | P0 — an unauthenticated request makes the whole service unusable |
+| Component | `src/auth.js` — `login`, `bcrypt.compareSync` |
+| Found / affected build | S07; exact build only where recorded below |
+| Environment / frequency | Node v24.13.1, local server on port 3100, throwaway database; frequency only if stated below |
+
+## Preconditions and test data
+
+S07, by the k6 load smoke `qa/load/auth-burst.js`
+
+## Reproduction
+
+1. `npm run test:load` (starts its own server on port 3100 with a throwaway
+   database, so nothing else is touched).
+2. The second scenario registers one account, then sends wrong passwords for it
+   from 20 connections at once for 15 seconds.
+3. Throughout, `GET /api/health` is polled 10 times a second and timed. It is
+   measured for 5 seconds beforehand as well, to have a baseline.
+
+## Expected and requirement
+
+`/api/health` does one `SELECT 1`, touches no user data, and has
+nothing to do with logging in. It should stay fast. The load smoke's threshold
+is `p(95) < 250 ms`, which is already generous for such a request.
+
+## Actual observation
+
+Under 20 wrong-password connections per second, `GET /api/health` p95 rose from **1.2 ms idle to 1819.1 ms loaded** (threshold: 250 ms). The dated k6 output below also reports a 1494.8× p95 increase; this is not a guess from the UI.
+
+## Evidence
+
+- [Recorded source: `qa/load/auth-burst.js`](../../../qa/load/auth-burst.js)
+- [Recorded source: `src/auth.js`](../../../src/auth.js)
+- [Recorded source: `src/ratelimit.js`](../../../src/ratelimit.js)
+- [Complete original register, preserved as a dated archive](../../../log/BUGS-archive-before-2026-10-26.md) — find heading `BUG-004`.
+- [GitHub Issue #4](https://github.com/DaniilBehus/wallet-tracker/issues/4) — external metadata can differ; the local register is the documentation status authority.
+
+## Resolution and verification
+
+**CLOSED.** Password comparison was moved to asynchronous bcrypt and the login rate limiter now rejects excess attempts before hashing. The same recorded 20-connection, 15-second k6 scenario changed loaded health p95 from **1819.1 ms to 5.3 ms** against the same 250 ms threshold; idle p95 remained 1.2 ms. A separate permitted-login control in the original report bounds the residual cost. No load test was rerun for this documentation rewrite.
+
+## Technical investigation and dated history
+
+<details>
+<summary>Open the original detailed report/observation</summary>
+
+### Original report: BUG-004 · Twenty wrong passwords a second make the app unusable for everyone
 
 [← Back to README](../../../README.md#qa-evidence) · [Next: load test source →](../../../qa/load/auth-burst.js)
 
@@ -196,3 +258,6 @@ it measured 422 ms. It now passes at 1.0 ms.
 Measure the same cheap endpoint idle and under load **in one run**. A latency
 number with nothing to compare it against says nothing; the ratio is the
 finding.
+
+
+</details>

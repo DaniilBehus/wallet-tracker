@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/selenium/README.md)
+
 # Selenium browser checks
 
 [← Running the tests](../../docs/testing.md) · [The cases](../docs/test-cases.md#selenium--browser-checks--qaselenium)

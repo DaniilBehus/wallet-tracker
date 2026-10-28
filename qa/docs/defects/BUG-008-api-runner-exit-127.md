@@ -1,4 +1,62 @@
+**English** · [Slovenčina](../../../locales/sk/qa/docs/defects/BUG-008-api-runner-exit-127.md)
+
 # BUG-008 · The API runner exits 127 on a green run, so the first CI build would be red
+
+[← Back to README](../../../README.md#qa-evidence) · [Defect register](../../../log/BUGS.md) · [Next: report index →](README.md)
+
+## Overview and impact
+
+The API runner reported exit 127 after a passing run, which would falsely fail a CI build.
+
+## Metadata
+
+| Field | Recorded value |
+|---|---|
+| Type | Defect |
+| Status | **CLOSED** — current canonical register |
+| Severity | High |
+| Priority | P0 — it breaks the pipeline that gates everything else |
+| Component | `qa/api/run.js` — `cleanUp` |
+| Found / affected build | S14; exact build only where recorded below |
+| Environment / frequency | Windows 11, Node v24.13.1, better-sqlite3 13.0.3; frequency only if stated below |
+
+## Preconditions and test data
+
+S14, checking the exit code of `npm run test:api` by hand
+
+## Reproduction
+
+1. ``` npm run test:api ; echo $? ```
+
+This step restates the dated historical recipe; it is not a newly executed test.
+
+## Expected and requirement
+
+0. Every assertion passed.
+
+## Actual observation
+
+127, on a run of 93 requests and 340 assertions with nothing failed.
+Reproduced directly under `node qa/api/run.js` as well, so it is not npm
+mangling anything.
+
+## Evidence
+
+- [Recorded source: `qa/api/run.js`](../../../qa/api/run.js)
+- [Recorded source: `qa/reports/api-report.html`](../../../qa/reports/api-report.html)
+- [Complete original register, preserved as a dated archive](../../../log/BUGS-archive-before-2026-10-26.md) — find heading `BUG-008`.
+- [GitHub Issue #8](https://github.com/DaniilBehus/wallet-tracker/issues/8) — external metadata can differ; the local register is the documentation status authority.
+
+## Resolution and verification
+
+**CLOSED.** The runner no longer deletes its own SQLite file while another process still has it open. It removes old `data/api-*.db` files at the *start* of a run, kills and awaits the server after the result, and lets buffered output flush. The recorded regression finished **93 requests / 340 assertions, zero failures, exit 0**, retained the 963 KB HTML report and left port 3001 closed. The trigger was isolated; why Windows terminated the deleting process rather than returning `EBUSY` remained unknown.
+
+## Technical investigation and dated history
+
+<details>
+<summary>Open the original detailed report/observation</summary>
+
+### Original report: BUG-008 · The API runner exits 127 on a green run, so the first CI build would be red
 
 [← Back to README](../../../README.md#qa-evidence) · [Next: API runner →](../../../qa/api/run.js)
 
@@ -155,3 +213,6 @@ Do not delete a database another process still has open — on this platform it
 kills the deleting process rather than returning an error. More generally:
 cleanup must not be able to change the result. Do it at the start of the next
 run.
+
+
+</details>

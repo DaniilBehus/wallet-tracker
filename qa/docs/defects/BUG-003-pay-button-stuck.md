@@ -1,4 +1,63 @@
-# BUG-003 · The pay button stays on its busy label after a refused payment
+**English** · [Slovenčina](../../../locales/sk/qa/docs/defects/BUG-003-pay-button-stuck.md)
+
+# BUG-003 · Pay button stays on its busy label after a refused payment
+
+[← Back to README](../../../README.md#qa-evidence) · [Defect register](../../../log/BUGS.md) · [Next: report index →](README.md)
+
+## Overview and impact
+
+A refused schedule payment showed the correct conflict toast but left the Pay button permanently labelled as busy.
+
+## Metadata
+
+| Field | Recorded value |
+|---|---|
+| Type | Defect |
+| Status | **CLOSED** — current canonical register |
+| Severity | Medium |
+| Priority | P1 — a control that misstates what it does |
+| Component | `public/app.js` — `paySchedule`, `withBusy` |
+| Found / affected build | S04; exact build only where recorded below |
+| Environment / frequency | Chromium, Pixel 5 and desktop viewports, local server; frequency only if stated below |
+
+## Preconditions and test data
+
+S04, by TC-E2E-030 (`qa/e2e/pay-conflict.spec.js`) — a case written on suspicion, not a failure that showed up on its own
+
+## Reproduction
+
+1. Create a loan with `total_count = 1` and open Upcoming.
+2. Close the loan from elsewhere — a second tab, another device, a direct
+   `PATCH /api/schedules/:id/pay`. Do not reload the screen.
+3. Press `Zaplatiť`.
+
+## Expected and requirement
+
+the conflict is reported and the button returns to offering the
+action — `Zaplatiť`, enabled, accessible name unchanged. Spec §4.2 makes the
+409 a documented state transition, so the interface has to survive it.
+
+## Actual observation
+
+The conflict toast appeared, but the button stayed on `Platím…` while its accessible name still said `Zaplatiť Posledná splátka`. The visible and announced states disagreed after a 409.
+
+## Evidence
+
+- [Recorded source: `public/app.js`](../../../public/app.js)
+- [Recorded source: `qa/e2e/upcoming.spec.js`](../../../qa/e2e/upcoming.spec.js)
+- [Complete original register, preserved as a dated archive](../../../log/BUGS-archive-before-2026-10-26.md) — find heading `BUG-003`.
+- [GitHub Issue #3](https://github.com/DaniilBehus/wallet-tracker/issues/3) — external metadata can differ; the local register is the documentation status authority.
+
+## Resolution and verification
+
+**CLOSED.** `withBusy` now snapshots the original label before applying the temporary busy label, then restores that original label in `finally`. The recorded TC-E2E-030 regression kept the button enabled and labelled `Zaplatiť` after refusal; the subsequent full browser run reported **60 passed (11.6 s)**. This is dated evidence, not a new run.
+
+## Technical investigation and dated history
+
+<details>
+<summary>Open the original detailed report/observation</summary>
+
+### Original report: BUG-003 · The pay button stays on its busy label after a refused payment
 
 [← Back to README](../../../README.md#qa-evidence) · [Next: browser regression tests →](../../../qa/e2e/upcoming.spec.js)
 
@@ -119,3 +178,6 @@ TC-E2E-030 is the regression case and stays in the suite. Full run afterwards:
 A helper that restores state must be the only thing that changes it. If a
 caller mutates what the helper snapshots, "restore" writes back the temporary
 value and the change becomes permanent.
+
+
+</details>

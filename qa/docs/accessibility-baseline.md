@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/accessibility-baseline.md)
+
 # Accessibility baseline — local evidence, not a WCAG certification
 
 > **Current-state pointer (2026-10-13):** the workflow and Escape/focus-restoration

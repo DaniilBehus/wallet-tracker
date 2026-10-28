@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-schedule-editing.md)
+
 # F09 schedule-edit UI — local verification
 
 [← Back to README](../../README.md#qa-evidence) · [Edit contract](analysis-schedule-editing.md) · [Next: test setup →](../../docs/testing.md)

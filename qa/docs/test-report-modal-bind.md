@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-modal-bind.md)
+
 # Expense modal and default listener — local verification
 
 [← Back to README](../../README.md#qa-evidence) · [Accessibility baseline](accessibility-baseline.md) · [QA status](../../docs/qa-status.md)

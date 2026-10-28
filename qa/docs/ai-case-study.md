@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/ai-case-study.md)
+
 # Case study — putting a language model next to money, and keeping it honest
 
 [← Back to README](../../README.md#qa-evidence) · [Next: evaluation method →](ai-evaluation.md)

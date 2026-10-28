@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-static-gates.md)
+
 # Static gate exceptions and evidence boundaries — local report
 
 [← Back to README](../../README.md#qa-evidence) · [Run commands](../../docs/testing.md) · [Negative controls](../gates/validator-controls.test.js) · [Next: observed API matrix →](test-report-contract.md#observed-status-matrix)

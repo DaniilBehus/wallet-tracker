@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../locales/sk/docs/design-system.md)
+
 # Interface design system
 
 [← Back to README](../README.md#architecture) · [Next: architecture notes →](../spec/architecture.md)
