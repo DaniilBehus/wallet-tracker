@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../locales/sk/docs/qa-status.md)
+
 # QA status — source-bounded view
 
 [← Back to README](../README.md#qa-evidence) · [Test plan](../qa/docs/test-plan.md) · [Source-accountability report](../qa/docs/test-report-test-source-inventory.md) · [Defect register](../log/BUGS.md) · [Owner UAT handoff](../qa/docs/uat-current-build.md) · [Next: test setup →](testing.md)

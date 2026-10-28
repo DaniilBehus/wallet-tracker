@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../locales/sk/spec/architecture.md)
+
 # Wallet Tracker — architecture and development notes
 
 [← Back to README](../README.md#architecture) · [Next: server modules →](../src/)

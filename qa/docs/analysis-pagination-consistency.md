@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/analysis-pagination-consistency.md)
+
 # Transaction pagination consistency — F05 contract
 
 [← Back to README](../../README.md#qa-evidence) · [QA status](../../docs/qa-status.md)

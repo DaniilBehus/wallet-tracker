@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/analysis-write-recovery.md)
+
 # Financial write recovery and request lifecycle
 
 [← Back to README](../../README.md#qa-evidence) · [Next: local verification](test-report-write-lifecycle.md)

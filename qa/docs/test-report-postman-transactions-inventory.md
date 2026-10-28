@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-postman-transactions-inventory.md)
+
 # Transactions Postman inventory — bounded F19 family
 
 [← Back to README](../../README.md#qa-evidence) · [Current Transactions inventory](postman-transactions-inventory.json) · [Prior Categories family](test-report-postman-categories-inventory.md)

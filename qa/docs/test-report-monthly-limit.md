@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-monthly-limit.md)
+
 # Monthly spending limit — test report
 
 [← Back to README](../../README.md#qa-evidence) · [Next: UAT script →](uat-monthly-limit.md)

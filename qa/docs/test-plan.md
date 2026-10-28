@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-plan.md)
+
 # Test plan · WALLET
 
 [← Back to README](../../README.md#qa-evidence) · [Next: test design →](test-design.md)

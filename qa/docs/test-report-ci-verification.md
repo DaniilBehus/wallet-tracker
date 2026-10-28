@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-ci-verification.md)
+
 # CI-equivalent verification and retained evidence — local report
 
 [← Back to README](../../README.md#qa-evidence) · [Run commands](../../docs/testing.md) · [Shared plan](../../scripts/verification-plan.js) · [Next: test plan →](test-plan.md)

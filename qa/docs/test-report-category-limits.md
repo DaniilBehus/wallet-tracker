@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-category-limits.md)
+
 # Category spending limits — local implementation report
 
 [← Back to README](../../README.md#qa-evidence) · [Requirements and trace](analysis-category-limits.md) · [Next: owner UAT →](uat-category-limits.md)

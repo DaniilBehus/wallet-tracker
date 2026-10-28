@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/docs/support/README.md)
+
 # Support pack
 
 [← README](../../README.md) · [Runbook](runbook.md) · [SQL diagnostics](sql-diagnostics.md) · [Log exercise](log-exercise.md)

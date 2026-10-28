@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-traceability.md)
+
 # F13 semantic traceability repair — local review report
 
 [← Back to README](../../README.md#qa-evidence) ·

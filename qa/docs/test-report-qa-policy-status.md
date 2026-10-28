@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-qa-policy-status.md)
+
 # F20/F21 QA policy and status correction — local documentation report
 
 [← Back to README](../../README.md#qa-evidence) · [Current QA status](../../docs/qa-status.md) · [Test plan](test-plan.md) · [Next: defect register →](../../log/BUGS.md)

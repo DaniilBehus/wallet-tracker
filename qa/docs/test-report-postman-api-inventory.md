@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-postman-api-inventory.md)
+
 # Postman API source inventory — 2026-10-14
 
 [← Back to README](../../README.md#qa-evidence) · [Case catalogue](test-cases.md) · [Derived inventory](postman-api-inventory.json)

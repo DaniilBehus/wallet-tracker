@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-write-lifecycle.md)
+
 # F06/F10 local write-recovery and request-lifecycle report
 
 [← Back to README](../../README.md#qa-evidence) · [Recovery contract](analysis-write-recovery.md) · [Next: test setup →](../../docs/testing.md)

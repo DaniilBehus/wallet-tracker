@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-postman-inventory.md)
+
 # Health/registration Postman inventory — bounded F19 pilot
 
 [← Back to README](../../README.md#qa-evidence) · [Current source inventory](postman-health-inventory.json) · [Next: QA status →](../../docs/qa-status.md)

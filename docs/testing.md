@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../locales/sk/docs/testing.md)
+
 # Running the tests
 
 [← Back to README](../README.md#qa-evidence) · [Next: test plan →](../qa/docs/test-plan.md)

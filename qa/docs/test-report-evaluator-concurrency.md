@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-evaluator-concurrency.md)
+
 # Evaluator concurrency — local QA evidence, 2026-10-10
 
 [← Back to README](../../README.md#qa-evidence) · [AI test commands](../../docs/testing.md) · [Regression controls](../ai/tests/eval-concurrency.test.js) · [Window controls](../ai/tests/eval-window.test.js)

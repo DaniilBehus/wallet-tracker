@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/analysis-synthetic-import.md)
+
 # Synthetic expense import — provisional analysis
 
 > Agent-authored proposal for a personal-project demonstrator. The owner has not reviewed or accepted these business choices. No bank connection, real external account, or real transaction data is in scope.

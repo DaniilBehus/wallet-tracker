@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-pagination-consistency.md)
+
 # F05 pagination consistency — local candidate report
 
 [← Back to README](../../README.md#qa-evidence) · [Technical contract](analysis-pagination-consistency.md) · [QA status](../../docs/qa-status.md)

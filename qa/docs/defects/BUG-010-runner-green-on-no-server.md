@@ -1,4 +1,60 @@
+**English** · [Slovenčina](../../../locales/sk/qa/docs/defects/BUG-010-runner-green-on-no-server.md)
+
 # BUG-010 · The API runner exits 0 when the server never starts, so CI called it green
+
+[← Back to README](../../../README.md#qa-evidence) · [Defect register](../../../log/BUGS.md) · [Next: report index →](README.md)
+
+## Overview and impact
+
+The API runner could exit successfully when the server never started, producing a false green CI signal.
+
+## Metadata
+
+| Field | Recorded value |
+|---|---|
+| Type | Defect |
+| Status | **CLOSED** — current canonical register |
+| Severity | Critical |
+| Priority | P0 — the gate reports success without having checked anything |
+| Component | `qa/api/run.js` — `main` |
+| Found / affected build | S15; exact build only where recorded below |
+| Environment / frequency | ubuntu-latest, Node 20; reproduced locally on Windows, Node 24; frequency only if stated below |
+
+## Preconditions and test data
+
+S15, reading the CI logs of the run that BUG-009 made red
+
+## Reproduction
+
+1. make the server fail to start, then run `npm run test:api` and read the exit code.
+
+This step restates the dated historical recipe; it is not a newly executed test.
+
+## Expected and requirement
+
+If the server does not start, the API runner must exit nonzero and CI must not report a passing API group.
+
+## Actual observation
+
+The API runner exited 0 after a startup failure, so CI could label an API run green even though no server answered a request. The original report below contains the exact failed-before command and output.
+
+## Evidence
+
+- [Recorded source: `qa/api/run.js`](../../../qa/api/run.js)
+- [Recorded source: `qa/reports/`](../../../qa/reports/)
+- [Complete original register, preserved as a dated archive](../../../log/BUGS-archive-before-2026-10-26.md) — find heading `BUG-010`.
+- [GitHub Issue #10](https://github.com/DaniilBehus/wallet-tracker/issues/10) — external metadata can differ; the local register is the documentation status authority.
+
+## Resolution and verification
+
+**CLOSED.** `process.exitCode` is now assigned before cleanup, the server exit is tracked from spawn time, and the wait has a bounded five-second timeout. A recorded blocked-port negative control made the server fail (`EADDRINUSE` / health never ready) and the runner exited **1**; the ordinary green path still completed **93 requests, 340 assertions, 93 executed scripts and exit 0**. This is the historical regression, not a new test.
+
+## Technical investigation and dated history
+
+<details>
+<summary>Open the original detailed report/observation</summary>
+
+### Original report: BUG-010 · The API runner exits 0 when the server never starts, so CI called it green
 
 [← Back to README](../../../README.md#qa-evidence) · [Next: API runner →](../../../qa/api/run.js)
 
@@ -128,3 +184,6 @@ exit 0
 Unchanged in wording. Broken twice in implementation, which is the more useful
 fact about it: record the result before cleanup, and treat "nothing below this
 line may change the exit code" as a structural rule, not an intention.
+
+
+</details>

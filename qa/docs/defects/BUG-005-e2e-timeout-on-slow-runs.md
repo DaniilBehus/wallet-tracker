@@ -1,4 +1,60 @@
-# BUG-005 · One end-to-end test times out on runs that are ~3× slower than normal
+**English** · [Slovenčina](../../../locales/sk/qa/docs/defects/BUG-005-e2e-timeout-on-slow-runs.md)
+
+# BUG-005 · One e2e test times out on runs that are ~3× slower than normal
+
+[← Back to README](../../../README.md#qa-evidence) · [Defect register](../../../log/BUGS.md) · [Next: report index →](README.md)
+
+## Overview and impact
+
+On two unusually slow local end-to-end runs (36–39 seconds rather than about 11), the same long schedule test exhausted its 30-second test budget. No user-facing failure or cause was established.
+
+## Metadata
+
+| Field | Recorded value |
+|---|---|
+| Type | Defect |
+| Status | **OPEN** — current canonical register |
+| Severity | Low |
+| Priority | P3 — intermittent, and no user-facing symptom is known |
+| Component | unknown — that is the point of this entry |
+| Found / affected build | S10; exact build only where recorded below |
+| Environment / frequency | Local Chromium; four Playwright workers; two observed slow runs at 36–39 s versus about 11 s normally |
+
+## Preconditions and test data
+
+Run the full local browser suite with four Chromium workers. The affected test is `qa/e2e/schedules.spec.js` → “the 31st is accepted and explains itself”; two slow occurrences were recorded in S08 and S10. The test alone did not reproduce the failure.
+
+## Reproduction
+
+No deterministic trigger was established. The failure occurred twice during full local four-worker runs, but the named test passed alone, in consecutive full-suite retries and during an attempted CPU-saturation reproduction. These are observations, not a guaranteed reproduction recipe.
+
+## Expected and requirement
+
+The named browser test should complete its documented scenario within the configured 30-second test budget. That is test intent, not an application response-time SLA.
+
+## Actual observation
+
+Chromium with four Playwright workers timed out at `locator.fill` in `qa/e2e/schedules.spec.js` after 30,000 ms. Two local full-suite runs took 36–39 s versus roughly 11 s normally. The exact cause remains unknown.
+
+## Evidence
+
+- [Affected browser scenario](../../../qa/e2e/schedules.spec.js) and the 30,000 ms `locator.fill` error quoted in the original report below.
+- [Recorded source: `qa/e2e/schedules.spec.js`](../../../qa/e2e/schedules.spec.js)
+- [Recorded source: `qa/docs/test-plan.md`](../../../qa/docs/test-plan.md)
+- [Recorded source: `qa/e2e/`](../../../qa/e2e/)
+- [Complete original register, preserved as a dated archive](../../../log/BUGS-archive-before-2026-10-26.md) — find heading `BUG-005`.
+- [GitHub Issue #5](https://github.com/DaniilBehus/wallet-tracker/issues/5) — external metadata can differ; the local register is the documentation status authority.
+
+## Resolution and verification
+
+Status: **OPEN**. Registration later changed to asynchronous bcrypt and subsequent full runs/CI were green, but the hypothesis was not proved: a CPU-saturation attempt did not reproduce the timeout. No timeout or assertion was relaxed. If it recurs, capture a Playwright trace together with server request timings. [Public Issue #5](https://github.com/DaniilBehus/wallet-tracker/issues/5) is closed despite the local OPEN record; no Issue edit was made in this work.
+
+## Technical investigation and dated history
+
+<details>
+<summary>Open the original detailed report/observation</summary>
+
+### Original report: BUG-005 · One end-to-end test times out on runs that are ~3× slower than normal
 
 [← Back to README](../../../README.md#qa-evidence) · [Next: browser suite →](../../../qa/e2e/)
 
@@ -124,3 +180,6 @@ testable.
 
 A rule drawn from an uncharacterised failure would be a guess with a number on
 it.
+
+
+</details>

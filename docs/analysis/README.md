@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/docs/analysis/README.md)
+
 # Analysis models — Wallet behaviour and category limits
 
 [← Back to README](../../README.md#start-here)

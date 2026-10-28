@@ -1,0 +1,64 @@
+erDiagram
+    users ||..o{ categories : vlastní
+    users ||..o{ schedules : vlastní
+    users ||..o{ transactions : vlastní
+    users ||--o| settings : má
+    users ||--o{ transaction_requests : vymedzuje
+    categories |o..o{ schedules : category_id
+    categories |o..o{ transactions : category_id
+    schedules |o..o{ transactions : schedule_id
+    users {
+        INTEGER id PK "NOT NULL; automatický prírastok"
+        TEXT email UK "NOT NULL"
+        TEXT password_hash "NOT NULL"
+        TEXT created_at "NOT NULL; predvolene teraz"
+    }
+    categories {
+        INTEGER id PK "NOT NULL; automatický prírastok"
+        INTEGER user_id FK "NOT NULL"
+        TEXT name "NOT NULL; jedinečné spolu s user_id"
+        TEXT icon "NULL povolené"
+        INTEGER monthly_limit_cents "NULL alebo >= 0 CHECK"
+    }
+    schedules {
+        INTEGER id PK "NOT NULL; automatický prírastok"
+        INTEGER user_id FK "NOT NULL"
+        TEXT name "NOT NULL"
+        INTEGER amount_cents "NOT NULL; väčšie ako nula"
+        INTEGER category_id FK "NULL povolené"
+        INTEGER day_of_month "NOT NULL; 1 až 31"
+        TEXT starts_on "NOT NULL"
+        INTEGER total_count "NULL alebo väčšie ako nula"
+        INTEGER paid_count "NOT NULL; predvolene 0; nezáporné"
+        INTEGER active "NOT NULL; predvolene 1"
+        TEXT created_at "NOT NULL; predvolene teraz"
+    }
+    transactions {
+        INTEGER id PK "NOT NULL; automatický prírastok"
+        INTEGER user_id FK "NOT NULL"
+        INTEGER amount_cents "NOT NULL; väčšie ako nula"
+        INTEGER category_id FK "NULL povolené"
+        TEXT spent_on "NOT NULL"
+        TEXT note "NULL povolené"
+        INTEGER schedule_id FK "NULL povolené"
+        TEXT created_at "NOT NULL; predvolene teraz"
+    }
+    settings {
+        INTEGER user_id PK,FK "NOT NULL; najviac jeden riadok na používateľa"
+        INTEGER monthly_income_cents "NOT NULL; predvolene 0; nezáporné"
+        INTEGER monthly_limit_cents "NULL alebo nezáporné"
+    }
+    transaction_requests {
+        INTEGER user_id PK,FK "NOT NULL; zložený PK"
+        TEXT operation_key PK "NOT NULL; zložený PK"
+        TEXT payload_hash "NOT NULL"
+        INTEGER transaction_id "NOT NULL; zámerne BEZ FK"
+        TEXT response_json "NOT NULL"
+        TEXT created_at "NOT NULL; predvolene teraz"
+    }
+    ai_quota {
+        TEXT period PK "NOT NULL; zložený PK"
+        TEXT scope PK "NOT NULL; obmedzený enum"
+        INTEGER user_id PK "NOT NULL; globálna zástupná hodnota 0; BEZ FK"
+        INTEGER count "NOT NULL; predvolene 0; nezáporné"
+    }

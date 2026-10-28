@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-synthetic-import.md)
+
 # Synthetic import and Selenium — local regression note
 
 [← Back to README](../../README.md) · [Import analysis](analysis-synthetic-import.md) · [Next: import tests →](../import/provider-adapter.test.js)

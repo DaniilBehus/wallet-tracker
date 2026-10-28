@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-runtime.md)
+
 # Runtime compatibility — focused local report
 
 [← Back to README](../../README.md#qa-evidence) · [Next: running the tests →](../../docs/testing.md)
