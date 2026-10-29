@@ -5754,7 +5754,7 @@
       "path": "qa/gates/traceability.test.js",
       "role": "support_control",
       "roleNote": "Named independent control tests, not owner catalogue: qa/gates/traceability.test.js",
-      "sha256": "ebe5aa804a83a39428aacb29ad1c1f20a55c4a8fc934f2500688ace3884844a2",
+      "sha256": "ea1cc75f3aa864632f66327c124277886e8aa994a90e4bba746084ab20dc7060",
       "declarations": [
         "positive LF fixture distinguishes repeated references from definitions",
         "CRLF source and catalogue parse identically",
@@ -6687,7 +6687,7 @@
       "path": "scripts/traceability.js",
       "role": "tooling",
       "roleNote": "Static checker or development tool; not a case: scripts/traceability.js",
-      "sha256": "0618ed8b86312816d7b493beec869790a8ec11df7716e29c5c0b4a59aec9722a",
+      "sha256": "4eb074e5b4ff048b4307ceb34f8d9ff084456eb26d1a910ff24a129ece548d43",
       "declarations": [],
       "links": [],
       "parameters": [],
@@ -6755,15 +6755,15 @@
   "sourceHashes": {
     "catalogue": {
       "path": "qa/docs/test-cases.md",
-      "sha256": "a2d1ff0cb206113ac82ec8f6014a5d17d7627265a26602dd6cb81f52962b512d"
+      "sha256": "a6236a33b462e1369fce057a2bae01eb0debabba1b3da7bb02aae640523f233c"
     },
     "manifest": {
       "path": "qa/traceability/test-source-manifest.json",
-      "sha256": "9806ef3e232b9697c50a63a7a4053da163c64492801991c6b212e23290bbf4b3"
+      "sha256": "ad1950beb91b4e736945a7bc7d1bc49e7eb666a2088fd637508419fd9e8256ca"
     },
     "apiInventory": {
       "path": "qa/docs/postman-api-inventory.json",
-      "sha256": "968b7b91050cb8ba26736bcb5d53f829d4679ba83c17c537e0f2a0ea2064c5d7"
+      "sha256": "eb70735b278e18ac2b4561a16d0ad0e2f6e492cf529c5c6713f787b23d0026fc"
     }
   }
 }

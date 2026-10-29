@@ -3600,7 +3600,7 @@
     },
     {
       "path": "qa/gates/traceability.test.js",
-      "sha256": "ebe5aa804a83a39428aacb29ad1c1f20a55c4a8fc934f2500688ace3884844a2",
+      "sha256": "ea1cc75f3aa864632f66327c124277886e8aa994a90e4bba746084ab20dc7060",
       "role": "support_control",
       "roleNote": "Named independent control tests, not owner catalogue: qa/gates/traceability.test.js",
       "declarations": [
@@ -4533,7 +4533,7 @@
     },
     {
       "path": "scripts/traceability.js",
-      "sha256": "0618ed8b86312816d7b493beec869790a8ec11df7716e29c5c0b4a59aec9722a",
+      "sha256": "4eb074e5b4ff048b4307ceb34f8d9ff084456eb26d1a910ff24a129ece548d43",
       "role": "tooling",
       "roleNote": "Static checker or development tool; not a case: scripts/traceability.js",
       "declarations": [],
