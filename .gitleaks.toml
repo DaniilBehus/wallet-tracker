@@ -14,4 +14,8 @@ regexTarget = "line"
 regexes = [
   '''^(?:\r?\n)?[ \t]{4}"TC-API-[0-9]{3}": "[a-f0-9]{64}",?$''',
   '''^(?:\r?\n)?Collection SHA-256: `[a-f0-9]{64}`; catalogue: `[a-f0-9]{64}`; Token mapping: `[a-f0-9]{64}`; generated Token JSON: `[a-f0-9]{64}`\. Separately inspected `qa/api/run\.js` SHA-256: `[a-f0-9]{64}` — its hash is recorded for provenance, not enforced by this validator\.$''',
+  # Exact recorded Slovak SHA-256 provenance only; other values and appended keys stay detectable.
+  '''^(?:\r?\n)?mapovania Token:\r?\n`2928afc2eb72d499803237b0420088aa8ece8f9e63b65b61725c10ca053f4bca`;$''',
+  '''^(?:\r?\n)?vygenerovaného Token JSON:\r?\n`cb39d06ef73e22b92d939c279141b5a121cf791f90987fff6b6c6498640449c4`\.$''',
+
 ]
