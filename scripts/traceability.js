@@ -101,6 +101,70 @@ function parseDefinitions(inputs, errors) {
   return definitions;
 }
 
+function parseDefectDefinitions(value, errors) {
+  const lines = linesOf(value, BUGS, errors);
+  const ids = new Set();
+  const currentHeading = '## Current register';
+  const modern = lines.includes('# Defect, limit and traceability register') || lines.includes(currentHeading);
+  if (!modern) {
+    if (lines[0] !== '# Bugs') {
+      errors.push('missing current defect register block');
+      return ids;
+    }
+    // Keep the original heading fixture contract. A current register never
+    // falls back to headings or prose when its table is missing or malformed.
+    for (const line of lines) {
+      const match = line.match(/^### ((?:BUG|LIMIT)-\d{3})\b/);
+      if (!match) continue;
+      if (ids.has(match[1])) errors.push(`duplicate defect heading ${match[1]}`);
+      ids.add(match[1]);
+    }
+    return ids;
+  }
+
+  const starts = lines.flatMap((line, index) => line === currentHeading ? [index] : []);
+  if (starts.length !== 1) {
+    errors.push('missing current defect register block');
+    return ids;
+  }
+  const start = starts[0];
+  const end = lines.findIndex((line, index) => index > start && /^## /.test(line));
+  if (end < 0) {
+    errors.push('unterminated current defect register block');
+    return ids;
+  }
+  const block = lines.slice(start + 1, end).filter(line => line.trim());
+  const header = '| ID / full report | Problem or boundary | Severity | Status | Recorded fix disposition |';
+  const divider = '|---|---|---|---|---|';
+  if (block[0] !== header || block[1] !== divider || block.length < 3) {
+    errors.push('unsupported current defect register table');
+    return ids;
+  }
+  const seen = new Set();
+  for (const [index, line] of block.slice(2).entries()) {
+    const cells = line.split('|').map(cell => cell.trim());
+    if (cells.length !== 7 || cells[0] || cells[6] || cells.slice(1, 6).some(cell => !cell)) {
+      errors.push(`unsupported defect register row ${index + 1}`);
+      continue;
+    }
+    const match = cells[1].match(/^\[((?:BUG|LIMIT)-\d{3}|TRACE-AUDIT-\d{3})\]\(([^)\s]+)\)$/);
+    if (!match) {
+      errors.push(`unsupported defect register ID/link cell ${index + 1}`);
+      continue;
+    }
+    const [, id, target] = match;
+    const report = new RegExp(`^\\.\\./qa/docs/defects/${id}-[a-z0-9]+(?:-[a-z0-9]+)*\\.md$`);
+    if (!report.test(target)) {
+      errors.push(`wrong defect report target for ${id}: ${target}`);
+      continue;
+    }
+    if (seen.has(id)) errors.push(`duplicate defect definition ${id}`);
+    seen.add(id);
+    if (/^(?:BUG|LIMIT)-/.test(id)) ids.add(id);
+  }
+  return ids;
+}
+
 function validateLinks(cell, where, definitions, bugIDs, errors, { aiOnly = false } = {}) {
   const ruleLinks = [...cell.matchAll(/\[((?:REQ-[A-Z][A-Z0-9-]*|AI-R[A-Z0-9-]+))\]\(([^)#\s]+)#([^)\s]+)\)/g)];
   const linked = [];
@@ -136,15 +200,7 @@ function validateLinks(cell, where, definitions, bugIDs, errors, { aiOnly = fals
 function analyze(inputs, options = {}) {
   const errors = [];
   const definitions = parseDefinitions(inputs, errors);
-  const bugLines = linesOf(inputs[BUGS], BUGS, errors);
-  const bugIDs = new Set();
-  for (const line of bugLines) {
-    const m = line.match(/^### ((?:BUG|LIMIT)-\d{3})\b/);
-    if (m) {
-      if (bugIDs.has(m[1])) errors.push(`duplicate defect heading ${m[1]}`);
-      bugIDs.add(m[1]);
-    }
-  }
+  const bugIDs = parseDefectDefinitions(inputs[BUGS], errors);
   const rows = linesOf(inputs[CATALOGUE], CATALOGUE, errors).filter(line => /^\| TC-/.test(line));
   if (!rows.length) errors.push('no catalogue case rows');
   const cases = new Set();
