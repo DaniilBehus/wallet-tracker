@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-postman-token-inventory.md)
+
 # Token-handling Postman inventory — bounded F19 family
 
 [← Back to README](../../README.md#qa-evidence) · [Current Token inventory](postman-token-inventory.json) · [Next: Health pilot →](test-report-postman-inventory.md)

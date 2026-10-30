@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-validator-controls.md)
+
 # Validator controls and race database ownership — 2026-10-09
 
 [← Back to README](../../README.md#qa-evidence) · [Run commands](../../docs/testing.md) · [Race runner](../race/run.js) · [Negative controls](../gates/validator-controls.test.js)

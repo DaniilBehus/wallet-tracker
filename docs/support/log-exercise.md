@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/docs/support/log-exercise.md)
+
 # Log-reading exercise
 
 [← Support pack](README.md) · [Runbook](runbook.md) · [SQL diagnostics](sql-diagnostics.md)

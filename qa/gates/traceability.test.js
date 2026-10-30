@@ -202,6 +202,87 @@ test('unsupported case row and AI risk forms fail', () => {
   failsWith(g, /unmapped trace in AI risk/);
 });
 
+function modernRegisterFixture() {
+  const f = fixture();
+  f[bugs] = [
+    '# Defect, limit and traceability register',
+    '',
+    '## Current register',
+    '',
+    '| ID / full report | Problem or boundary | Severity | Status | Recorded fix disposition |',
+    '|---|---|---|---|---|',
+    '| [BUG-001](../qa/docs/defects/BUG-001-save-button-contrast.md) | Save control | High | CLOSED | fixed |',
+    '| [LIMIT-001](../qa/docs/defects/LIMIT-001-serialised-database-work.md) | Queue | — | ACCEPTED | — |',
+    '| [TRACE-AUDIT-001](../qa/docs/defects/TRACE-AUDIT-001-semantic-links.md) | Trace | — | CLOSED | verified |',
+    '',
+    '## Historical evidence',
+    'BUG-999 is a prose reference, not a definition.',
+    '',
+  ].join('\n');
+  f[catalogue] = f[catalogue].replace(
+    '[REQ-CORE-01](../../spec/core-requirements.md#req-core-01)',
+    '[BUG-001](../../log/BUGS.md)',
+  );
+  return f;
+}
+
+function runModernRegisterControls() {
+  for (const ending of ['\n', '\r\n']) {
+    const withEnding = f => {
+      if (ending === '\r\n') for (const key of Object.keys(f)) f[key] = f[key].replace(/\n/g, '\r\n');
+      return f;
+    };
+    const valid = check(withEnding(modernRegisterFixture()));
+    assert.equal(valid.ok, true, valid.errors.join('\n'));
+    assert.equal(valid.caseCount, 2);
+
+    const missing = modernRegisterFixture();
+    missing[bugs] = missing[bugs].replace(/^\| \[BUG-001\].*\n/m, '');
+    failsWith(withEnding(missing), /missing defect definition BUG-001/);
+
+    const malformed = modernRegisterFixture();
+    malformed[bugs] = malformed[bugs].replace(
+      '| [BUG-001](../qa/docs/defects/BUG-001-save-button-contrast.md) | Save control | High | CLOSED | fixed |',
+      '| [BUG-001](../qa/docs/defects/BUG-001-save-button-contrast.md) | Save control | High | CLOSED |',
+    );
+    withEnding(malformed);
+    failsWith(malformed, /unsupported defect register row/);
+    failsWith(malformed, /missing defect definition BUG-001/);
+
+    const duplicate = modernRegisterFixture();
+    const row = duplicate[bugs].split('\n').find(line => line.startsWith('| [BUG-001]'));
+    duplicate[bugs] = duplicate[bugs].replace(row, row + '\n' + row);
+    failsWith(withEnding(duplicate), /duplicate defect definition BUG-001/);
+
+    const wrong = modernRegisterFixture();
+    wrong[bugs] = wrong[bugs].replace('BUG-001-save-button-contrast.md', 'BUG-002-paid-loan-counter.md');
+    withEnding(wrong);
+    failsWith(wrong, /wrong defect report target for BUG-001/);
+    failsWith(wrong, /missing defect definition BUG-001/);
+
+    const outside = modernRegisterFixture();
+    outside[bugs] = outside[bugs]
+      .replace(/^\| \[BUG-001\].*\n/m, '')
+      .replace('BUG-999 is a prose reference', '### BUG-001 · pseudo-definition\nBUG-001 and BUG-999 are prose references');
+    failsWith(withEnding(outside), /missing defect definition BUG-001/);
+
+    const noBlock = modernRegisterFixture();
+    noBlock[bugs] = noBlock[bugs].replace('## Current register', '## Other register') + '\n### BUG-001 · pseudo-definition\n';
+    failsWith(withEnding(noBlock), /missing current defect register block/);
+
+    const unknown = modernRegisterFixture();
+    unknown[bugs] = unknown[bugs]
+      .replace('# Defect, limit and traceability register', '# Unrecognized register')
+      .replace('## Current register', '## Other register')
+      .concat('\n### BUG-001 · pseudo-definition\n');
+    failsWith(withEnding(unknown), /missing current defect register block/);
+
+    const wrongSource = modernRegisterFixture();
+    wrongSource[catalogue] = wrongSource[catalogue].replace('[BUG-001](../../log/BUGS.md)', '[BUG-001](../../spec/core-requirements.md)');
+    failsWith(withEnding(wrongSource), /wrong defect source for BUG-001/);
+  }
+}
+
 test('defect links require a real heading and the correct source', () => {
   const f = fixture();
   f[catalogue] = f[catalogue].replace('[REQ-CORE-01](../../spec/core-requirements.md#req-core-01)', '[BUG-999](../../log/BUGS.md)');
@@ -209,6 +290,7 @@ test('defect links require a real heading and the correct source', () => {
   const g = fixture();
   g[catalogue] = g[catalogue].replace('[REQ-CORE-01](../../spec/core-requirements.md#req-core-01)', '[BUG-001](../../spec/core-requirements.md)');
   failsWith(g, /wrong defect source/);
+  runModernRegisterControls();
 });
 
 test('unmapped feature requirements are permitted; AI owns its separate register', () => {

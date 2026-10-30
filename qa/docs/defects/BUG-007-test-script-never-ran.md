@@ -1,4 +1,63 @@
+**English** · [Slovenčina](../../../locales/sk/qa/docs/defects/BUG-007-test-script-never-ran.md)
+
 # BUG-007 · A test script never ran, and the suite reported it as green
+
+[← Back to README](../../../README.md#qa-evidence) · [Defect register](../../../log/BUGS.md) · [Next: report index →](README.md)
+
+## Overview and impact
+
+A test script did not execute at all while its enclosing suite still reported a green result.
+
+## Metadata
+
+| Field | Recorded value |
+|---|---|
+| Type | Defect |
+| Status | **CLOSED** — current canonical register |
+| Severity | Medium |
+| Priority | P1 — false confidence, in the layer whose whole job is confidence |
+| Component | `qa/api/wallet.postman_collection.json` — `08 · Settings and the month balance / Another user's income does not leak` |
+| Found / affected build | S14; exact build only where recorded below |
+| Environment / frequency | newman 6.2.2, Node v24.13.1; frequency only if stated below |
+
+## Preconditions and test data
+
+S14, running the suite as a routine check after an unrelated change
+
+## Reproduction
+
+1. `npm run test:api` and read the summary line.
+
+This step restates the dated historical recipe; it is not a newly executed test.
+
+## Expected and requirement
+
+93 requests, and every one of them running its assertions.
+
+## Actual observation
+
+```
+requests   93  (0 failed)
+assertions 337  (0 failed)
+```
+
+## Evidence
+
+- [Recorded source: `qa/api/wallet.postman_collection.json`](../../../qa/api/wallet.postman_collection.json)
+- [Recorded source: `qa/api/run.js`](../../../qa/api/run.js)
+- [Complete original register, preserved as a dated archive](../../../log/BUGS-archive-before-2026-10-26.md) — find heading `BUG-007`.
+- [GitHub Issue #7](https://github.com/DaniilBehus/wallet-tracker/issues/7) — external metadata can differ; the local register is the documentation status authority.
+
+## Resolution and verification
+
+**CLOSED.** The apostrophe-containing `pm.test` name was changed to a valid quoted string, and the runner now prints the number of test scripts that executed and fails visibly when one does not. The recorded regression restored the missing cross-user income check: assertions increased from **337 to 340** with **93 scripts executed**. No new API run was performed for this rewrite.
+
+## Technical investigation and dated history
+
+<details>
+<summary>Open the original detailed report/observation</summary>
+
+### Original report: BUG-007 · A test script never ran, and the suite reported it as green
 
 [← Back to README](../../../README.md#qa-evidence) · [Next: API runner →](../../../qa/api/run.js)
 
@@ -116,3 +175,6 @@ never wrong. What was wrong was the claim that it had been checked.
 
 A test that does not run reports the same as a test that passes. Count what
 executed, not just what failed — and print the count on green runs too.
+
+
+</details>

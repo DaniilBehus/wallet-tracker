@@ -1,0 +1,60 @@
+sequenceDiagram
+    actor Person as Osoba
+    participant UI as Kontrola v prehliadači
+    participant API as Autentifikované API
+    participant Service as Služba návrhov
+    participant Provider as Adaptér extrakcie
+    participant DB as SQLite
+    Note over UI,API: Každá odpoveď nesie X-Request-Id,<br/>jedno UUID na požiadavku HTTP
+    Person->>UI: Opísať jeden zaplatený výdavok v EUR, vyžiadať návrh
+    UI->>API: POST /api/ai/expense-draft
+    API->>Service: createDraft(userId, body, rawBytes, signal, requestId)
+    Service->>Service: Validovať požiadavku a referenčný dátum, režim, súhlas v živom režime
+    alt Odmietnuté pred odoslaním
+        Service-->>API: ApiError (validácia, nedostupnosť, súhlas)
+        API-->>UI: Pevne určená chyba, bez volania poskytovateľa a finančného zápisu
+    else Platná požiadavka
+        Service->>DB: Čítať vlastné kategórie, rezervovať kvótu po získaní miesta súbežnosti
+        Service->>Provider: extract(prompt, schema, signal)
+        alt Zlyhanie poskytovateľa alebo nepoužiteľný výstup
+            Provider-->>Service: Zlyhanie, časový limit alebo nepoužiteľný výstup
+            Service-->>API: Mapované na pevne určené 502, 503 alebo 504
+            API-->>UI: Chyba, upraviť opis alebo zadať ručne
+        else Použiteľná odpoveď vrátane odmietnutia
+            Provider-->>Service: Štruktúrovaná extrakcia alebo odmietnutie
+            Service->>Service: Validovať výstup, deterministická normalizácia
+            Service-->>API: Výsledok s request_id rovným requestId
+            API-->>UI: Výsledok 200<br/>ready alebo needs_input: upraviteľná kontrola<br/>unsupported: odmietnutie, nemožno uložiť
+        end
+        Note over Service,DB: Návrh AI sa neukladá. Kvóta sa môže minúť aj pri zlyhaní.<br/>Riadok logu ai_draft nesie rovnaké ID požiadavky.
+    end
+    opt Návrh ready alebo needs_input dorazil v aktuálnej relácii rozhrania
+        Person->>UI: Skontrolovať a opraviť polia, výslovne uložiť výdavok
+        Note over Person,UI: Zrušenie alebo úprava opisu<br/>zneplatní požiadavku na návrh.<br/>Výsledok unsupported sa nedá uložiť.
+        UI->>API: POST /api/transactions + Idempotency-Key
+        API->>API: Validovať kľúč a kanonický tvar obsahu
+        API->>DB: BEGIN IMMEDIATE, vyhľadať (user_id, key)
+        alt Nový kľúč, kategória a dátum sú platné
+            API->>DB: Vložiť výdavok a záznam požiadavky, COMMIT
+            API-->>UI: 201 vytvorený výdavok
+        else Nový kľúč, kategória alebo dátum odmietnuté
+            API->>DB: ROLLBACK, vyhodiť odmietnutie
+            API-->>UI: 404 neznáma kategória alebo 400 dátum
+        else Rovnaký kľúč a obsah, výdavok stále existuje
+            API->>DB: COMMIT, nič sa nevloží
+            API-->>UI: Pôvodné telo 201 + Idempotency-Replayed: true
+            Note over API,DB: Upravený výdavok sa nevracia do pôvodného stavu
+        else Rovnaký kľúč, odlišný obsah
+            API->>DB: ROLLBACK, vyhodiť konflikt
+            API-->>UI: 409 IDEMPOTENCY_CONFLICT
+        else Rovnaký obsah, výdavok bol medzitým vymazaný
+            API->>DB: ROLLBACK, vyhodiť konflikt
+            API-->>UI: 409 IDEMPOTENCY_REPLAY_UNAVAILABLE
+        end
+        opt Bez spoľahlivého potvrdenia (stratená odpoveď, 5xx, časový limit)
+            UI-->>Person: Výsledok neistý, polia a obsah sú zmrazené
+            Person->>UI: Skontrolovať alebo zopakovať toto uloženie
+            UI->>API: Rovnaký POST, rovnaký obsah, rovnaký kľúč
+            Note over API,DB: Znovu vstúpi do rozhodovania podľa kľúča, pre tento kľúč nikdy druhý výdavok
+        end
+    end

@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/uat-current-build.md)
+
 # Current-build owner UAT — accepted test build, 2026-10-19
 
 [← Back to README](../../README.md#qa-evidence) · [Current QA status](../../docs/qa-status.md) · [Next: category-limit steps →](uat-category-limits.md)

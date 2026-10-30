@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/docs/analysis/database.md)
+
 # Database — modular data map and formal ERD
 
 [← Back to README](../../README.md#start-here) · [Analysis index](README.md) · [Next: user goals →](use-cases.md)

@@ -1,4 +1,61 @@
+**English** · [Slovenčina](../../../locales/sk/qa/docs/defects/BUG-012-deferred-transaction-500.md)
+
 # BUG-012 · Two processes writing one database answer 500
+
+[← Back to README](../../../README.md#qa-evidence) · [Defect register](../../../log/BUGS.md) · [Next: report index →](README.md)
+
+## Overview and impact
+
+Concurrent schedule Pay and Edit on two server processes produced 500 responses in 4 of 40 pairs, despite a five-second busy timeout.
+
+## Metadata
+
+| Field | Recorded value |
+|---|---|
+| Type | Defect |
+| Status | **CLOSED** — current canonical register |
+| Severity | High |
+| Priority | P1 — a status the specification says is unreachable |
+| Component | `src/routes/schedules.js` — both transactions |
+| Found / affected build | S16; exact build only where recorded below |
+| Environment / frequency | Windows 11, Node v24.13.1, better-sqlite3 13.0.3, SQLite WAL; 4/40 cross-process pairs returned 500 before repair |
+
+## Preconditions and test data
+
+S16, `qa/race/` scenario C
+
+## Reproduction
+
+1. `npm run test:race`. Scenario C pays a loan on one server while editing it on another, both sharing one database file.
+
+This step restates the dated historical recipe; it is not a newly executed test.
+
+## Expected and requirement
+
+Both requests must succeed or one must receive a coherent race response; spec §5 classifies an unhandled 500 as a state **that must not be reachable through the UI**. A database lock must not surface as an internal server failure.
+
+## Actual observation
+
+4 of 40 pairs answered 500.
+
+## Evidence
+
+- [Recorded source: `qa/race/`](../../../qa/race/)
+- [Recorded source: `src/routes/schedules.js`](../../../src/routes/schedules.js)
+- [Recorded source: `qa/race/run.js`](../../../qa/race/run.js)
+- [Complete original register, preserved as a dated archive](../../../log/BUGS-archive-before-2026-10-26.md) — find heading `BUG-012`.
+- [GitHub Issue #13](https://github.com/DaniilBehus/wallet-tracker/issues/13) — external metadata can differ; the local register is the documentation status authority.
+
+## Resolution and verification
+
+**CLOSED.** Pay/Edit read-decide-write transactions now use `BEGIN IMMEDIATE`, taking the SQLite write lock before reading; `busy_timeout` can then queue the second writer instead of failing a deferred lock upgrade. In the recorded two-process race, **4/40 pairs returned 500 before** and **40/40 returned 200 after**, with zero invariant violations. The original report records the heavier write-lock trade-off; no new race run was made for this rewrite.
+
+## Technical investigation and dated history
+
+<details>
+<summary>Open the original detailed report/observation</summary>
+
+### Original report: BUG-012 · Two processes writing one database answer 500
 
 [← Back to README](../../../README.md#qa-evidence) · [Next: race test source →](../../../qa/race/run.js)
 
@@ -111,3 +168,6 @@ per script. Recorded as the open half of D-030.
 On SQLite in WAL mode, a transaction that will write must be `BEGIN IMMEDIATE`.
 A deferred transaction that upgrades to a write is refused, not queued, and
 `busy_timeout` will not save it.
+
+
+</details>

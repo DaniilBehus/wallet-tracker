@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-api-validation.md)
+
 # Safe numeric and text input — local HTTP regression, 2026-10-09
 
 [← Back to README](../../README.md#qa-evidence) · [Run commands](../../docs/testing.md) · [Contract tests](../contract/contract.test.js) · [OpenAPI contract](../../spec/openapi.json)

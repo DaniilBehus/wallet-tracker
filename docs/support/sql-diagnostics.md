@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/docs/support/sql-diagnostics.md)
+
 # SQL diagnostics
 
 [← Support pack](README.md) · [Runbook](runbook.md)

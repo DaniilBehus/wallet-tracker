@@ -1,3 +1,5 @@
+**English** · [Slovenčina](locales/sk/README.md)
+
 <div align="center">
 
 # Wallet Tracker
