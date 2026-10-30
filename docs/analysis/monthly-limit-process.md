@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/docs/analysis/monthly-limit-process.md)
+
 # Monthly spending limit — modular map
 
 [← Back to README](../../README.md#start-here) · [Analysis index](README.md) · [Next: database model →](database.md)

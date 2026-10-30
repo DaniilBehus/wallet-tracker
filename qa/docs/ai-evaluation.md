@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/ai-evaluation.md)
+
 # AI expense entry — evaluation
 
 [← Back to README](../../README.md#ai-expense-entry) · [Next: demo and modes →](../../docs/ai-feature.md)

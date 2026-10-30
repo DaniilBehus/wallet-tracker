@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/docs/api/README.md)
+
 # API contract and executable evidence
 
 [← Back to README](../../README.md#qa-evidence) · [Next: local contract report →](../../qa/docs/test-report-contract.md)

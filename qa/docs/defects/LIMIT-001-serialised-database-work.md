@@ -1,4 +1,60 @@
+**English** · [Slovenčina](../../../locales/sk/qa/docs/defects/LIMIT-001-serialised-database-work.md)
+
 # LIMIT-001 · Every request queues behind database work — 23× slower under write load
+
+[← Back to README](../../../README.md#qa-evidence) · [Defect register](../../../log/BUGS.md) · [Next: report index →](README.md)
+
+## Overview and impact
+
+Under the measured write load, database work serialized requests and made health latency approximately 23 times slower. This is an accepted design limit, not a product defect.
+
+## Metadata
+
+| Field | Recorded value |
+|---|---|
+| Type | Accepted design limit |
+| Status | **ACCEPTED** — current canonical register |
+| Severity | Not applicable |
+| Priority | Not recorded separately |
+| Component | `src/db.js` — `better-sqlite3`, synchronous by design |
+| Found / affected build | S07; exact build only where recorded below |
+| Environment / frequency | Node v24.13.1, local server on port 3100, WAL mode; frequency only if stated below |
+
+## Preconditions and test data
+
+S07, by the k6 load smoke `qa/load/expense-write.js`
+
+## Observation or measurement procedure
+
+1. 50 users writing expenses as fast as they can for 30 seconds, while `GET /api/health` is polled throughout and, for 5 seconds beforehand, against an idle server.
+
+This step restates the dated historical recipe; it is not a newly executed test.
+
+## Expected and requirement
+
+This is a measured performance boundary, not an unmet functional assertion. The dated load smoke supplies its threshold and workload.
+
+## Actual observation
+
+With 50 writers over 30 seconds, `GET /api/health` p95 increased from **1.4 ms idle to 32.4 ms under load** (23.4×). The request stayed well below the test's 250 ms threshold, while the increase disclosed synchronous request serialization.
+
+## Evidence
+
+- [Recorded source: `qa/load/expense-write.js`](../../../qa/load/expense-write.js)
+- [Recorded source: `src/db.js`](../../../src/db.js)
+- [Complete original register, preserved as a dated archive](../../../log/BUGS-archive-before-2026-10-26.md) — find heading `LIMIT-001`.
+- [GitHub Issue #11](https://github.com/DaniilBehus/wallet-tracker/issues/11) — external metadata can differ; the local register is the documentation status authority.
+
+## Resolution and verification
+
+**ACCEPTED design limit, not a defect.** `better-sqlite3` work is synchronous on one Node event loop, so writes make other requests queue even with SQLite WAL. The dated load smoke measured the 1.4→32.4 ms health p95 change without a failed threshold or lost write. The trade-off is documented; this report does not claim a performance repair or a new load run.
+
+## Technical investigation and dated history
+
+<details>
+<summary>Open the original detailed report/observation</summary>
+
+### Original report: LIMIT-001 · Every request queues behind database work — 23× slower under write load
 
 [← Back to README](../../../README.md#qa-evidence) · [Next: write-load test →](../../../qa/load/expense-write.js)
 
@@ -98,3 +154,6 @@ entry is the starting point rather than a surprise.
 
 Measure the same cheap endpoint idle and under load **in one run**. Without the
 idle baseline, 32 ms looks fine.
+
+
+</details>

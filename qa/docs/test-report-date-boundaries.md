@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-date-boundaries.md)
+
 # Four-digit calendar dates — local QA evidence, 2026-10-10
 
 [← Back to README](../../README.md#qa-evidence) · [Run commands](../../docs/testing.md) · [Pure date controls](../dates/date-boundaries.test.js) · [Real HTTP controls](../contract/contract.test.js)

@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/docs/analysis/category-limit-process.md)
+
 # Category spending limits — modular map
 
 [← Back to README](../../README.md#start-here) · [Analysis index](README.md) · [Next: database model →](database.md)

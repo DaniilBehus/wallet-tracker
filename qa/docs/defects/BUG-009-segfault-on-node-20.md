@@ -1,4 +1,60 @@
+**English** · [Slovenčina](../../../locales/sk/qa/docs/defects/BUG-009-segfault-on-node-20.md)
+
 # BUG-009 · The server segfaults on Node 20 in CI, so the first build was red
+
+[← Back to README](../../../README.md#qa-evidence) · [Defect register](../../../log/BUGS.md) · [Next: report index →](README.md)
+
+## Overview and impact
+
+The first CI attempt on Node 20 crashed at the native database layer; the historical failure is a runtime-compatibility case, not an application test pass.
+
+## Metadata
+
+| Field | Recorded value |
+|---|---|
+| Type | Defect |
+| Status | **CLOSED** — current canonical register |
+| Severity | High |
+| Priority | P0 — nothing in the pipeline can run |
+| Component | `.github/workflows/ci.yml` — `NODE_VERSION`, and `package.json` `engines` |
+| Found / affected build | S15; exact build only where recorded below |
+| Environment / frequency | ubuntu-latest, Node 20, better-sqlite3 13.0.3; frequency only if stated below |
+
+## Preconditions and test data
+
+S15, the first CI run after the first push
+
+## Reproduction
+
+1. run the workflow on `ubuntu-latest` with `node-version: 20`.
+
+This step restates the dated historical recipe; it is not a newly executed test.
+
+## Expected and requirement
+
+the same green suite as locally — 340 assertions, 92 e2e tests.
+Spec §2 says Node 20+, and `package.json` said `engines: >=20`.
+
+## Actual observation
+
+The CI web server logged `Segmentation fault (core dumped)` and Playwright reported web-server **exit 139** (`SIGSEGV`). The API job's server also failed its health check. The dated CI output is reproduced in the investigation below.
+
+## Evidence
+
+- [Recorded CI workflow](../../../.github/workflows/ci.yml) and [package runtime constraint](../../../package.json).
+- [Complete original register, preserved as a dated archive](../../../log/BUGS-archive-before-2026-10-26.md) — find heading `BUG-009`.
+- [GitHub Issue #9](https://github.com/DaniilBehus/wallet-tracker/issues/9) — external metadata can differ; the local register is the documentation status authority.
+
+## Resolution and verification
+
+**CLOSED for the historical Node-20 floor mismatch.** The dated repair moved CI and the package engine declaration from Node 20 to a Node 22 floor required by `better-sqlite3@13.0.3`; the workflow was the regression check after the failed first run. The old report does not record a direct run ID in this front section. A later [runtime compatibility report](../test-report-runtime.md) documents the stricter current `22.14.0`/Node-API-10 guard. The exact native crash mechanism beyond the unsupported runtime was not isolated.
+
+## Technical investigation and dated history
+
+<details>
+<summary>Open the original detailed report/observation</summary>
+
+### Original report: BUG-009 · The server segfaults on Node 20 in CI, so the first build was red
 
 [← Back to README](../../../README.md#qa-evidence) · [Next: CI configuration →](../../../.github/workflows/ci.yml)
 
@@ -105,3 +161,6 @@ history rather than described from memory.
 A minimum supported version is a claim, and every dependency can invalidate it
 without saying so. Check what the dependencies actually require, and run CI at
 the floor rather than at the version you happen to develop on.
+
+
+</details>

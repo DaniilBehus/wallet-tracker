@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../locales/sk/spec/ai-expense-entry.md)
+
 # Wallet · AI expense entry — feature contract
 
 [← Back to README](../README.md#ai-expense-entry) · [Next: AI test plan →](../qa/docs/ai-test-plan.md)

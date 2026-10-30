@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/uat-monthly-limit.md)
+
 # Monthly spending limit — UAT script
 
 [← Back to README](../../README.md#qa-evidence) · [Next: defect investigations →](defects/README.md)

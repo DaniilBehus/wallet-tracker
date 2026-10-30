@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/analysis-category-limits.md)
+
 # Category spending limits — requirements and test analysis
 
 [← Back to README](../../README.md#qa-evidence) · [The monthly limit this extends](analysis-monthly-limit.md) · [Next: test cases →](test-cases.md)

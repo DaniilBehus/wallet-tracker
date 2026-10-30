@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../locales/sk/docs/ai-feature.md)
+
 # AI expense entry
 
 [← Back to README](../README.md#ai-expense-entry) · [Next: AI case study →](../qa/docs/ai-case-study.md)

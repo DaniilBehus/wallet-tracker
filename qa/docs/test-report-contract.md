@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-contract.md)
+
 # OpenAPI and real-response checks — local report
 
 [← Back to README](../../README.md#qa-evidence) · [API guide and requirements](../../docs/api/README.md) · [Next: contract cases →](test-cases.md#contract-checks--openapi-and-real-http)

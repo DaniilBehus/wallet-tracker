@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/analysis-schedule-editing.md)
+
 # Schedule editing — local UI contract
 
 [← Back to README](../../README.md#qa-evidence) · [Core requirements](../../spec/core-requirements.md#req-core-21) · [Next: local test report →](test-report-schedule-editing.md)

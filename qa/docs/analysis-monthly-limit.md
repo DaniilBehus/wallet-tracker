@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/analysis-monthly-limit.md)
+
 # Monthly spending limit — requirements and test analysis
 
 [← Back to README](../../README.md#qa-evidence) · [Next: test cases →](test-cases.md#api--monthly-spending-limit--folder-12)

@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../locales/sk/spec/core-requirements.md)
+
 # Core requirements — traceability index
 
 This document links currently public product rules to stable identifiers.

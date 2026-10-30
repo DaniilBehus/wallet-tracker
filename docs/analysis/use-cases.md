@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/docs/analysis/use-cases.md)
+
 # Wallet capabilities — modular map
 
 [← Back to README](../../README.md#start-here) · [Analysis index](README.md) · [Next: expense process →](ai-expense-process.md)

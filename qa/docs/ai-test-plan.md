@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/ai-test-plan.md)
+
 # AI expense entry — test plan and case register
 
 [← Back to README](../../README.md#ai-expense-entry) · [Next: AI case study →](ai-case-study.md)

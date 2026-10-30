@@ -1,3 +1,5 @@
+**English** · [Slovenčina](../../locales/sk/qa/docs/test-report-postman-categories-inventory.md)
+
 # Categories Postman inventory — bounded F19 family
 
 [← Back to README](../../README.md#qa-evidence) · [Current Categories inventory](postman-categories-inventory.json) · [Prior Token family](test-report-postman-token-inventory.md)
